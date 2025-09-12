@@ -25,6 +25,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Single product hooks - following external plugin pattern
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_price' ], 9 );
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_booking_form' ], 25 );
+			
+			// Calendar display below product image
+			add_action( 'woocommerce_before_single_product_summary', [ $this, 'rental_product_calendar' ], 25 );
 
 			// Rental booking form components (following external plugin)
 			add_action( 'smart_rentals_booking_form', [ $this, 'rental_booking_form_fields' ], 5 );
@@ -303,6 +306,33 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			}
 			
 			return $product_quantity;
+		}
+
+		/**
+		 * Display rental product availability calendar
+		 */
+		public function rental_product_calendar() {
+			if ( !is_product() ) {
+				return;
+			}
+
+			global $post;
+			if ( !$post || !smart_rentals_wc_is_rental_product( $post->ID ) ) {
+				return;
+			}
+
+			// Check if calendar is enabled for this product
+			$show_calendar = smart_rentals_wc_get_post_meta( $post->ID, 'show_calendar' );
+			if ( 'yes' !== $show_calendar ) {
+				return;
+			}
+
+			// Include the calendar template
+			$template_path = SMART_RENTALS_WC_PATH . 'templates/single/calendar.php';
+			if ( file_exists( $template_path ) ) {
+				$product_id = $post->ID;
+				include $template_path;
+			}
 		}
 	}
 }
