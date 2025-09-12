@@ -1,0 +1,1 @@
+# smart-rentals-for-woocommerce
