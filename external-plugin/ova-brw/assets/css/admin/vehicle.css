@@ -1,0 +1,42 @@
+#meta-box-id-vehicle .ovabrw-row {
+  display: flex;
+  align-items: center;
+}
+#meta-box-id-vehicle .ovabrw-row:not(:last-child) {
+  margin-bottom: 20px;
+}
+#meta-box-id-vehicle .ovabrw-row .unavailable-field {
+  position: relative;
+}
+#meta-box-id-vehicle .ovabrw-row label {
+  margin-right: 150px;
+  max-width: 130px;
+  width: 100%;
+}
+#meta-box-id-vehicle .ovabrw-row label.loc {
+  margin-right: 180px;
+}
+#meta-box-id-vehicle .ovabrw-row input.ova_brw_datepicker:not(:last-child) {
+  margin-right: 20px;
+}
+#meta-box-id-vehicle .ovabrw-row input[readonly] {
+  background-color: #FFF;
+}
+#meta-box-id-vehicle .ovabrw-row.require_location input {
+  margin-right: 10px;
+}
+#meta-box-id-vehicle .ovabrw-row.require_location label.label_radio {
+  flex: 0 0 0;
+  margin-top: -5px;
+  margin-right: 5px;
+}
+#meta-box-id-vehicle .ovabrw-row.location_vehicle {
+  display: none;
+}
+#meta-box-id-vehicle .ovabrw-row .from {
+  margin-right: 10px;
+}
+#meta-box-id-vehicle .ovabrw-row .to {
+  margin-right: 10px;
+  margin-left: 20px;
+}

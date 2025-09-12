@@ -1,0 +1,329 @@
+/* Smart Rentals WC Admin Styles */
+
+#smart-rentals-fields {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-top: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+#smart-rentals-fields .form-field {
+    margin-bottom: 15px;
+}
+
+.rental-enabled {
+    color: #46b450 !important;
+    font-weight: bold;
+}
+
+.rental-disabled {
+    color: #dc3232 !important;
+}
+
+/* Smart Rentals menu icon */
+.toplevel_page_smart-rentals-wc .wp-menu-image:before {
+    content: '\f508';
+}
+
+/* Admin dashboard styles */
+.smart-rentals-dashboard {
+    max-width: 1200px;
+}
+
+.smart-rentals-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.smart-rentals-stat-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.smart-rentals-stat-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.smart-rentals-stat-box p {
+    margin: 0;
+    color: #666;
+}
+
+/* Product list table enhancements */
+.wp-list-table .column-rental {
+    width: 10%;
+}
+
+/* Settings page styles */
+.smart-rentals-settings {
+    max-width: 800px;
+}
+
+.smart-rentals-settings .form-table th {
+    width: 200px;
+}
+
+/* Rental type specific styling */
+.rental-type-day {
+    border-left: 4px solid #46b450;
+}
+
+.rental-type-hour {
+    border-left: 4px solid #00a0d2;
+}
+
+.rental-type-mixed {
+    border-left: 4px solid #f56e28;
+}
+
+.rental-type-period_time {
+    border-left: 4px solid #9b59b6;
+}
+
+.rental-type-transportation {
+    border-left: 4px solid #e74c3c;
+}
+
+.rental-type-hotel {
+    border-left: 4px solid #f39c12;
+}
+
+.rental-type-appointment {
+    border-left: 4px solid #1abc9c;
+}
+
+.rental-type-taxi {
+    border-left: 4px solid #34495e;
+}
+
+/* Form field improvements */
+.smart-rentals-field-group {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-field-group h4 {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Responsive design */
+@media (max-width: 782px) {
+    .smart-rentals-stats {
+        flex-direction: column;
+    }
+    
+    .smart-rentals-stat-box {
+        margin-bottom: 15px;
+    }
+}
+
+/* Loading states */
+.smart-rentals-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.smart-rentals-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: smart-rentals-spin 1s linear infinite;
+}
+
+@keyframes smart-rentals-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success/Error messages */
+.smart-rentals-message {
+    padding: 10px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.smart-rentals-message.success {
+    background: #f0f8ff;
+    border-left-color: #46b450;
+    color: #155724;
+}
+
+.smart-rentals-message.error {
+    background: #fef2f2;
+    border-left-color: #dc3232;
+    color: #721c24;
+}
+
+.smart-rentals-message.warning {
+    background: #fffbf0;
+    border-left-color: #f56e28;
+    color: #856404;
+}
+
+/* Tooltip styles */
+.smart-rentals-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.smart-rentals-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.smart-rentals-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Calendar integration preview */
+.smart-rentals-calendar-preview {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    background: #fff;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.smart-rentals-calendar-preview.disabled {
+    opacity: 0.5;
+    background: #f5f5f5;
+}
+
+/* Product meta box styling */
+.postbox .smart-rentals-fields {
+    padding: 0;
+}
+
+.smart-rentals-fields .inside {
+    margin: 0;
+    padding: 12px;
+}
+
+/* Quick edit support */
+.inline-edit-row .smart-rentals-quick-edit {
+    clear: both;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.smart-rentals-quick-edit label {
+    display: inline-block;
+    width: 120px;
+    font-weight: 600;
+}
+
+/* Bulk edit support */
+.bulk-edit-row .smart-rentals-bulk-edit {
+    clear: both;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+/* Booking status indicators */
+.status-pending {
+    color: #f56e28;
+    font-weight: bold;
+}
+
+.status-confirmed {
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.status-active {
+    color: #46b450;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: #666;
+}
+
+.status-cancelled {
+    color: #dc3232;
+    font-weight: bold;
+}
+
+/* Dashboard section styling */
+.smart-rentals-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.smart-rentals-section h2 {
+    margin: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    border-radius: 4px 4px 0 0;
+}
+
+.smart-rentals-section .wp-list-table {
+    border: none;
+    box-shadow: none;
+}
+
+.smart-rentals-section p {
+    padding: 20px;
+    margin: 0;
+}
+
+/* Enhanced form styling */
+.smart-rentals-field-group {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-field-group h4 {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    color: #23282d;
+}

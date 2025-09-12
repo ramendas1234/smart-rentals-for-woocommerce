@@ -1,0 +1,65 @@
+/*!
+*    ______ _       _   _
+*    |  ____| |     | | (_)
+*    | |__  | | __ _| |_ _  ___ ___  _ __
+*    |  __| | |/ _` | __| |/ __/ _ \| '_ \
+*    | |    | | (_| | |_| | (_| (_) | | | |
+*    |_|    |_|\__,_|\__|_|\___\___/|_| |_|
+*
+*         https://www.flaticon.com
+*/
+
+@font-face {
+    font-family: "brwicon2";
+    src: url("./brwicon2.woff2?619d85380d97992af845ea5c482bde5b") format("woff2"),
+url("./brwicon2.woff?619d85380d97992af845ea5c482bde5b") format("woff"),
+url("./brwicon2.eot?619d85380d97992af845ea5c482bde5b#iefix") format("embedded-opentype"),
+url("./brwicon2.ttf?619d85380d97992af845ea5c482bde5b") format("truetype"),
+url("./brwicon2.svg?619d85380d97992af845ea5c482bde5b#brwicon2") format("svg")
+}
+
+i[class^="brwicon2-"]:before, i[class*=" brwicon2-"]:before {
+    font-family: brwicon2 !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.brwicon2-spinner-of-dots:before {
+    content: "\f101";
+}
+.brwicon2-down-arrow:before {
+    content: "\f102";
+}
+.brwicon2-up-arrow:before {
+    content: "\f103";
+}
+.brwicon2-minus-sign:before {
+    content: "\f104";
+}
+.brwicon2-plus-sign:before {
+    content: "\f105";
+}
+.brwicon2-question:before {
+    content: "\f106";
+}
+.brwicon2-group:before {
+    content: "\f107";
+}
+.brwicon2-close:before {
+    content: "\f108";
+}
+.brwicon2-price-tag:before {
+    content: "\f109";
+}
+.brwicon2-price-tag-1:before {
+    content: "\f10a";
+}
+.brwicon2-price-tag-2:before {
+    content: "\f10b";
+}
+

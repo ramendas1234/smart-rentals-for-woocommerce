@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Flaticon Webfont</title>
+    <link rel="stylesheet" type="text/css" href="brwicon3.css"/>
+    <meta charset="UTF-8">
+    <style>
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn, em, img, ins, kbd, q, s, samp,
+        small, strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd, ol, ul, li,
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed,
+        figure, figcaption, footer, header, hgroup,
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+
+        /* HTML5 display-role reset for older browsers */
+        article, aside, details, figcaption, figure,
+        footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+
+        body {
+            line-height: 1;
+        }
+
+        ol, ul {
+            list-style: none;
+        }
+
+        blockquote, q {
+            quotes: none;
+        }
+
+        blockquote:before, blockquote:after,
+        q:before, q:after {
+            content: '';
+            content: none;
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        body {
+            font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #777777;
+        }
+
+        a {
+            color: #52D999;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        * {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        [class^="brwicon3-"]:before, [class*=" brwicon3-"]:before, [class^="brwicon3-"]:after, [class*=" brwicon3-"]:after {
+            font-family: Flaticon;
+            font-size: 32px;
+            line-height: 1.25;
+            font-style: normal;
+            margin-left: 20px;
+            color: #424242;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: auto;
+            padding: 0 1em;
+        }
+
+        .title {
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        header {
+            text-align: center;
+            padding: 24px;
+        }
+
+        header .logo {
+            height: auto;
+            border: none;
+            display: inline-block;
+        }
+
+        header strong {
+            font-size: 24px;
+            line-height: 1.25;
+            font-weight: 500;
+            vertical-align: middle;
+        }
+
+        .demo {
+            margin: 2em auto;
+            line-height: 1.25;
+        }
+
+        .demo ul li {
+            margin-bottom: 12px;
+        }
+
+        .demo ul li code {
+            background-color: #121212;
+            border-radius: 3px;
+            padding: 12px;
+            display: inline-block;
+            color: #fff;
+            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+            font-weight: lighter;
+            margin-top: 12px;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .demo ul li code .red {
+            color: #EB644C;
+        }
+
+        .demo ul li code .green {
+            color: #52D999;
+        }
+
+        .demo ul li code .yellow {
+            color: #FFF4D9;
+        }
+
+        .demo ul li code .blue {
+            color: #648EEF;
+        }
+
+        .demo ul li code .purple {
+            color: #6569BD;
+        }
+
+        .demo ul li code .dots {
+            margin-top: 0.5em;
+            display: block;
+        }
+
+        #glyphs {
+            border-bottom: 1px solid #E5E5E5;
+            padding: 2em 0;
+            text-align: center;
+        }
+
+        .glyph {
+            display: inline-block;
+            width: 9em;
+            margin: 1em;
+            text-align: center;
+            vertical-align: top;
+            background: #FFF;
+        }
+
+        .glyph .flaticon {
+            padding: 10px;
+            display: block;
+            font-family: "Flaticon";
+            font-size: 64px;
+            line-height: 1;
+        }
+
+        .glyph .flaticon:before {
+            font-size: 64px;
+            color: #777777;
+            margin-left: 0;
+        }
+
+        .class-name {
+            font-size: 0.65em;
+            background-color: #E5E5E5;
+            color: #9C9C9C;
+            border-radius: 4px 4px 0 0;
+            padding: 0.5em;
+            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+        }
+
+        .author-name {
+            font-size: 0.6em;
+            background-color: #EFF3F6;
+            border-top: 0;
+            border-radius: 0 0 4px 4px;
+            padding: 0.5em;
+        }
+
+        .author-name a {
+            color: #121212;
+        }
+
+        .class-name:last-child {
+            font-size: 10px;
+            line-height: 1.75;
+            color: #888;
+        }
+
+        .class-name:last-child a {
+            font-size: 10px;
+            line-height: 1.75;
+            color: #555;
+        }
+
+        .glyph > input {
+            display: block;
+            width: 100px;
+            margin: 5px auto;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.75;
+            cursor: text;
+        }
+
+        .glyph > input.icon-input {
+            font-family: "Flaticon";
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .attribution .title {
+            margin-top: 2em;
+        }
+
+        .attribution textarea {
+            background-color: #F8FAFB;
+            color: #121212;
+            padding: 1em;
+            border: none;
+            box-shadow: none;
+            border: 1px solid #E5E5E5;
+            border-radius: 4px;
+            resize: none;
+            width: 100%;
+            height: 150px;
+            font-size: 13px;
+            line-height: 1.6;
+            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+            -webkit-appearance: none;
+        }
+
+        .attribution textarea:hover {
+            border-color: #CFD9E0;
+        }
+
+        .attribution textarea:focus {
+            border-color: #52D999;
+        }
+
+        .iconsuse {
+            margin: 2em auto;
+            text-align: center;
+            max-width: 1200px;
+        }
+
+        .iconsuse:after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .iconsuse .image {
+            float: left;
+            width: 25%;
+            padding: 0 1em;
+        }
+
+        .iconsuse .image p {
+            margin-bottom: 1em;
+        }
+
+        .iconsuse .image span {
+            display: block;
+            font-size: 0.65em;
+            background-color: #222;
+            color: #fff;
+            border-radius: 4px;
+            padding: 10px;
+            color: #FFFF99;
+            margin-top: 1em;
+            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+        }
+
+        .flaticon:before {
+            color: #777777;
+        }
+
+        #footer {
+            text-align: center;
+            background-color: #121212;
+            color: #9C9C9C;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        #footer a {
+            font-weight: normal;
+        }
+
+        @media (max-width: 960px) {
+            .iconsuse .image {
+                width: 50%;
+            }
+        }
+
+        .preview {
+            width: 100px;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .preview .inner {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            background: #F7F7F7;
+            -webkit-border-radius: 3px 3px 0 0;
+            -moz-border-radius: 3px 3px 0 0;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .preview .inner  {
+            line-height: 85px;
+            font-size: 40px;
+            color: #424242;
+        }
+
+        .label {
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+            font-size: 10px;
+            font-family: Monaco, monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: #ddd;
+            -webkit-border-radius: 0 0 3px 3px;
+            -moz-border-radius: 0 0 3px 3px;
+            border-radius: 0 0 3px 3px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="https://www.flaticon.com/" target="_blank" class="logo">
+            <img src="https://media.flaticon.com/dist/min/img/logos/flaticon-by-positive-hor.svg" alt="logo">
+        </a>
+    </header>
+    <section class="demo wrapper">
+
+        <p class="title">Webfont Instructions</p>
+
+        <ul>
+            <li>
+                <span class="num">1. </span>Copy the "Fonts" files and CSS files to your website CSS folder.
+            </li>
+            <li>
+                <span class="num">2. </span>Add the CSS link to your website source code on header.
+                <code class="big">
+                    &lt;<span class="red">head</span>&gt;
+                    <br/><span class="dots">...</span>
+                    <br/>&lt;<span class="red">link</span> <span class="green">rel</span>=<span
+                        class="yellow">"stylesheet"</span> <span class="green">type</span>=<span
+                        class="yellow">"text/css"</span> <span class="green">href</span>=<span class="yellow">"your_website_domain/css_root/flaticon_collection_name.css"</span>&gt;
+                    <br/><span class="dots">...</span>
+                    <br/>&lt;/<span class="red">head</span>&gt;
+                </code>
+            </li>
+
+            <li>
+                <p>
+                    <span class="num">3. </span>Use the icon class on <code>"<span class="blue">display</span>:<span
+                        class="purple"> inline</span>"</code> elements:
+                    <br/>
+                    Use example: <code>&lt;<span class="red">i</span> <span class="green">class</span>=<span class="yellow">&quot;brwicon3-airplane49&quot;</span>&gt;&lt;/<span
+                        class="red">i</span>&gt;</code> or <code>&lt;<span class="red">span</span> <span
+                        class="green">class</span>=<span class="yellow">&quot;brwicon3-airplane49&quot;</span>&gt;&lt;/<span
+                        class="red">span</span>&gt;</code>
+            </li>
+        </ul>
+
+    </section>
+    <section id="glyphs">
+            <div class="glyph">
+                <i class="flaticon brwicon3-booking"></i>
+                <div class="class-name">.brwicon3-booking</div>
+                <div class="author-name">Author: #author-link-brwicon3-booking# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-calendar-date"></i>
+                <div class="class-name">.brwicon3-calendar-date</div>
+                <div class="author-name">Author: #author-link-brwicon3-calendar-date# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-check"></i>
+                <div class="class-name">.brwicon3-check</div>
+                <div class="author-name">Author: #author-link-brwicon3-check# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-hotel"></i>
+                <div class="class-name">.brwicon3-hotel</div>
+                <div class="author-name">Author: #author-link-brwicon3-hotel# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-flights"></i>
+                <div class="class-name">.brwicon3-flights</div>
+                <div class="author-name">Author: #author-link-brwicon3-flights# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-airport"></i>
+                <div class="class-name">.brwicon3-airport</div>
+                <div class="author-name">Author: #author-link-brwicon3-airport# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-airport-tower"></i>
+                <div class="class-name">.brwicon3-airport-tower</div>
+                <div class="author-name">Author: #author-link-brwicon3-airport-tower# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-air-plane"></i>
+                <div class="class-name">.brwicon3-air-plane</div>
+                <div class="author-name">Author: #author-link-brwicon3-air-plane# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-map"></i>
+                <div class="class-name">.brwicon3-map</div>
+                <div class="author-name">Author: #author-link-brwicon3-map# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-user"></i>
+                <div class="class-name">.brwicon3-user</div>
+                <div class="author-name">Author: #author-link-brwicon3-user# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-car"></i>
+                <div class="class-name">.brwicon3-car</div>
+                <div class="author-name">Author: #author-link-brwicon3-car# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-car-1"></i>
+                <div class="class-name">.brwicon3-car-1</div>
+                <div class="author-name">Author: #author-link-brwicon3-car-1# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-calendar"></i>
+                <div class="class-name">.brwicon3-calendar</div>
+                <div class="author-name">Author: #author-link-brwicon3-calendar# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-delivery-man"></i>
+                <div class="class-name">.brwicon3-delivery-man</div>
+                <div class="author-name">Author: #author-link-brwicon3-delivery-man# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-profits"></i>
+                <div class="class-name">.brwicon3-profits</div>
+                <div class="author-name">Author: #author-link-brwicon3-profits# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-profit"></i>
+                <div class="class-name">.brwicon3-profit</div>
+                <div class="author-name">Author: #author-link-brwicon3-profit# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-profits-1"></i>
+                <div class="class-name">.brwicon3-profits-1</div>
+                <div class="author-name">Author: #author-link-brwicon3-profits-1# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-funds"></i>
+                <div class="class-name">.brwicon3-funds</div>
+                <div class="author-name">Author: #author-link-brwicon3-funds# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-seat"></i>
+                <div class="class-name">.brwicon3-seat</div>
+                <div class="author-name">Author: #author-link-brwicon3-seat# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-delivery-truck"></i>
+                <div class="class-name">.brwicon3-delivery-truck</div>
+                <div class="author-name">Author: #author-link-brwicon3-delivery-truck# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-calculator"></i>
+                <div class="class-name">.brwicon3-calculator</div>
+                <div class="author-name">Author: #author-link-brwicon3-calculator# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-rental-car"></i>
+                <div class="class-name">.brwicon3-rental-car</div>
+                <div class="author-name">Author: #author-link-brwicon3-rental-car# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-pipette"></i>
+                <div class="class-name">.brwicon3-pipette</div>
+                <div class="author-name">Author: #author-link-brwicon3-pipette# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-speedometer"></i>
+                <div class="class-name">.brwicon3-speedometer</div>
+                <div class="author-name">Author: #author-link-brwicon3-speedometer# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-twitter"></i>
+                <div class="class-name">.brwicon3-twitter</div>
+                <div class="author-name">Author: #author-link-brwicon3-twitter# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-vimeo"></i>
+                <div class="class-name">.brwicon3-vimeo</div>
+                <div class="author-name">Author: #author-link-brwicon3-vimeo# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-settings"></i>
+                <div class="class-name">.brwicon3-settings</div>
+                <div class="author-name">Author: #author-link-brwicon3-settings# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-driver"></i>
+                <div class="class-name">.brwicon3-driver</div>
+                <div class="author-name">Author: #author-link-brwicon3-driver# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-key"></i>
+                <div class="class-name">.brwicon3-key</div>
+                <div class="author-name">Author: #author-link-brwicon3-key# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-calendar-1"></i>
+                <div class="class-name">.brwicon3-calendar-1</div>
+                <div class="author-name">Author: #author-link-brwicon3-calendar-1# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-boom-lift"></i>
+                <div class="class-name">.brwicon3-boom-lift</div>
+                <div class="author-name">Author: #author-link-brwicon3-boom-lift# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-weight"></i>
+                <div class="class-name">.brwicon3-weight</div>
+                <div class="author-name">Author: #author-link-brwicon3-weight# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-review"></i>
+                <div class="class-name">.brwicon3-review</div>
+                <div class="author-name">Author: #author-link-brwicon3-review# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-depth"></i>
+                <div class="class-name">.brwicon3-depth</div>
+                <div class="author-name">Author: #author-link-brwicon3-depth# </div>
+            </div>
+
+            <div class="glyph">
+                <i class="flaticon brwicon3-package"></i>
+                <div class="class-name">.brwicon3-package</div>
+                <div class="author-name">Author: #author-link-brwicon3-package# </div>
+            </div>
+
+    </section>
+
+    <section class="attribution wrapper"   style="text-align:center;">
+
+        <div class="title">License and attribution:</div><div class="attrDiv">Font generated by <a href="https://www.flaticon.com">flaticon.com</a>. <div>#allAuthorLinksCC# #allAuthorLinksBasic# </div>
+        </div>
+        <div class="title">Copy the Attribution License:</div>
+
+        <textarea onclick="this.focus();this.select();">Font generated by &lt;a href=&quot;https://www.flaticon.com&quot;&gt;flaticon.com&lt;/a&gt;. #allAuthorLinksCC# #allAuthorLinksBasic#
+        </textarea>
+
+    </section>
+
+    <section class="iconsuse">
+
+        <div class="title">Examples:</div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-booking"></i>
+                    <span>&lt;i class=&quot;brwicon3-booking&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-calendar-date"></i>
+                    <span>&lt;i class=&quot;brwicon3-calendar-date&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-check"></i>
+                    <span>&lt;i class=&quot;brwicon3-check&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-hotel"></i>
+                    <span>&lt;i class=&quot;brwicon3-hotel&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-flights"></i>
+                    <span>&lt;i class=&quot;brwicon3-flights&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-airport"></i>
+                    <span>&lt;i class=&quot;brwicon3-airport&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-airport-tower"></i>
+                    <span>&lt;i class=&quot;brwicon3-airport-tower&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-air-plane"></i>
+                    <span>&lt;i class=&quot;brwicon3-air-plane&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-map"></i>
+                    <span>&lt;i class=&quot;brwicon3-map&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-user"></i>
+                    <span>&lt;i class=&quot;brwicon3-user&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-car"></i>
+                    <span>&lt;i class=&quot;brwicon3-car&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-car-1"></i>
+                    <span>&lt;i class=&quot;brwicon3-car-1&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-calendar"></i>
+                    <span>&lt;i class=&quot;brwicon3-calendar&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-delivery-man"></i>
+                    <span>&lt;i class=&quot;brwicon3-delivery-man&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-profits"></i>
+                    <span>&lt;i class=&quot;brwicon3-profits&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-profit"></i>
+                    <span>&lt;i class=&quot;brwicon3-profit&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-profits-1"></i>
+                    <span>&lt;i class=&quot;brwicon3-profits-1&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-funds"></i>
+                    <span>&lt;i class=&quot;brwicon3-funds&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-seat"></i>
+                    <span>&lt;i class=&quot;brwicon3-seat&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-delivery-truck"></i>
+                    <span>&lt;i class=&quot;brwicon3-delivery-truck&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-calculator"></i>
+                    <span>&lt;i class=&quot;brwicon3-calculator&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-rental-car"></i>
+                    <span>&lt;i class=&quot;brwicon3-rental-car&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-pipette"></i>
+                    <span>&lt;i class=&quot;brwicon3-pipette&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-speedometer"></i>
+                    <span>&lt;i class=&quot;brwicon3-speedometer&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-twitter"></i>
+                    <span>&lt;i class=&quot;brwicon3-twitter&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-vimeo"></i>
+                    <span>&lt;i class=&quot;brwicon3-vimeo&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-settings"></i>
+                    <span>&lt;i class=&quot;brwicon3-settings&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-driver"></i>
+                    <span>&lt;i class=&quot;brwicon3-driver&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-key"></i>
+                    <span>&lt;i class=&quot;brwicon3-key&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-calendar-1"></i>
+                    <span>&lt;i class=&quot;brwicon3-calendar-1&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-boom-lift"></i>
+                    <span>&lt;i class=&quot;brwicon3-boom-lift&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-weight"></i>
+                    <span>&lt;i class=&quot;brwicon3-weight&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-review"></i>
+                    <span>&lt;i class=&quot;brwicon3-review&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-depth"></i>
+                    <span>&lt;i class=&quot;brwicon3-depth&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+            <div class="image">
+                <p>
+                    <i class="flaticon brwicon3-package"></i>
+                    <span>&lt;i class=&quot;brwicon3-package&quot;&gt;&lt;/i&gt;</span>
+                </p>
+            </div>
+        </div>
+
+    </section>
+
+    <div id="footer">
+        <div>Generated by <a href="https://www.flaticon.com">flaticon.com</a>
+        </div>
+    </div>
+
+</body>
+</html>

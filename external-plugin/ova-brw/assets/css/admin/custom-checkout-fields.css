@@ -1,0 +1,207 @@
+.ova-list-checkout-field {
+  text-align: left;
+}
+.ova-list-checkout-field .ovabrw-required:after {
+  content: "*";
+  color: red;
+  font-size: 20px;
+  vertical-align: middle;
+}
+.ova-list-checkout-field form#ova_update_form input.button, .ova-list-checkout-field form#ova_update_form button {
+  text-transform: capitalize;
+}
+.ova-list-checkout-field form#ova_update_form .ovabrw-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+}
+.ova-list-checkout-field form#ova_update_form .ovabrw-loading span.dashicons.dashicons-update-alt {
+  animation: ovabrw_spin 2s linear infinite;
+}
+.ova-list-checkout-field table {
+  margin: 0px;
+  width: 100%;
+}
+.ova-list-checkout-field table tbody.ovabrw-sortable-ajax tr, .ova-list-checkout-field table tbody.ovabrw-sortable-taxonomies-ajax tr {
+  cursor: grabbing;
+}
+.ova-list-checkout-field table tbody tr:nth-child(odd) {
+  background: #f9f9f9;
+}
+.ova-list-checkout-field table tbody tr:nth-child(even) {
+  background: #fff;
+}
+.ova-list-checkout-field table tbody tr th.ovabrw-required:after {
+  content: "*";
+  color: red;
+  font-size: 20px;
+  vertical-align: middle;
+}
+.ova-list-checkout-field table tbody tr td.ova-checkbox {
+  opacity: 1 !important;
+}
+.ova-list-checkout-field table tbody tr td.ova-disable td {
+  opacity: 0.4;
+}
+.ova-list-checkout-field table tbody tr td a {
+  text-decoration: none;
+}
+
+.ova-wrap-popup-ckf {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  height: 120vh;
+  display: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper {
+  position: relative;
+  margin: 150px auto;
+  width: 50%;
+  height: auto;
+  background: #fff;
+  padding: 40px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .ovabrw-required:after {
+  content: "*";
+  color: red;
+  font-size: 20px;
+  vertical-align: middle;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper table {
+  border-spacing: 0 20px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.ova-row-type td, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-options td, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-values td, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-checkbox-options td {
+  width: 80%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.ova-row-type td.label, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-options td.label, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-values td.label, .ova-wrap-popup-ckf .ova-popup-wrapper table tbody tr.row-checkbox-options td.label {
+  width: 20%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper select {
+  max-width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date {
+  display: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table th {
+  text-align: left;
+  padding-right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td {
+  padding-right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td input, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td input {
+  width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td.ova-box, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td.ova-box {
+  width: auto;
+  padding-right: 5px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td.ova-box a, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td.ova-box a {
+  color: #FFFFFF;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  text-decoration: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td.ova-box a.btn-blue, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td.ova-box a.btn-blue {
+  background-color: #00A0D2;
+  border: 1px solid #0073AA;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-default-date table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-min-date table.ova-sub-table td.ova-box a.btn-red, .ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-max-date table.ova-sub-table td.ova-box a.btn-red {
+  background-color: #ff6666;
+  border: 1px solid #ff4c4c;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values {
+  display: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table th {
+  width: 30%;
+  padding-right: 3px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td {
+  width: 30%;
+  padding-right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td input {
+  width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box {
+  width: auto;
+  padding-right: 5px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box.sort {
+  cursor: pointer;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a {
+  color: #FFFFFF;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  text-decoration: none;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a.btn-blue {
+  background-color: #00A0D2;
+  border: 1px solid #0073AA;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-values table.ova-sub-table td.ova-box a.btn-red {
+  background-color: #ff6666;
+  border: 1px solid #ff4c4c;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-options table.ova-sub-table td, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table th, .ova-wrap-popup-ckf .ova-popup-wrapper tr.row-checkbox-options table.ova-sub-table td {
+  width: 26%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr.ova-row-description textarea {
+  width: 100%;
+  height: 100px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper button[type=submit] {
+  text-transform: capitalize;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .close_popup {
+  font-size: 16px;
+  color: #333;
+  text-decoration: none;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr {
+  margin-bottom: 20px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td select, .ova-wrap-popup-ckf .ova-popup-wrapper tr td input:not([type=radio]):not([type=checkbox]) {
+  width: 100%;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td input[readonly].ovabrw-datepicker {
+  background-color: #FFFFFF;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td.label {
+  font-size: 16px;
+  color: #333333;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper tr td.row-required label {
+  margin-bottom: 10px;
+  display: inline-block;
+  font-size: 15px;
+  color: #333;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .ova-sub-table {
+  border-spacing: 0px;
+}
+.ova-wrap-popup-ckf .ova-popup-wrapper .ova-sub-table tr {
+  display: table;
+  margin-bottom: 10px;
+}
+
+@keyframes ovabrw_spin {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}

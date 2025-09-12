@@ -1,0 +1,1136 @@
+/* Smart Rentals WC Frontend Styles */
+
+.smart-rentals-booking-form-container {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    position: relative;
+}
+
+.smart-rentals-booking-form {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    position: relative;
+}
+
+.smart-rentals-container {
+    max-width: 100%;
+}
+
+.smart-rentals-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -10px;
+}
+
+.wrap-item {
+    flex: 1;
+    padding: 10px;
+}
+
+.rental_item {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.rental_item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.rental_item input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.rental_item input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.rental_item input.smart-rentals-input-required {
+    border-left: 4px solid #0073aa;
+}
+
+/* Modern date input wrapper */
+.date-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-input-wrapper input {
+    flex: 1;
+    padding-right: 45px !important;
+}
+
+.date-input-wrapper .date-icon {
+    position: absolute;
+    right: 15px;
+    color: #667eea;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.date-input-wrapper .date-icon:hover {
+    color: #764ba2;
+    transform: scale(1.1);
+}
+
+.smart-rentals-loader-date {
+    position: absolute;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    z-index: 3;
+}
+
+.smart-rentals-loader-date i {
+    animation: spin 1s linear infinite;
+    color: #0073aa;
+}
+
+/* Enhanced range duration display */
+.range-duration {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 600;
+    animation: slideInUp 0.3s ease-out;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    z-index: 10;
+}
+
+.range-duration i {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.range-duration .duration-text {
+    font-weight: 700;
+    margin-right: 5px;
+}
+
+.range-duration .duration-label {
+    opacity: 0.9;
+    font-size: 12px;
+}
+
+/* Date selected animation */
+.date-selected {
+    animation: dateSelectedPulse 0.6s ease-out;
+}
+
+@keyframes dateSelectedPulse {
+    0% { transform: scale(1); border-color: #e9ecef; }
+    50% { transform: scale(1.02); border-color: #46b450; box-shadow: 0 0 0 4px rgba(70, 180, 80, 0.2); }
+    100% { transform: scale(1); border-color: #667eea; }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Daterangepicker.com styling with Apply button emphasis */
+.daterangepicker {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    padding: 0;
+    overflow: hidden;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Calendar styling */
+.daterangepicker .calendar-table {
+    background: white;
+    border: none;
+}
+
+.daterangepicker .calendar-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    border: none;
+    padding: 12px 8px;
+}
+
+.daterangepicker .calendar-table td {
+    border: none;
+    padding: 6px;
+    text-align: center;
+}
+
+.daterangepicker .calendar-table td.available {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.daterangepicker .calendar-table td.available:hover {
+    background: #f0f4ff !important;
+    color: #667eea !important;
+    transform: scale(1.1);
+    font-weight: 600;
+}
+
+/* Range highlighting - KEY FEATURE */
+.daterangepicker .calendar-table td.in-range {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%) !important;
+    color: #667eea !important;
+    border-radius: 0 !important;
+    font-weight: 500;
+}
+
+.daterangepicker .calendar-table td.start-date,
+.daterangepicker .calendar-table td.end-date {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 6px !important;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.daterangepicker .calendar-table td.start-date.end-date {
+    border-radius: 6px !important;
+}
+
+.daterangepicker .calendar-table td.today {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    font-weight: 600;
+    border: 2px solid #ffc107;
+}
+
+/* Ranges sidebar */
+.daterangepicker .ranges {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-right: 1px solid #dee2e6;
+    border-radius: 15px 0 0 0;
+    padding: 10px 0;
+}
+
+.daterangepicker .ranges li {
+    color: #495057;
+    border-radius: 8px;
+    margin: 2px 8px;
+    padding: 10px 15px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.daterangepicker .ranges li:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.daterangepicker .ranges li.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Month navigation */
+.daterangepicker .calendar-table .month {
+    color: #333;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.daterangepicker .prev, .daterangepicker .next {
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.daterangepicker .prev:hover, .daterangepicker .next:hover {
+    background: #764ba2;
+    transform: scale(1.1);
+}
+
+/* Apply/Cancel buttons - MOST IMPORTANT STYLING */
+.daterangepicker .drp-buttons {
+    border-top: 2px solid #e9ecef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 20px;
+    text-align: center;
+    border-radius: 0 0 15px 15px;
+}
+
+.daterangepicker .drp-buttons .btn {
+    border-radius: 25px;
+    padding: 12px 25px;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 5px;
+    min-width: 100px;
+}
+
+/* Apply button - make it prominent! */
+.daterangepicker .drp-buttons .btn-success {
+    background: linear-gradient(135deg, #46b450 0%, #27ae60 100%) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(70, 180, 80, 0.4);
+}
+
+.daterangepicker .drp-buttons .btn-success:hover {
+    background: linear-gradient(135deg, #27ae60 0%, #46b450 100%) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(70, 180, 80, 0.5);
+}
+
+/* Cancel button */
+.daterangepicker .drp-buttons .btn-secondary {
+    background: #6c757d !important;
+    border: none !important;
+    color: white !important;
+}
+
+.daterangepicker .drp-buttons .btn-secondary:hover {
+    background: #5a6268 !important;
+    transform: translateY(-2px);
+}
+
+/* Success animation for selected dates */
+.success-selected {
+    animation: successPulse 0.6s ease-out;
+    border-color: #46b450 !important;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); border-color: #46b450; }
+    100% { transform: scale(1); }
+}
+
+/* Pickup selected indicator */
+.pickup-selected-indicator {
+    background: linear-gradient(135deg, #46b450 0%, #27ae60 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 600;
+    animation: slideInUp 0.3s ease-out;
+    font-size: 14px;
+}
+
+/* Enhanced input styling */
+.flatpickr-input {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px 50px 15px 15px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.flatpickr-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 20px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.flatpickr-input.active {
+    border-color: #667eea;
+    background: white;
+}
+
+/* Alternative input (human readable format) */
+.flatpickr-input.form-control.input {
+    background: white;
+    border: 2px solid #667eea;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Mobile enhancements */
+@media (max-width: 768px) {
+    .flatpickr-calendar.smart-rentals-calendar {
+        width: 100% !important;
+        max-width: 350px;
+        margin: 0 auto;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .quick-select {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .quick-btn {
+        flex: 1;
+        min-width: 60px;
+    }
+    
+    .date-input-wrapper {
+        margin-bottom: 15px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .flatpickr-calendar.smart-rentals-calendar {
+        background: #2d3748;
+        color: white;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .flatpickr-day {
+        color: white;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .flatpickr-day:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
+}
+
+.smart-rentals-booking-form h3 {
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0073aa;
+    color: #333;
+}
+
+.smart-rentals-dates {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-date-field {
+    flex: 1;
+}
+
+.smart-rentals-times {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-time-field {
+    flex: 1;
+}
+
+.smart-rentals-date-field label,
+.smart-rentals-time-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.smart-rentals-date-field input,
+.smart-rentals-time-field input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.smart-rentals-date-field input:focus,
+.smart-rentals-time-field input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
+}
+
+.smart-rentals-info {
+    margin-top: 15px;
+}
+
+.rental-period-info {
+    margin: 5px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.rental-price-display {
+    background: #e8f4f8;
+    border: 1px solid #0073aa;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 115, 170, 0.1);
+}
+
+.price-item:last-child {
+    border-bottom: none;
+}
+
+.price-item.total {
+    border-top: 2px solid #0073aa;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.price-item .label {
+    font-weight: 600;
+    color: #333;
+}
+
+.price-item .value {
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.price-item.security-deposit .value {
+    color: #f39c12;
+}
+
+.smart-rentals-book-now {
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.smart-rentals-book-now:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+}
+
+.smart-rentals-book-now:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Compact Total Display Box */
+.smart-rentals-total-display {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e3e6ea;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    max-width: 400px;
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.smart-rentals-total-display::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #007cba, #00a0d2);
+}
+
+/* Total Header */
+.total-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.total-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Availability Info */
+.availability-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.availability-info.in-stock {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.availability-info.low-stock {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.availability-info.out-of-stock {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.availability-count {
+    font-weight: 700;
+}
+
+.availability-label {
+    opacity: 0.8;
+}
+
+/* Total Breakdown */
+.total-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+.total-row.duration-row {
+    background: #f1f3f4;
+    padding: 8px 12px;
+    margin: 0 -4px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.total-row.subtotal-row .label,
+.total-row.deposit-row .label {
+    color: #6c757d;
+}
+
+.total-row.total-row-final {
+    border-top: 2px solid #dee2e6;
+    margin-top: 8px;
+    padding-top: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    background: #f8f9fa;
+    padding: 12px 8px 8px 8px;
+    margin: 8px -4px 0 -4px;
+    border-radius: 6px;
+}
+
+.total-row .label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.total-row .value {
+    font-weight: 600;
+    color: #212529;
+}
+
+.total-row-final .value {
+    color: #007cba;
+    font-size: 16px;
+}
+
+/* Legacy support for old class names */
+.total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+.total-item.total {
+    border-top: 2px solid #dee2e6;
+    margin-top: 8px;
+    padding-top: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #007cba;
+}
+
+/* Error display */
+.smart-rentals-error-display {
+    background: #fef2f2;
+    border: 1px solid #dc3232;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.error-message {
+    color: #721c24;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Side-by-side date fields layout */
+.date-fields-row {
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.date-fields-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.date-field {
+    flex: 1;
+    min-width: 0;
+}
+
+.date-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.date-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-input-wrapper input {
+    width: 100%;
+    padding: 15px 45px 15px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    cursor: pointer;
+}
+
+.date-input-wrapper input:focus,
+.date-input-wrapper input:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 20px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.date-input-wrapper .date-icon {
+    position: absolute;
+    right: 15px;
+    color: #667eea;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.date-input-wrapper .date-icon:hover {
+    color: #764ba2;
+    transform: scale(1.1);
+}
+
+/* Form styling improvements */
+.smart-rentals-form .rental_item {
+    margin-bottom: 20px;
+}
+
+.smart-rentals-form .rental_item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.smart-rentals-form .rental_item input:not(.daterangepicker-field) {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.smart-rentals-form .rental_item input:not(.daterangepicker-field):focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.rental-period-info {
+    background: #f0f8ff;
+    border-left: 4px solid #0073aa;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.rental-period-info p {
+    margin: 5px 0;
+    color: #333;
+}
+
+.smart-rentals-info .rental-availability,
+.smart-rentals-info .security-deposit {
+    margin: 10px 0;
+    padding: 10px;
+    background: #fff;
+    border-left: 4px solid #0073aa;
+    border-radius: 0 4px 4px 0;
+}
+
+.smart-rentals-price {
+    font-weight: 600;
+    color: #0073aa;
+}
+
+.smart-rentals-calendar {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Messages */
+.smart-rentals-message {
+    padding: 12px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.smart-rentals-message.smart-rentals-success {
+    background: #f0f8ff;
+    border-left-color: #46b450;
+    color: #155724;
+}
+
+.smart-rentals-message.smart-rentals-error {
+    background: #fef2f2;
+    border-left-color: #dc3232;
+    color: #721c24;
+}
+
+.smart-rentals-message.smart-rentals-warning {
+    background: #fffbf0;
+    border-left-color: #f56e28;
+    color: #856404;
+}
+
+/* Required field indicator */
+.required {
+    color: #dc3232;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .date-fields-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .date-field {
+        width: 100%;
+    }
+    
+    .range-duration {
+        position: static;
+        transform: none;
+        margin: 15px 0;
+    }
+    
+    .smart-rentals-loader-date {
+        position: static;
+        text-align: center;
+        margin: 10px 0;
+        transform: none;
+    }
+    
+    .smart-rentals-booking-form-container {
+        padding: 15px;
+    }
+    
+    .date-input-wrapper input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .daterangepicker {
+        max-width: 95vw;
+    }
+    
+    .daterangepicker .ranges {
+        display: none; /* Hide ranges on mobile for more space */
+    }
+    
+    /* Compact total display on mobile */
+    .smart-rentals-total-display {
+        padding: 12px;
+        margin: 12px 0;
+        max-width: none;
+        font-size: 13px;
+    }
+    
+    .total-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .total-title {
+        font-size: 15px;
+    }
+    
+    .availability-info {
+        align-self: flex-end;
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+    
+    .total-row {
+        font-size: 12px;
+        padding: 5px 0;
+    }
+    
+    .total-row-final {
+        font-size: 14px;
+        padding: 10px 6px 6px 6px;
+    }
+    
+    .total-row-final .value {
+        font-size: 15px;
+    }
+}
+
+/* Loading states */
+.smart-rentals-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.smart-rentals-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: smart-rentals-spin 1s linear infinite;
+}
+
+@keyframes smart-rentals-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Cart and checkout styles */
+.cart .smart-rentals-rental-info,
+.checkout .smart-rentals-rental-info {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0;
+}
+
+.cart .smart-rentals-rental-info strong,
+.checkout .smart-rentals-rental-info strong {
+    color: #333;
+}
+
+/* Product archive styles */
+.woocommerce-loop-product__title .smart-rentals-badge {
+    display: inline-block;
+    background: #0073aa;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: top;
+}
+
+/* Admin bar compatibility */
+.admin-bar .smart-rentals-calendar {
+    z-index: 99999;
+}
+
+/* WooCommerce compatibility */
+.woocommerce .smart-rentals-booking-form,
+.woocommerce-page .smart-rentals-booking-form {
+    margin: 20px 0;
+}
+
+.woocommerce .smart-rentals-price,
+.woocommerce-page .smart-rentals-price {
+    font-weight: 600;
+}
+
+/* Accessibility improvements */
+.smart-rentals-date-field input:focus,
+.smart-rentals-time-field input:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.smart-rentals-message {
+    role: alert;
+}
+
+/* ========================================
+   RENTAL QUANTITY DISPLAY IN CART
+   ======================================== */
+
+/* Rental quantity/duration display in cart */
+.rental-duration,
+.rental-quantity {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.rental-duration {
+    background: #e3f2fd;
+    border-color: #bbdefb;
+    color: #1976d2;
+}
+
+.rental-quantity {
+    background: #f3e5f5;
+    border-color: #ce93d8;
+    color: #7b1fa2;
+}
+
+/* Cart table styling for rental products */
+.woocommerce-cart-form .cart_item .product-quantity .rental-duration,
+.woocommerce-cart-form .cart_item .product-quantity .rental-quantity {
+    margin: 0;
+    text-align: center;
+    min-width: 80px;
+}
+
+/* Checkout page styling */
+.woocommerce-checkout .shop_table .cart_item .product-quantity .rental-duration,
+.woocommerce-checkout .shop_table .cart_item .product-quantity .rental-quantity {
+    margin: 0;
+    text-align: center;
+}
+
+/* Mini cart styling */
+.widget_shopping_cart_content .mini_cart_item .quantity .rental-duration,
+.widget_shopping_cart_content .mini_cart_item .quantity .rental-quantity {
+    font-size: 0.8em;
+    padding: 2px 6px;
+}
+
+/* Print styles */
+@media print {
+    .smart-rentals-booking-form {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .smart-rentals-message {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .rental-duration,
+    .rental-quantity {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+}

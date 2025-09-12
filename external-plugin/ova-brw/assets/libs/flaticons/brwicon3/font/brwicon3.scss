@@ -1,0 +1,165 @@
+$brwicon3-font: "brwicon3";
+
+@font-face {
+    font-family: $brwicon3-font;
+    src: url("./brwicon3.woff2?843d5500c974253ded106dc3c809e6d7") format("woff2"),
+url("./brwicon3.woff?843d5500c974253ded106dc3c809e6d7") format("woff"),
+url("./brwicon3.eot?843d5500c974253ded106dc3c809e6d7#iefix") format("embedded-opentype"),
+url("./brwicon3.ttf?843d5500c974253ded106dc3c809e6d7") format("truetype"),
+url("./brwicon3.svg?843d5500c974253ded106dc3c809e6d7#brwicon3") format("svg");
+}
+
+i[class^="brwicon3-"]:before, i[class*=" brwicon3-"]:before {
+    font-family: brwicon3 !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+$brwicon3-map: (
+    "booking": "\f101",
+    "calendar-date": "\f102",
+    "check": "\f103",
+    "hotel": "\f104",
+    "flights": "\f105",
+    "airport": "\f106",
+    "airport-tower": "\f107",
+    "air-plane": "\f108",
+    "map": "\f109",
+    "user": "\f10a",
+    "car": "\f10b",
+    "car-1": "\f10c",
+    "calendar": "\f10d",
+    "delivery-man": "\f10e",
+    "profits": "\f10f",
+    "profit": "\f110",
+    "profits-1": "\f111",
+    "funds": "\f112",
+    "seat": "\f113",
+    "delivery-truck": "\f114",
+    "calculator": "\f115",
+    "rental-car": "\f116",
+    "pipette": "\f117",
+    "speedometer": "\f118",
+    "twitter": "\f119",
+    "vimeo": "\f11a",
+    "settings": "\f11b",
+    "driver": "\f11c",
+    "key": "\f11d",
+    "calendar-1": "\f11e",
+    "boom-lift": "\f11f",
+    "weight": "\f120",
+    "review": "\f121",
+    "depth": "\f122",
+    "package": "\f123",
+);
+
+.brwicon3-booking:before {
+    content: map-get($brwicon3-map, "booking");
+}
+.brwicon3-calendar-date:before {
+    content: map-get($brwicon3-map, "calendar-date");
+}
+.brwicon3-check:before {
+    content: map-get($brwicon3-map, "check");
+}
+.brwicon3-hotel:before {
+    content: map-get($brwicon3-map, "hotel");
+}
+.brwicon3-flights:before {
+    content: map-get($brwicon3-map, "flights");
+}
+.brwicon3-airport:before {
+    content: map-get($brwicon3-map, "airport");
+}
+.brwicon3-airport-tower:before {
+    content: map-get($brwicon3-map, "airport-tower");
+}
+.brwicon3-air-plane:before {
+    content: map-get($brwicon3-map, "air-plane");
+}
+.brwicon3-map:before {
+    content: map-get($brwicon3-map, "map");
+}
+.brwicon3-user:before {
+    content: map-get($brwicon3-map, "user");
+}
+.brwicon3-car:before {
+    content: map-get($brwicon3-map, "car");
+}
+.brwicon3-car-1:before {
+    content: map-get($brwicon3-map, "car-1");
+}
+.brwicon3-calendar:before {
+    content: map-get($brwicon3-map, "calendar");
+}
+.brwicon3-delivery-man:before {
+    content: map-get($brwicon3-map, "delivery-man");
+}
+.brwicon3-profits:before {
+    content: map-get($brwicon3-map, "profits");
+}
+.brwicon3-profit:before {
+    content: map-get($brwicon3-map, "profit");
+}
+.brwicon3-profits-1:before {
+    content: map-get($brwicon3-map, "profits-1");
+}
+.brwicon3-funds:before {
+    content: map-get($brwicon3-map, "funds");
+}
+.brwicon3-seat:before {
+    content: map-get($brwicon3-map, "seat");
+}
+.brwicon3-delivery-truck:before {
+    content: map-get($brwicon3-map, "delivery-truck");
+}
+.brwicon3-calculator:before {
+    content: map-get($brwicon3-map, "calculator");
+}
+.brwicon3-rental-car:before {
+    content: map-get($brwicon3-map, "rental-car");
+}
+.brwicon3-pipette:before {
+    content: map-get($brwicon3-map, "pipette");
+}
+.brwicon3-speedometer:before {
+    content: map-get($brwicon3-map, "speedometer");
+}
+.brwicon3-twitter:before {
+    content: map-get($brwicon3-map, "twitter");
+}
+.brwicon3-vimeo:before {
+    content: map-get($brwicon3-map, "vimeo");
+}
+.brwicon3-settings:before {
+    content: map-get($brwicon3-map, "settings");
+}
+.brwicon3-driver:before {
+    content: map-get($brwicon3-map, "driver");
+}
+.brwicon3-key:before {
+    content: map-get($brwicon3-map, "key");
+}
+.brwicon3-calendar-1:before {
+    content: map-get($brwicon3-map, "calendar-1");
+}
+.brwicon3-boom-lift:before {
+    content: map-get($brwicon3-map, "boom-lift");
+}
+.brwicon3-weight:before {
+    content: map-get($brwicon3-map, "weight");
+}
+.brwicon3-review:before {
+    content: map-get($brwicon3-map, "review");
+}
+.brwicon3-depth:before {
+    content: map-get($brwicon3-map, "depth");
+}
+.brwicon3-package:before {
+    content: map-get($brwicon3-map, "package");
+}
