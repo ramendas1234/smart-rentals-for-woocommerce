@@ -156,14 +156,22 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					SELECT 
 						pickup_date,
 						dropoff_date,
-						quantity
+						quantity,
+						status
 					FROM $table_name
 					WHERE 
 						product_id = %d
-						AND status IN ('confirmed', 'active', 'pending')
+						AND status IN ('confirmed', 'active', 'pending', 'processing', 'completed')
 				", $product_id ));
 
 				if ( smart_rentals_wc_array_exists( $booked_dates ) ) {
+					// Debug logging
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						smart_rentals_wc_log( "Found " . count( $booked_dates ) . " bookings for product $product_id from custom table" );
+						foreach ( $booked_dates as $booking ) {
+							smart_rentals_wc_log( "Booking: {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}, Status: {$booking->status}" );
+						}
+					}
 					return apply_filters( 'smart_rentals_wc_get_booked_dates', $booked_dates, $product_id );
 				}
 			}
@@ -363,6 +371,118 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			}
 
 			return apply_filters( 'smart_rentals_wc_calculate_rental_price', $total_price, $product_id, $pickup_date, $dropoff_date, $quantity );
+		}
+
+		/**
+		 * Get available quantity for a specific calendar day
+		 * More robust method specifically for calendar display
+		 */
+		public function get_calendar_day_availability( $product_id, $date_string ) {
+			if ( !$product_id || !$date_string ) {
+				return 0;
+			}
+
+			// Get product stock
+			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
+			$total_stock = $rental_stock ? intval( $rental_stock ) : 1;
+
+			// Convert date string to timestamps for the entire day
+			$day_timestamp = strtotime( $date_string );
+			$day_start = $day_timestamp; // 00:00:00
+			$day_end = $day_timestamp + 86400 - 1; // 23:59:59
+
+			$booked_quantity = 0;
+
+			// Check custom bookings table first
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$bookings = $wpdb->get_results( $wpdb->prepare("
+					SELECT pickup_date, dropoff_date, quantity, status
+					FROM $table_name
+					WHERE product_id = %d
+					AND status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
+				", $product_id ));
+
+				foreach ( $bookings as $booking ) {
+					$booking_pickup = strtotime( $booking->pickup_date );
+					$booking_dropoff = strtotime( $booking->dropoff_date );
+					
+					// Check overlap: booking affects this day if it overlaps with any part of the day
+					if ( $booking_pickup <= $day_end && $booking_dropoff >= $day_start ) {
+						$booked_quantity += intval( $booking->quantity );
+						
+						// Debug logging
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							smart_rentals_wc_log( "Calendar: Date $date_string conflicts with booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+						}
+					}
+				}
+			}
+
+			// Also check WooCommerce orders as fallback
+			if ( $booked_quantity === 0 ) {
+				$order_status = $this->get_booking_order_status();
+				$status_placeholders = implode( "','", array_map( 'esc_sql', $order_status ) );
+
+				$order_bookings = $wpdb->get_results( $wpdb->prepare("
+					SELECT 
+						pickup_date.meta_value as pickup_date,
+						dropoff_date.meta_value as dropoff_date,
+						quantity.meta_value as quantity
+					FROM {$wpdb->prefix}woocommerce_order_items AS items
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS pickup_date 
+						ON items.order_item_id = pickup_date.order_item_id 
+						AND pickup_date.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS dropoff_date 
+						ON items.order_item_id = dropoff_date.order_item_id 
+						AND dropoff_date.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS quantity 
+						ON items.order_item_id = quantity.order_item_id 
+						AND quantity.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS product_meta 
+						ON items.order_item_id = product_meta.order_item_id 
+						AND product_meta.meta_key = '_product_id'
+					LEFT JOIN {$wpdb->posts} AS orders 
+						ON items.order_id = orders.ID
+					WHERE 
+						product_meta.meta_value = %d
+						AND orders.post_status IN ('{$status_placeholders}')
+						AND pickup_date.meta_value IS NOT NULL
+						AND dropoff_date.meta_value IS NOT NULL
+				",
+					smart_rentals_wc_meta_key( 'pickup_date' ),
+					smart_rentals_wc_meta_key( 'dropoff_date' ),
+					smart_rentals_wc_meta_key( 'rental_quantity' ),
+					$product_id
+				));
+
+				foreach ( $order_bookings as $booking ) {
+					if ( $booking->pickup_date && $booking->dropoff_date ) {
+						$booking_pickup = strtotime( $booking->pickup_date );
+						$booking_dropoff = strtotime( $booking->dropoff_date );
+						
+						// Check overlap
+						if ( $booking_pickup <= $day_end && $booking_dropoff >= $day_start ) {
+							$booked_quantity += intval( $booking->quantity );
+							
+							// Debug logging
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								smart_rentals_wc_log( "Calendar: Date $date_string conflicts with order booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+							}
+						}
+					}
+				}
+			}
+
+			$available_quantity = max( 0, $total_stock - $booked_quantity );
+			
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( "Calendar Availability - Date: $date_string, Stock: $total_stock, Booked: $booked_quantity, Available: $available_quantity" );
+			}
+
+			return $available_quantity;
 		}
 
 		/**

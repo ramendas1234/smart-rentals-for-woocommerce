@@ -102,27 +102,8 @@ if ( $next_month > 12 ) {
                     $is_today = ( $date === date( 'Y-m-d' ) );
                     $is_past = ( $timestamp < strtotime( 'today' ) );
                     
-                    // Check availability for this date (more accurate check)
-                    $total_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
-                    $total_stock = $total_stock ? intval( $total_stock ) : 1;
-                    
-                    // Check for existing bookings on this date
-                    global $wpdb;
-                    $bookings_table = $wpdb->prefix . 'smart_rentals_bookings';
-                    
-                    $booked_quantity = 0;
-                    if ( $wpdb->get_var( "SHOW TABLES LIKE '$bookings_table'" ) === $bookings_table ) {
-                        $booked_quantity = $wpdb->get_var( $wpdb->prepare(
-                            "SELECT COALESCE(SUM(quantity), 0) FROM $bookings_table 
-                             WHERE product_id = %d 
-                             AND status IN ('confirmed', 'pending', 'processing', 'completed')
-                             AND %s BETWEEN pickup_date AND dropoff_date",
-                            $product_id,
-                            $date
-                        ));
-                    }
-                    
-                    $available_quantity = $total_stock - intval( $booked_quantity );
+                    // Use the robust calendar-specific availability method
+                    $available_quantity = Smart_Rentals_WC()->options->get_calendar_day_availability( $product_id, $date );
                     $is_available = ( $available_quantity > 0 );
                     
                     // Get price for this day
