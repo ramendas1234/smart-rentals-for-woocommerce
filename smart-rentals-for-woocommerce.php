@@ -126,9 +126,7 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			}
 
 			// Admin access
-			add_action( 'init', function() {
-				require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
-			});
+			add_action( 'init', [ $this, 'init_admin' ] );
 
 			// Assets
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-assets.php';
@@ -193,6 +191,13 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 		}
 
 		/**
+		 * Initialize admin
+		 */
+		public function init_admin() {
+			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
+		}
+
+		/**
 		 * Woocommerce loaded
 		 */
 		public function woocommerce_loaded() {
@@ -201,30 +206,36 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 
 			// Register IntegrationInterface only if blocks are available
 			if ( class_exists( 'Smart_Rentals_WC_Blocks' ) && method_exists( 'Smart_Rentals_WC_Blocks', 'get_script_handles' ) ) {
-				add_action(
-				    'woocommerce_blocks_mini-cart_block_registration',
-				    function( $integration_registry ) {
-				        if ( method_exists( $integration_registry, 'register' ) ) {
-				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
-				        }
-				    }
-				);
-				add_action(
-				    'woocommerce_blocks_cart_block_registration',
-				    function( $integration_registry ) {
-				        if ( method_exists( $integration_registry, 'register' ) ) {
-				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
-				        }
-				    }
-				);
-				add_action(
-				    'woocommerce_blocks_checkout_block_registration',
-				    function( $integration_registry ) {
-				        if ( method_exists( $integration_registry, 'register' ) ) {
-				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
-				        }
-				    }
-				);
+				add_action( 'woocommerce_blocks_mini-cart_block_registration', [ $this, 'register_mini_cart_block' ] );
+				add_action( 'woocommerce_blocks_cart_block_registration', [ $this, 'register_cart_block' ] );
+				add_action( 'woocommerce_blocks_checkout_block_registration', [ $this, 'register_checkout_block' ] );
+			}
+		}
+
+		/**
+		 * Register mini cart block
+		 */
+		public function register_mini_cart_block( $integration_registry ) {
+			if ( method_exists( $integration_registry, 'register' ) ) {
+				$integration_registry->register( new Smart_Rentals_WC_Blocks() );
+			}
+		}
+
+		/**
+		 * Register cart block
+		 */
+		public function register_cart_block( $integration_registry ) {
+			if ( method_exists( $integration_registry, 'register' ) ) {
+				$integration_registry->register( new Smart_Rentals_WC_Blocks() );
+			}
+		}
+
+		/**
+		 * Register checkout block
+		 */
+		public function register_checkout_block( $integration_registry ) {
+			if ( method_exists( $integration_registry, 'register' ) ) {
+				$integration_registry->register( new Smart_Rentals_WC_Blocks() );
 			}
 		}
 
@@ -246,35 +257,63 @@ if ( !function_exists( 'is_plugin_active' ) ) {
 }
 
 // Check if WooCommerce is active before initializing
-add_action( 'plugins_loaded', function() {
+add_action( 'plugins_loaded', 'smart_rentals_wc_init_plugin' );
+
+/**
+ * Initialize plugin
+ */
+function smart_rentals_wc_init_plugin() {
 	if ( !class_exists( 'WooCommerce' ) ) {
-		add_action( 'admin_notices', function() {
-			echo '<div class="notice notice-error"><p>';
-			echo __( 'Smart Rentals for WooCommerce requires WooCommerce to be installed and activated.', 'smart-rentals-wc' );
-			echo '</p></div>';
-		});
+		add_action( 'admin_notices', 'smart_rentals_wc_woocommerce_missing_notice' );
 		return;
 	}
 
 	// Initialize plugin
-	function Smart_Rentals_WC() {
-		return Smart_Rentals_WC::instance();
+	if ( !function_exists( 'Smart_Rentals_WC' ) ) {
+		function Smart_Rentals_WC() {
+			return Smart_Rentals_WC::instance();
+		}
 	}
 
 	// Global for backwards compatibility.
 	$GLOBALS['Smart_Rentals_WC'] = Smart_Rentals_WC();
-});
+}
+
+/**
+ * WooCommerce missing notice
+ */
+function smart_rentals_wc_woocommerce_missing_notice() {
+	echo '<div class="notice notice-error"><p>';
+	echo __( 'Smart Rentals for WooCommerce requires WooCommerce to be installed and activated.', 'smart-rentals-wc' );
+	echo '</p></div>';
+}
 
 // Activation hook
-register_activation_hook( __FILE__, function() {
+register_activation_hook( __FILE__, 'smart_rentals_wc_activate_plugin' );
+
+// Uninstall hook
+register_uninstall_hook( __FILE__, 'smart_rentals_wc_uninstall_plugin' );
+
+/**
+ * Plugin activation callback
+ */
+function smart_rentals_wc_activate_plugin() {
+	// Include install class
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-smart-rentals-wc-install.php';
+	
 	if ( class_exists( 'Smart_Rentals_WC_Install' ) ) {
 		Smart_Rentals_WC_Install::install();
 	}
-});
+}
 
-// Uninstall hook
-register_uninstall_hook( __FILE__, function() {
+/**
+ * Plugin uninstall callback
+ */
+function smart_rentals_wc_uninstall_plugin() {
+	// Include install class
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-smart-rentals-wc-install.php';
+	
 	if ( class_exists( 'Smart_Rentals_WC_Install' ) ) {
 		Smart_Rentals_WC_Install::uninstall();
 	}
-});
+}
