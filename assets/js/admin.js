@@ -24,31 +24,47 @@ jQuery(document).ready(function($) {
     var dailyPriceField = $('input[name="smart_rentals_daily_price"]').closest('.form-field');
     var hourlyPriceField = $('input[name="smart_rentals_hourly_price"]').closest('.form-field');
     
+    // Disable "Coming Soon" rental types
+    function disableComingSoonTypes() {
+        var disabledTypes = ['period_time', 'transportation', 'hotel', 'appointment', 'taxi'];
+        
+        disabledTypes.forEach(function(type) {
+            rentalType.find('option[value="' + type + '"]').prop('disabled', true).css({
+                'color': '#999',
+                'font-style': 'italic'
+            });
+        });
+    }
+    
+    // Apply disabled styling
+    disableComingSoonTypes();
+    
     function togglePriceFields() {
         var selectedType = rentalType.val();
+        
+        // Check if selected type is disabled
+        var disabledTypes = ['period_time', 'transportation', 'hotel', 'appointment', 'taxi'];
+        if (disabledTypes.includes(selectedType)) {
+            alert('This rental type is not yet available. Please select Daily, Hourly, or Mixed.');
+            rentalType.val('');
+            return;
+        }
         
         // Hide all price fields first
         dailyPriceField.hide();
         hourlyPriceField.hide();
         
-        // Show relevant fields based on rental type
+        // Show relevant fields based on rental type (only active types)
         switch (selectedType) {
             case 'day':
-            case 'hotel':
                 dailyPriceField.show();
                 break;
             case 'hour':
-            case 'appointment':
                 hourlyPriceField.show();
                 break;
             case 'mixed':
                 dailyPriceField.show();
                 hourlyPriceField.show();
-                break;
-            case 'period_time':
-            case 'transportation':
-            case 'taxi':
-                // These will have their own specific fields
                 break;
         }
     }
@@ -76,12 +92,17 @@ jQuery(document).ready(function($) {
             var hasError = false;
             var errorMessage = '';
             
+            // Check if rental type is selected and valid
+            var validTypes = ['day', 'hour', 'mixed'];
             if (!rentalTypeVal) {
                 hasError = true;
                 errorMessage += 'Please select a rental type.\n';
+            } else if (!validTypes.includes(rentalTypeVal)) {
+                hasError = true;
+                errorMessage += 'Please select a supported rental type (Daily, Hourly, or Mixed).\n';
             }
             
-            // Check for required price fields
+            // Check for required price fields (only for active types)
             if (rentalTypeVal === 'day' || rentalTypeVal === 'mixed') {
                 var dailyPrice = $('input[name="smart_rentals_daily_price"]').val();
                 if (!dailyPrice || parseFloat(dailyPrice) <= 0) {

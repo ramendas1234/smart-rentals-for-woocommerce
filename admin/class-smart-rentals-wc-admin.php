@@ -350,17 +350,19 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'id' => smart_rentals_wc_meta_key( 'rental_type' ),
 				'label' => __( 'Rental Type', 'smart-rentals-wc' ),
 				'options' => [
+					'' => __( 'Select rental type', 'smart-rentals-wc' ),
 					'day' => __( 'Daily', 'smart-rentals-wc' ),
 					'hour' => __( 'Hourly', 'smart-rentals-wc' ),
 					'mixed' => __( 'Mixed (Daily/Hourly)', 'smart-rentals-wc' ),
-					'period_time' => __( 'Package/Period', 'smart-rentals-wc' ),
-					'transportation' => __( 'Transportation', 'smart-rentals-wc' ),
-					'hotel' => __( 'Hotel/Accommodation', 'smart-rentals-wc' ),
-					'appointment' => __( 'Appointment', 'smart-rentals-wc' ),
-					'taxi' => __( 'Taxi/Distance', 'smart-rentals-wc' ),
+					// Disabled options (kept for future use)
+					'period_time' => __( 'Package/Period', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'transportation' => __( 'Transportation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'hotel' => __( 'Hotel/Accommodation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'appointment' => __( 'Appointment', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'taxi' => __( 'Taxi/Distance', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 				],
 				'desc_tip' => true,
-				'description' => __( 'Select the rental pricing type', 'smart-rentals-wc' ),
+				'description' => __( 'Select the rental pricing type. Currently only Daily, Hourly, and Mixed types are fully supported.', 'smart-rentals-wc' ),
 			]);
 
 			// Daily price
@@ -387,30 +389,30 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				],
 			]);
 
-			// Minimum rental period
+			// Minimum rental period (optional)
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'min_rental_period' ),
-				'label' => __( 'Minimum Rental Period', 'smart-rentals-wc' ),
-				'placeholder' => '1',
+				'label' => __( 'Min Rental Period', 'smart-rentals-wc' ) . ' (' . __( 'Optional', 'smart-rentals-wc' ) . ')',
+				'placeholder' => __( 'Leave blank for no minimum', 'smart-rentals-wc' ),
 				'type' => 'number',
 				'custom_attributes' => [
-					'min' => '1',
+					'min' => '0',
 				],
 				'desc_tip' => true,
-				'description' => __( 'Minimum number of days/hours for rental', 'smart-rentals-wc' ),
+				'description' => __( 'Minimum rental duration in days/hours. Leave blank to allow any duration.', 'smart-rentals-wc' ),
 			]);
 
-			// Maximum rental period
+			// Maximum rental period (optional)
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'max_rental_period' ),
-				'label' => __( 'Maximum Rental Period', 'smart-rentals-wc' ),
-				'placeholder' => '365',
+				'label' => __( 'Max Rental Period', 'smart-rentals-wc' ) . ' (' . __( 'Optional', 'smart-rentals-wc' ) . ')',
+				'placeholder' => __( 'Leave blank for no maximum', 'smart-rentals-wc' ),
 				'type' => 'number',
 				'custom_attributes' => [
-					'min' => '1',
+					'min' => '0',
 				],
 				'desc_tip' => true,
-				'description' => __( 'Maximum number of days/hours for rental', 'smart-rentals-wc' ),
+				'description' => __( 'Maximum rental duration in days/hours. Leave blank to allow unlimited duration.', 'smart-rentals-wc' ),
 			]);
 
 			// Inventory/Stock
@@ -461,6 +463,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 
 			// Only save other fields if rental is enabled
 			if ( 'yes' === $enable_rental ) {
+				// Validate rental type (only allow active types)
+				$rental_type = isset( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) ? sanitize_text_field( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) : '';
+				$allowed_types = [ 'day', 'hour', 'mixed' ];
+				
+				if ( $rental_type && !in_array( $rental_type, $allowed_types ) ) {
+					// Reset to empty if invalid type selected
+					$rental_type = '';
+					add_action( 'admin_notices', function() {
+						echo '<div class="notice notice-error"><p>' . __( 'Invalid rental type selected. Please choose Daily, Hourly, or Mixed.', 'smart-rentals-wc' ) . '</p></div>';
+					});
+				}
+				
 				$fields = [
 					'rental_type' => 'text',
 					'daily_price' => 'price',
@@ -473,6 +487,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				];
 
 				foreach ( $fields as $field => $type ) {
+					// Special handling for rental_type validation
+					if ( $field === 'rental_type' && isset( $_POST[smart_rentals_wc_meta_key( $field )] ) ) {
+						$submitted_type = sanitize_text_field( $_POST[smart_rentals_wc_meta_key( $field )] );
+						$allowed_types = [ 'day', 'hour', 'mixed' ];
+						
+						if ( !in_array( $submitted_type, $allowed_types ) ) {
+							// Don't save invalid rental type
+							continue;
+						}
+					}
 					$meta_key = smart_rentals_wc_meta_key( $field );
 					
 					if ( isset( $_POST[$meta_key] ) ) {
@@ -483,7 +507,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								$value = smart_rentals_wc_format_price( $value );
 								break;
 							case 'number':
-								$value = smart_rentals_wc_format_number( $value );
+								// Allow empty values for optional period fields
+								if ( in_array( $field, [ 'min_rental_period', 'max_rental_period' ] ) && empty( $value ) ) {
+									$value = '';
+								} else {
+									$value = smart_rentals_wc_format_number( $value );
+								}
 								break;
 							case 'checkbox':
 								$value = 'yes';
