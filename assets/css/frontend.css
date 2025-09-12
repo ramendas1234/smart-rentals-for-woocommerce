@@ -1,5 +1,14 @@
 /* Smart Rentals WC Frontend Styles */
 
+.smart-rentals-booking-form-container {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    position: relative;
+}
+
 .smart-rentals-booking-form {
     background: #f9f9f9;
     border: 1px solid #ddd;
@@ -203,6 +212,110 @@
     background: #ccc;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Total display styling */
+.smart-rentals-total-display {
+    background: #fff;
+    border: 2px solid #0073aa;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.total-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.total-item:last-child {
+    border-bottom: none;
+}
+
+.total-item.total {
+    border-top: 2px solid #0073aa;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-weight: bold;
+    font-size: 18px;
+    color: #0073aa;
+}
+
+.total-item.security-deposit {
+    color: #f39c12;
+}
+
+.total-item .label {
+    font-weight: 600;
+}
+
+.total-item .value {
+    font-weight: bold;
+}
+
+/* Error display */
+.smart-rentals-error-display {
+    background: #fef2f2;
+    border: 1px solid #dc3232;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.error-message {
+    color: #721c24;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Form styling improvements */
+.smart-rentals-form .rental_item {
+    margin-bottom: 20px;
+}
+
+.smart-rentals-form .rental_item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.smart-rentals-form .rental_item input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.smart-rentals-form .rental_item input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.rental-period-info {
+    background: #f0f8ff;
+    border-left: 4px solid #0073aa;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+.rental-period-info p {
+    margin: 5px 0;
+    color: #333;
 }
 
 .smart-rentals-info .rental-availability,
