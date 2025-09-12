@@ -37,34 +37,20 @@ $has_timepicker = in_array( $rental_type, [ 'hour', 'mixed', 'appointment' ] );
 			<?php _e( 'Pickup Date', 'smart-rentals-wc' ); ?>
 			<span class="required">*</span>
 		</label>
-		<?php if ( $has_timepicker ) : ?>
+		<div class="date-input-wrapper">
 			<input
 				type="text"
 				id="pickup_date"
-				class="pickup-date smart-rentals-input-required"
+				class="pickup-date smart-rentals-input-required flatpickr-input"
 				name="pickup_date"
 				value="<?php echo esc_attr( $pickup_date ); ?>"
 				required
-				data-type="datetimepicker"
-				data-date="<?php echo esc_attr( $pickup_date ? gmdate( $date_format, strtotime( $pickup_date ) ) : '' ); ?>"
-				data-time="<?php echo esc_attr( $pickup_date ? gmdate( $time_format, strtotime( $pickup_date ) ) : '' ); ?>"
-				placeholder="<?php echo esc_attr( Smart_Rentals_WC()->options->get_date_placeholder() . ' ' . Smart_Rentals_WC()->options->get_time_placeholder() ); ?>"
+				data-type="<?php echo $has_timepicker ? 'datetimepicker' : 'datepicker'; ?>"
+				placeholder="<?php echo esc_attr( $has_timepicker ? Smart_Rentals_WC()->options->get_date_placeholder() . ' ' . Smart_Rentals_WC()->options->get_time_placeholder() : Smart_Rentals_WC()->options->get_date_placeholder() ); ?>"
 				readonly
 			/>
-		<?php else : ?>
-			<input
-				type="text"
-				id="pickup_date"
-				class="pickup-date smart-rentals-input-required"
-				name="pickup_date"
-				value="<?php echo esc_attr( $pickup_date ); ?>"
-				required
-				data-type="datepicker"
-				data-date="<?php echo esc_attr( $pickup_date ? gmdate( $date_format, strtotime( $pickup_date ) ) : '' ); ?>"
-				placeholder="<?php echo esc_attr( Smart_Rentals_WC()->options->get_date_placeholder() ); ?>"
-				readonly
-			/>
-		<?php endif; ?>
+			<i class="date-icon dashicons dashicons-calendar-alt"></i>
+		</div>
 	    <span class="smart-rentals-loader-date">
 	    	<i class="dashicons dashicons-update-alt" aria-hidden="true"></i>
 	    </span>
@@ -76,34 +62,20 @@ $has_timepicker = in_array( $rental_type, [ 'hour', 'mixed', 'appointment' ] );
 			<?php _e( 'Drop-off Date', 'smart-rentals-wc' ); ?>
 			<span class="required">*</span>
 		</label>
-		<?php if ( $has_timepicker ) : ?>
+		<div class="date-input-wrapper">
 			<input
 				type="text"
 				id="dropoff_date"
-				class="dropoff-date smart-rentals-input-required"
+				class="dropoff-date smart-rentals-input-required flatpickr-input"
 				name="dropoff_date"
 				value="<?php echo esc_attr( $dropoff_date ); ?>"
 				required
-				data-type="datetimepicker"
-				data-date="<?php echo esc_attr( $dropoff_date ? gmdate( $date_format, strtotime( $dropoff_date ) ) : '' ); ?>"
-				data-time="<?php echo esc_attr( $dropoff_date ? gmdate( $time_format, strtotime( $dropoff_date ) ) : '' ); ?>"
-				placeholder="<?php echo esc_attr( Smart_Rentals_WC()->options->get_date_placeholder() . ' ' . Smart_Rentals_WC()->options->get_time_placeholder() ); ?>"
+				data-type="<?php echo $has_timepicker ? 'datetimepicker' : 'datepicker'; ?>"
+				placeholder="<?php echo esc_attr( $has_timepicker ? Smart_Rentals_WC()->options->get_date_placeholder() . ' ' . Smart_Rentals_WC()->options->get_time_placeholder() : Smart_Rentals_WC()->options->get_date_placeholder() ); ?>"
 				readonly
 			/>
-		<?php else : ?>
-			<input
-				type="text"
-				id="dropoff_date"
-				class="dropoff-date smart-rentals-input-required"
-				name="dropoff_date"
-				value="<?php echo esc_attr( $dropoff_date ); ?>"
-				required
-				data-type="datepicker"
-				data-date="<?php echo esc_attr( $dropoff_date ? gmdate( $date_format, strtotime( $dropoff_date ) ) : '' ); ?>"
-				placeholder="<?php echo esc_attr( Smart_Rentals_WC()->options->get_date_placeholder() ); ?>"
-				readonly
-			/>
-		<?php endif; ?>
+			<i class="date-icon dashicons dashicons-calendar-alt"></i>
+		</div>
 	    <span class="smart-rentals-loader-date">
 	    	<i class="dashicons dashicons-update-alt" aria-hidden="true"></i>
 	    </span>
@@ -161,53 +133,105 @@ $has_timepicker = in_array( $rental_type, [ 'hour', 'mixed', 'appointment' ] );
 jQuery(document).ready(function($) {
     'use strict';
     
-    // Initialize date pickers (simplified approach)
-    function initDatePickers() {
-        // Convert readonly text inputs to date/datetime inputs
-        $('input[data-type="datepicker"]').each(function() {
-            $(this).attr('type', 'date').removeAttr('readonly');
-            
-            // Set minimum date to today
-            var today = new Date().toISOString().split('T')[0];
-            $(this).attr('min', today);
-        });
+    var hasTimepicker = <?php echo $has_timepicker ? 'true' : 'false'; ?>;
+    var minRentalPeriod = <?php echo intval( $min_rental_period ); ?>;
+    
+    // Initialize modern date pickers using our enhanced class
+    function initModernDatePickers() {
+        if (typeof window.SmartRentalsModernDatePicker === 'undefined') {
+            console.error('Modern date picker class not available, falling back to basic');
+            initBasicDatePickers();
+            return;
+        }
         
-        $('input[data-type="datetimepicker"]').each(function() {
-            $(this).attr('type', 'datetime-local').removeAttr('readonly');
-            
-            // Set minimum datetime to now
-            var now = new Date();
-            var minDateTime = now.toISOString().slice(0, 16);
-            $(this).attr('min', minDateTime);
-        });
+        // Configuration for our rental date picker
+        var datePickerConfig = {
+            dateFormat: hasTimepicker ? "Y-m-d H:i" : "Y-m-d",
+            enableTime: hasTimepicker,
+            time_24hr: true,
+            mode: "range",
+            showMonths: window.innerWidth > 768 ? 2 : 1,
+            minDate: "today",
+            maxDate: new Date().fp_incr(365), // 1 year from today
+            altInput: true,
+            altFormat: hasTimepicker ? "F j, Y at H:i" : "F j, Y",
+            ariaDateFormat: "F j, Y",
+            animate: true,
+            position: "auto",
+            static: window.innerWidth <= 768
+        };
         
-        // Update dropoff minimum when pickup changes
+        // Add minimum rental period validation
+        if (minRentalPeriod > 0) {
+            datePickerConfig.minDate = "today";
+            datePickerConfig.disable = [
+                function(date) {
+                    // Disable dates that would result in rental period less than minimum
+                    var today = new Date();
+                    var diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+                    return diffDays < 0; // Only disable past dates, let validation handle minimum period
+                }
+            ];
+        }
+        
+        // Initialize the modern date picker
+        var picker = window.SmartRentalsModernDatePicker.init('#pickup_date', '#dropoff_date', datePickerConfig);
+        
+        console.log('Modern date picker initialized with enhanced UI');
+    }
+    
+    // Fallback for basic date pickers
+    function initBasicDatePickers() {
+        $('input[data-type="datepicker"]').attr('type', 'date').removeAttr('readonly');
+        $('input[data-type="datetimepicker"]').attr('type', 'datetime-local').removeAttr('readonly');
+        
+        var today = new Date().toISOString().split('T')[0];
+        $('#pickup_date').attr('min', today);
+        
         $('#pickup_date').on('change', function() {
             var pickupDate = $(this).val();
             if (pickupDate) {
                 var minDropoff = new Date(pickupDate);
                 minDropoff.setDate(minDropoff.getDate() + 1);
-                
-                if ($(this).attr('type') === 'date') {
-                    $('#dropoff_date').attr('min', minDropoff.toISOString().split('T')[0]);
-                } else {
-                    $('#dropoff_date').attr('min', minDropoff.toISOString().slice(0, 16));
-                }
+                $('#dropoff_date').attr('min', minDropoff.toISOString().split('T')[0]);
             }
         });
+        
+        console.log('Basic date pickers initialized');
+    }
+    
+    // Show range duration
+    function showRangeDuration(pickup, dropoff) {
+        var durationMs = dropoff - pickup;
+        var durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+        var durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
+        
+        var durationText = '';
+        if (hasTimepicker && durationHours < 24) {
+            durationText = durationHours + ' ' + (durationHours === 1 ? 'hour' : 'hours');
+        } else {
+            durationText = durationDays + ' ' + (durationDays === 1 ? 'day' : 'days');
+        }
+        
+        // Show duration in the UI
+        $('.range-duration').remove();
+        $('.smart-rentals-container').append('<div class="range-duration"><i class="dashicons dashicons-clock"></i> ' + durationText + '</div>');
+        
+        setTimeout(function() {
+            $('.range-duration').fadeOut();
+        }, 3000);
     }
     
     // Trigger calculation when dates change
     $('#pickup_date, #dropoff_date, #smart_rentals_quantity').on('change', function() {
-        // Trigger the main form's calculation
         if (typeof window.smartRentalsCalculateTotal === 'function') {
             setTimeout(window.smartRentalsCalculateTotal, 100);
         }
     });
     
-    // Initialize
-    initDatePickers();
+    // Initialize date pickers
+    setTimeout(initModernDatePickers, 100);
     
-    console.log('Smart Rentals Form Fields Initialized');
+    console.log('Smart Rentals Form Fields with Modern UI Initialized');
 });
 </script>

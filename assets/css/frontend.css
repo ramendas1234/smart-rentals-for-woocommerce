@@ -65,17 +65,240 @@
     border-left: 4px solid #0073aa;
 }
 
-.smart-rentals-loader-date {
+/* Modern date input wrapper */
+.date-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-input-wrapper input {
+    flex: 1;
+    padding-right: 45px !important;
+}
+
+.date-input-wrapper .date-icon {
     position: absolute;
     right: 15px;
+    color: #667eea;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.date-input-wrapper .date-icon:hover {
+    color: #764ba2;
+    transform: scale(1.1);
+}
+
+.smart-rentals-loader-date {
+    position: absolute;
+    right: 50px;
     top: 50%;
     transform: translateY(-50%);
     display: none;
+    z-index: 3;
 }
 
 .smart-rentals-loader-date i {
     animation: spin 1s linear infinite;
     color: #0073aa;
+}
+
+/* Range duration display */
+.range-duration {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 600;
+    animation: slideInUp 0.3s ease-out;
+}
+
+.range-duration i {
+    margin-right: 8px;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Flatpickr custom styling */
+.flatpickr-calendar.smart-rentals-calendar {
+    border-radius: 15px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+    border: none;
+    overflow: hidden;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .flatpickr-month {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.flatpickr-calendar.smart-rentals-calendar .flatpickr-day.selected,
+.flatpickr-calendar.smart-rentals-calendar .flatpickr-day.startRange,
+.flatpickr-calendar.smart-rentals-calendar .flatpickr-day.endRange {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .flatpickr-day.inRange {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    color: #667eea;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .range-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .pickup-label {
+    color: #667eea;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .dropoff-label {
+    color: #764ba2;
+}
+
+/* Quick select buttons */
+.flatpickr-calendar.smart-rentals-calendar .quick-select {
+    display: flex;
+    gap: 8px;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    justify-content: center;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .quick-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.flatpickr-calendar.smart-rentals-calendar .quick-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Success animation for selected dates */
+.success-selected {
+    animation: successPulse 0.6s ease-out;
+    border-color: #46b450 !important;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); border-color: #46b450; }
+    100% { transform: scale(1); }
+}
+
+/* Pickup selected indicator */
+.pickup-selected-indicator {
+    background: linear-gradient(135deg, #46b450 0%, #27ae60 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 600;
+    animation: slideInUp 0.3s ease-out;
+    font-size: 14px;
+}
+
+/* Enhanced input styling */
+.flatpickr-input {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px 50px 15px 15px;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.flatpickr-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 20px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.flatpickr-input.active {
+    border-color: #667eea;
+    background: white;
+}
+
+/* Alternative input (human readable format) */
+.flatpickr-input.form-control.input {
+    background: white;
+    border: 2px solid #667eea;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Mobile enhancements */
+@media (max-width: 768px) {
+    .flatpickr-calendar.smart-rentals-calendar {
+        width: 100% !important;
+        max-width: 350px;
+        margin: 0 auto;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .quick-select {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .quick-btn {
+        flex: 1;
+        min-width: 60px;
+    }
+    
+    .date-input-wrapper {
+        margin-bottom: 15px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .flatpickr-calendar.smart-rentals-calendar {
+        background: #2d3748;
+        color: white;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .flatpickr-day {
+        color: white;
+    }
+    
+    .flatpickr-calendar.smart-rentals-calendar .flatpickr-day:hover {
+        background: rgba(102, 126, 234, 0.3);
+    }
 }
 
 .smart-rentals-booking-form h3 {
