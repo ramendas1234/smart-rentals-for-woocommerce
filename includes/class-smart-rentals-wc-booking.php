@@ -147,7 +147,19 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				return $cart_item_data;
 			}
 
-			// Add rental data
+			// Check if this is from our AJAX add to cart
+			if ( isset( $_POST['action'] ) && 'smart_rentals_add_to_cart' === $_POST['action'] ) {
+				// Data comes from AJAX call, already processed
+				$cart_item_from_ajax = smart_rentals_wc_get_meta_data( 'cart_item', $_POST );
+				if ( smart_rentals_wc_array_exists( $cart_item_from_ajax ) ) {
+					// Merge the AJAX cart item data
+					$cart_item_data = array_merge( $cart_item_data, $cart_item_from_ajax );
+					smart_rentals_wc_log( 'AJAX cart item data: ' . print_r( $cart_item_data, true ) );
+				}
+				return $cart_item_data;
+			}
+
+			// Handle standard form submission (fallback)
 			$pickup_date = isset( $_POST['pickup_date'] ) ? sanitize_text_field( $_POST['pickup_date'] ) : '';
 			$dropoff_date = isset( $_POST['dropoff_date'] ) ? sanitize_text_field( $_POST['dropoff_date'] ) : '';
 			$pickup_time = isset( $_POST['pickup_time'] ) ? sanitize_text_field( $_POST['pickup_time'] ) : '';
@@ -168,8 +180,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				// Make each rental booking unique
 				$cart_item_data['unique_key'] = md5( microtime() . rand() . $product_id );
 				
-				// Debug logging
-				smart_rentals_wc_log( 'Added rental cart item data: ' . print_r( $cart_item_data['rental_data'], true ) );
+				smart_rentals_wc_log( 'Standard cart item data: ' . print_r( $cart_item_data['rental_data'], true ) );
 			} else {
 				// If no rental dates provided, prevent adding to cart
 				wc_add_notice( __( 'Please select pickup and drop-off dates for rental products.', 'smart-rentals-wc' ), 'error' );

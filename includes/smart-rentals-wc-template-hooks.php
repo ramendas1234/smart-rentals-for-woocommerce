@@ -8,8 +8,8 @@ if ( !defined( 'ABSPATH' ) ) exit();
 /**
  * Product page hooks
  */
-add_action( 'woocommerce_before_add_to_cart_button', 'smart_rentals_wc_add_booking_form', 10 );
-add_action( 'woocommerce_single_product_summary', 'smart_rentals_wc_add_price_display', 25 );
+add_action( 'woocommerce_single_product_summary', 'smart_rentals_wc_add_booking_form', 25 );
+add_action( 'woocommerce_single_product_summary', 'smart_rentals_wc_add_price_display', 35 );
 
 /**
  * Shop loop hooks

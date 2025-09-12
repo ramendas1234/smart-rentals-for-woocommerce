@@ -33,15 +33,29 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 				true
 			);
 
-			wp_localize_script( 'smart-rentals-wc-frontend', 'smart_rentals_wc_ajax', [
+			// Error messages
+			wp_localize_script( 'smart-rentals-wc-frontend', 'smartRentalsErrorMessages', [
+				'select_dates' => __( 'Please select pickup and drop-off dates.', 'smart-rentals-wc' ),
+				'invalid_dates' => __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ),
+				'loading' => __( 'Loading...', 'smart-rentals-wc' ),
+				'error' => __( 'An error occurred. Please try again.', 'smart-rentals-wc' ),
+				'validation_failed' => __( 'Please fill in all required fields.', 'smart-rentals-wc' ),
+				'add_to_cart_success' => __( 'Product added to cart successfully!', 'smart-rentals-wc' ),
+				'add_to_cart_failed' => __( 'Failed to add product to cart.', 'smart-rentals-wc' ),
+			]);
+
+			// AJAX object
+			wp_localize_script( 'smart-rentals-wc-frontend', 'ajax_object', [
 				'ajax_url' => admin_url( 'admin-ajax.php' ),
-				'nonce' => wp_create_nonce( 'smart_rentals_wc_nonce' ),
-				'messages' => [
-					'select_dates' => __( 'Please select pickup and drop-off dates.', 'smart-rentals-wc' ),
-					'invalid_dates' => __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ),
-					'loading' => __( 'Loading...', 'smart-rentals-wc' ),
-					'error' => __( 'An error occurred. Please try again.', 'smart-rentals-wc' ),
-				]
+				'security' => wp_create_nonce( 'smart-rentals-security-ajax' ),
+			]);
+
+			// Date picker options
+			wp_localize_script( 'smart-rentals-wc-frontend', 'datePickerOptions', [
+				'format' => Smart_Rentals_WC()->options->get_date_format(),
+				'timeFormat' => Smart_Rentals_WC()->options->get_time_format(),
+				'firstDay' => 1,
+				'minDate' => gmdate( 'Y-m-d' ),
 			]);
 
 			// Load on cart and checkout pages

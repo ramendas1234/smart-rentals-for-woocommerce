@@ -6,6 +6,67 @@
     border-radius: 8px;
     padding: 20px;
     margin: 20px 0;
+    position: relative;
+}
+
+.smart-rentals-container {
+    max-width: 100%;
+}
+
+.smart-rentals-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -10px;
+}
+
+.wrap-item {
+    flex: 1;
+    padding: 10px;
+}
+
+.rental_item {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.rental_item label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.rental_item input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.rental_item input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.1);
+}
+
+.rental_item input.smart-rentals-input-required {
+    border-left: 4px solid #0073aa;
+}
+
+.smart-rentals-loader-date {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+}
+
+.smart-rentals-loader-date i {
+    animation: spin 1s linear infinite;
+    color: #0073aa;
 }
 
 .smart-rentals-booking-form h3 {
@@ -74,18 +135,74 @@
 .rental-price-display {
     background: #e8f4f8;
     border: 1px solid #0073aa;
-    border-radius: 4px;
-    padding: 15px;
-    margin: 15px 0;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
 }
 
-.rental-price-display p {
-    margin: 5px 0;
+.price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.rental-price-display strong {
-    color: #0073aa;
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 115, 170, 0.1);
+}
+
+.price-item:last-child {
+    border-bottom: none;
+}
+
+.price-item.total {
+    border-top: 2px solid #0073aa;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-weight: bold;
     font-size: 18px;
+}
+
+.price-item .label {
+    font-weight: 600;
+    color: #333;
+}
+
+.price-item .value {
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.price-item.security-deposit .value {
+    color: #f39c12;
+}
+
+.smart-rentals-book-now {
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.smart-rentals-book-now:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+}
+
+.smart-rentals-book-now:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .smart-rentals-info .rental-availability,
@@ -180,6 +297,12 @@
 }
 
 @keyframes smart-rentals-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
     to {
         transform: rotate(360deg);
     }
