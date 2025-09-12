@@ -1,0 +1,251 @@
+/* Smart Rentals WC Frontend Styles */
+
+.smart-rentals-booking-form {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.smart-rentals-booking-form h3 {
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0073aa;
+    color: #333;
+}
+
+.smart-rentals-dates {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-date-field {
+    flex: 1;
+}
+
+.smart-rentals-times {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-time-field {
+    flex: 1;
+}
+
+.smart-rentals-date-field label,
+.smart-rentals-time-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.smart-rentals-date-field input,
+.smart-rentals-time-field input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.smart-rentals-date-field input:focus,
+.smart-rentals-time-field input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
+}
+
+.smart-rentals-info {
+    margin-top: 15px;
+}
+
+.rental-period-info {
+    margin: 5px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.rental-price-display {
+    background: #e8f4f8;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.rental-price-display p {
+    margin: 5px 0;
+}
+
+.rental-price-display strong {
+    color: #0073aa;
+    font-size: 18px;
+}
+
+.smart-rentals-info .rental-availability,
+.smart-rentals-info .security-deposit {
+    margin: 10px 0;
+    padding: 10px;
+    background: #fff;
+    border-left: 4px solid #0073aa;
+    border-radius: 0 4px 4px 0;
+}
+
+.smart-rentals-price {
+    font-weight: 600;
+    color: #0073aa;
+}
+
+.smart-rentals-calendar {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Messages */
+.smart-rentals-message {
+    padding: 12px 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.smart-rentals-message.smart-rentals-success {
+    background: #f0f8ff;
+    border-left-color: #46b450;
+    color: #155724;
+}
+
+.smart-rentals-message.smart-rentals-error {
+    background: #fef2f2;
+    border-left-color: #dc3232;
+    color: #721c24;
+}
+
+.smart-rentals-message.smart-rentals-warning {
+    background: #fffbf0;
+    border-left-color: #f56e28;
+    color: #856404;
+}
+
+/* Required field indicator */
+.required {
+    color: #dc3232;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .smart-rentals-dates,
+    .smart-rentals-times {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .smart-rentals-booking-form {
+        padding: 15px;
+    }
+    
+    .smart-rentals-date-field input,
+    .smart-rentals-time-field input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Loading states */
+.smart-rentals-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.smart-rentals-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: smart-rentals-spin 1s linear infinite;
+}
+
+@keyframes smart-rentals-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Cart and checkout styles */
+.cart .smart-rentals-rental-info,
+.checkout .smart-rentals-rental-info {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0;
+}
+
+.cart .smart-rentals-rental-info strong,
+.checkout .smart-rentals-rental-info strong {
+    color: #333;
+}
+
+/* Product archive styles */
+.woocommerce-loop-product__title .smart-rentals-badge {
+    display: inline-block;
+    background: #0073aa;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: top;
+}
+
+/* Admin bar compatibility */
+.admin-bar .smart-rentals-calendar {
+    z-index: 99999;
+}
+
+/* WooCommerce compatibility */
+.woocommerce .smart-rentals-booking-form,
+.woocommerce-page .smart-rentals-booking-form {
+    margin: 20px 0;
+}
+
+.woocommerce .smart-rentals-price,
+.woocommerce-page .smart-rentals-price {
+    font-weight: 600;
+}
+
+/* Accessibility improvements */
+.smart-rentals-date-field input:focus,
+.smart-rentals-time-field input:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.smart-rentals-message {
+    role: alert;
+}
+
+/* Print styles */
+@media print {
+    .smart-rentals-booking-form {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .smart-rentals-message {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+}
