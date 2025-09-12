@@ -486,24 +486,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 		}
 
 		/**
-		 * Get all rental product IDs
-		 */
-		public function get_rental_product_ids() {
-			global $wpdb;
-			
-			$meta_key = smart_rentals_wc_meta_key( 'enable_rental' );
-			
-			$product_ids = $wpdb->get_col( $wpdb->prepare("
-				SELECT post_id 
-				FROM {$wpdb->postmeta} 
-				WHERE meta_key = %s 
-				AND meta_value = 'yes'
-			", $meta_key ));
-			
-			return array_map( 'intval', $product_ids );
-		}
-
-		/**
 		 * Get rental duration text
 		 */
 		public function get_rental_duration_text( $pickup_date, $dropoff_date ) {
