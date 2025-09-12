@@ -156,25 +156,42 @@ jQuery(document).ready(function($) {
     
     calendar.render();
     
-    // Filter functionality
+    // Filter functionality with AJAX
     $('#filter-calendar').on('click', function() {
         var productId = $('#product-filter').val();
         var status = $('#status-filter').val();
         
         $('#calendar-spinner').addClass('is-active');
         
-        var filteredEvents = allEvents.filter(function(event) {
-            var matchProduct = !productId || event.extendedProps.product_id == productId;
-            var matchStatus = !status || event.extendedProps.status == status;
-            return matchProduct && matchStatus;
+        // AJAX request for filtered events
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'smart_rentals_admin_calendar_events',
+                product_id: productId,
+                status: status,
+                nonce: '<?php echo wp_create_nonce( 'smart_rentals_admin_calendar' ); ?>'
+            },
+            success: function(response) {
+                if (response.success && response.data.events) {
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(response.data.events);
+                    
+                    // Update title count
+                    var count = response.data.events.length;
+                    $('.title-count').text('(' + count + ' <?php _e( 'bookings', 'smart-rentals-wc' ); ?>)');
+                } else {
+                    console.error('Filter failed:', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', error);
+            },
+            complete: function() {
+                $('#calendar-spinner').removeClass('is-active');
+            }
         });
-        
-        calendar.removeAllEvents();
-        calendar.addEventSource(filteredEvents);
-        
-        setTimeout(function() {
-            $('#calendar-spinner').removeClass('is-active');
-        }, 500);
     });
     
     // Reset filter
