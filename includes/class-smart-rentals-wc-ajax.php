@@ -26,6 +26,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				'add_to_cart',
 				'get_calendar_data',
 				'load_calendar',
+				'admin_calendar_events',
 			];
 
 			foreach ( $ajax_actions as $action ) {
@@ -427,6 +428,95 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			$html = ob_get_clean();
 
 			wp_send_json_success( [ 'html' => $html ] );
+		}
+
+		/**
+		 * Get admin calendar events via AJAX
+		 */
+		public function smart_rentals_admin_calendar_events() {
+			// Check permissions
+			if ( !current_user_can( 'manage_woocommerce' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Permission denied', 'smart-rentals-wc' ) ] );
+			}
+
+			$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
+			$status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : '';
+
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			$events = [];
+
+			// Build WHERE clause
+			$where_conditions = [ "b.status IN ('pending', 'confirmed', 'active', 'processing', 'completed')" ];
+			$prepare_values = [];
+
+			if ( $product_id ) {
+				$where_conditions[] = "b.product_id = %d";
+				$prepare_values[] = $product_id;
+			}
+
+			if ( $status ) {
+				$where_conditions[] = "b.status = %s";
+				$prepare_values[] = $status;
+			}
+
+			$where_clause = implode( ' AND ', $where_conditions );
+
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$query = "
+					SELECT 
+						b.*, 
+						p.post_title as product_name
+					FROM $table_name b
+					LEFT JOIN {$wpdb->posts} p ON b.product_id = p.ID
+					WHERE $where_clause
+					ORDER BY b.pickup_date ASC
+				";
+
+				if ( !empty( $prepare_values ) ) {
+					$bookings = $wpdb->get_results( $wpdb->prepare( $query, $prepare_values ) );
+				} else {
+					$bookings = $wpdb->get_results( $query );
+				}
+
+				foreach ( $bookings as $booking ) {
+					$events[] = [
+						'id' => $booking->id,
+						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
+						'start' => $booking->pickup_date,
+						'end' => $booking->dropoff_date,
+						'backgroundColor' => $this->get_booking_color( $booking->status ),
+						'borderColor' => $this->get_booking_color( $booking->status ),
+						'textColor' => '#ffffff',
+						'extendedProps' => [
+							'booking_id' => $booking->id,
+							'product_id' => $booking->product_id,
+							'quantity' => $booking->quantity,
+							'status' => $booking->status,
+							'total_price' => $booking->total_price,
+							'security_deposit' => $booking->security_deposit,
+						]
+					];
+				}
+			}
+
+			wp_send_json_success( [ 'events' => $events ] );
+		}
+
+		/**
+		 * Get booking color based on status
+		 */
+		private function get_booking_color( $status ) {
+			$colors = [
+				'pending' => '#ffc107',     // Yellow
+				'confirmed' => '#28a745',   // Green
+				'active' => '#17a2b8',      // Blue
+				'processing' => '#fd7e14',  // Orange
+				'completed' => '#6f42c1',   // Purple
+				'cancelled' => '#dc3545',   // Red
+			];
+			
+			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
 		}
 	}
 }

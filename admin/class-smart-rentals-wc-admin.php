@@ -76,6 +76,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'smart-rentals-wc-bookings',
 				[ $this, 'bookings_page' ]
 			);
+
+			add_submenu_page(
+				'smart-rentals-wc',
+				__( 'Booking Calendar', 'smart-rentals-wc' ),
+				__( 'Booking Calendar', 'smart-rentals-wc' ),
+				'manage_woocommerce',
+				'smart-rentals-wc-booking-calendar',
+				[ $this, 'booking_calendar_page' ]
+			);
 		}
 
 		/**
@@ -704,6 +713,84 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 			
 			return $price;
+		}
+
+		/**
+		 * Booking calendar page
+		 */
+		public function booking_calendar_page() {
+			// Enqueue required assets
+			wp_enqueue_script( 'jquery' );
+			
+			// Get rental product IDs
+			$product_ids = Smart_Rentals_WC()->options->get_rental_product_ids();
+			
+			// Get events for calendar
+			$events = $this->get_calendar_events();
+			
+			// Include the calendar template
+			include SMART_RENTALS_WC_PLUGIN_PATH . 'admin/views/booking-calendar.php';
+		}
+
+		/**
+		 * Get calendar events for admin booking calendar
+		 */
+		private function get_calendar_events() {
+			global $wpdb;
+			
+			$events = [];
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			
+			// Check if table exists
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$bookings = $wpdb->get_results("
+					SELECT 
+						b.*, 
+						p.post_title as product_name
+					FROM $table_name b
+					LEFT JOIN {$wpdb->posts} p ON b.product_id = p.ID
+					WHERE b.status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
+					ORDER BY b.pickup_date ASC
+				");
+
+				foreach ( $bookings as $booking ) {
+					$events[] = [
+						'id' => $booking->id,
+						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
+						'start' => $booking->pickup_date,
+						'end' => $booking->dropoff_date,
+						'backgroundColor' => $this->get_booking_color( $booking->status ),
+						'borderColor' => $this->get_booking_color( $booking->status ),
+						'textColor' => '#ffffff',
+						'extendedProps' => [
+							'booking_id' => $booking->id,
+							'product_id' => $booking->product_id,
+							'quantity' => $booking->quantity,
+							'status' => $booking->status,
+							'total_price' => $booking->total_price,
+							'security_deposit' => $booking->security_deposit,
+						]
+					];
+				}
+			}
+			
+			return $events;
+		}
+
+		/**
+		 * Get booking color based on status
+		 */
+		private function get_booking_color( $status ) {
+			$colors = [
+				'pending' => '#ffc107',     // Yellow
+				'confirmed' => '#28a745',   // Green
+				'active' => '#17a2b8',      // Blue
+				'processing' => '#fd7e14',  // Orange
+				'completed' => '#6f42c1',   // Purple
+				'cancelled' => '#dc3545',   // Red
+			];
+			
+			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
 		}
 
 		/**
