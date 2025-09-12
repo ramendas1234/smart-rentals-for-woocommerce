@@ -330,6 +330,29 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					}
 					break;
 
+				case 'period_time':
+					// Package-based pricing - use daily as base
+					if ( $daily_price > 0 ) {
+						$days = max( 1, ceil( $duration_days ) );
+						$total_price = $daily_price * $days * $quantity;
+					}
+					break;
+
+				case 'transportation':
+					// Transportation pricing - use daily as base
+					if ( $daily_price > 0 ) {
+						$total_price = $daily_price * $quantity; // Fixed price per trip
+					}
+					break;
+
+				case 'taxi':
+					// Distance-based pricing - use hourly as base for time
+					if ( $hourly_price > 0 ) {
+						$hours = max( 1, ceil( $duration_hours ) );
+						$total_price = $hourly_price * $hours * $quantity;
+					}
+					break;
+
 				default:
 					// For other types, use daily pricing as fallback
 					if ( $daily_price > 0 ) {
@@ -357,9 +380,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			$duration_hours = $duration_seconds / 3600;
 			$duration_days = $duration_seconds / 86400;
 
+			// More precise duration calculation
 			if ( $duration_days >= 1 ) {
 				$days = ceil( $duration_days );
-				return sprintf( _n( '%d day', '%d days', $days, 'smart-rentals-wc' ), $days );
+				if ( $duration_hours > 24 && ( $duration_hours % 24 ) > 0 ) {
+					// Show days and hours for mixed durations
+					$extra_hours = ceil( $duration_hours % 24 );
+					return sprintf( 
+						__( '%d days, %d hours', 'smart-rentals-wc' ), 
+						floor( $duration_days ), 
+						$extra_hours 
+					);
+				} else {
+					return sprintf( _n( '%d day', '%d days', $days, 'smart-rentals-wc' ), $days );
+				}
 			} else {
 				$hours = ceil( $duration_hours );
 				return sprintf( _n( '%d hour', '%d hours', $hours, 'smart-rentals-wc' ), $hours );

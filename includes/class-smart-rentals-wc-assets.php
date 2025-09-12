@@ -24,21 +24,21 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		 * Frontend scripts
 		 */
 		public function frontend_scripts() {
-			// Load modern date picker library (Flatpickr)
+			// Load Moment.js (required for daterangepicker)
 			wp_enqueue_script(
-				'flatpickr',
-				'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js',
+				'moment',
+				'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js',
 				[ 'jquery' ],
-				'4.6.13',
+				'2.29.4',
 				true
 			);
 
-			// Load our modern date picker enhancement
+			// Load daterangepicker library
 			wp_enqueue_script(
-				'smart-rentals-modern-datepicker',
-				SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/modern-datepicker.js',
-				[ 'jquery', 'flatpickr' ],
-				Smart_Rentals_WC()->get_version(),
+				'daterangepicker',
+				'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js',
+				[ 'jquery', 'moment' ],
+				'3.14.1',
 				true
 			);
 
@@ -46,7 +46,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 			wp_enqueue_script(
 				'smart-rentals-wc-frontend',
 				SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/frontend.js',
-				[ 'jquery', 'flatpickr', 'smart-rentals-modern-datepicker' ],
+				[ 'jquery', 'moment', 'daterangepicker' ],
 				Smart_Rentals_WC()->get_version(),
 				true
 			);
@@ -92,26 +92,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		 * Frontend styles
 		 */
 		public function frontend_styles() {
-			// Load modern date picker styles (Flatpickr)
+			// Load daterangepicker styles
 			wp_enqueue_style(
-				'flatpickr',
-				'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css',
+				'daterangepicker',
+				'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
 				[],
-				'4.6.13'
-			);
-
-			// Load our custom Flatpickr theme
-			wp_enqueue_style(
-				'smart-rentals-flatpickr-theme',
-				SMART_RENTALS_WC_PLUGIN_URI . 'assets/libs/flatpickr/flatpickr.min.css',
-				[ 'flatpickr' ],
-				Smart_Rentals_WC()->get_version()
+				'3.14.1'
 			);
 
 			wp_enqueue_style(
 				'smart-rentals-wc-frontend',
 				SMART_RENTALS_WC_PLUGIN_URI . 'assets/css/frontend.css',
-				[ 'flatpickr', 'smart-rentals-flatpickr-theme' ],
+				[ 'daterangepicker' ],
 				Smart_Rentals_WC()->get_version()
 			);
 

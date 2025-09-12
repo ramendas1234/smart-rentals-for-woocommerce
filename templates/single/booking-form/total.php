@@ -109,11 +109,12 @@ jQuery(document).ready(function($) {
                 if (response.success && response.data) {
                     var data = response.data;
                     
-                    // Update display (use .html() instead of .text() for formatted prices)
+                    // Update display (use .html() for formatted prices, .text() for plain text)
                     $('#rental-subtotal-amount').html(data.formatted_price || '0');
                     $('#rental-duration-text').text(data.duration_text || '-');
                     
-                    var totalAmount = data.total_price + securityDeposit;
+                    // Calculate and display total
+                    var totalAmount = parseFloat(data.total_price || 0) + parseFloat(securityDeposit || 0);
                     var currencySymbol = '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? esc_js( get_woocommerce_currency_symbol() ) : '$'; ?>';
                     $('#rental-total-amount').text(currencySymbol + totalAmount.toFixed(2));
                     
