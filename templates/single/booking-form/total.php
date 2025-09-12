@@ -12,25 +12,34 @@ $security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_depos
 
 <div class="rental_item total-section">
 	<div id="smart-rentals-total-display" class="smart-rentals-total-display" style="display: none;">
+		<div class="total-header">
+			<h4 class="total-title"><?php _e( 'Rental Summary', 'smart-rentals-wc' ); ?></h4>
+			<div class="availability-info">
+				<span class="availability-label"><?php _e( 'Available:', 'smart-rentals-wc' ); ?></span>
+				<span class="availability-count" id="rental-availability-count">-</span>
+				<span class="availability-text" id="rental-availability-text"><?php _e( 'items', 'smart-rentals-wc' ); ?></span>
+			</div>
+		</div>
+		
 		<div class="total-breakdown">
-			<div class="total-item subtotal">
+			<div class="total-row duration-row">
+				<span class="label"><?php _e( 'Duration:', 'smart-rentals-wc' ); ?></span>
+				<span class="value" id="rental-duration-text">-</span>
+			</div>
+			
+			<div class="total-row subtotal-row">
 				<span class="label"><?php _e( 'Subtotal:', 'smart-rentals-wc' ); ?></span>
 				<span class="value" id="rental-subtotal-amount">-</span>
 			</div>
 			
 			<?php if ( $security_deposit > 0 ) : ?>
-			<div class="total-item security-deposit">
+			<div class="total-row deposit-row">
 				<span class="label"><?php _e( 'Security Deposit:', 'smart-rentals-wc' ); ?></span>
 				<span class="value"><?php echo smart_rentals_wc_price( $security_deposit ); ?></span>
 			</div>
 			<?php endif; ?>
 			
-			<div class="total-item duration">
-				<span class="label"><?php _e( 'Duration:', 'smart-rentals-wc' ); ?></span>
-				<span class="value" id="rental-duration-text">-</span>
-			</div>
-			
-			<div class="total-item total">
+			<div class="total-row total-row-final">
 				<span class="label"><?php _e( 'Total:', 'smart-rentals-wc' ); ?></span>
 				<span class="value" id="rental-total-amount">-</span>
 			</div>
@@ -134,6 +143,25 @@ jQuery(document).ready(function($) {
                     // Update display (use .html() for formatted prices, .text() for plain text)
                     $('#rental-subtotal-amount').html(data.formatted_price || '0');
                     $('#rental-duration-text').text(data.duration_text || '-');
+                    
+                    // Update availability display
+                    var availableItems = parseInt(data.available_quantity || 0);
+                    $('#rental-availability-count').text(availableItems);
+                    
+                    // Update availability styling based on stock level
+                    var $availabilityInfo = $('.availability-info');
+                    $availabilityInfo.removeClass('low-stock out-of-stock in-stock');
+                    
+                    if (availableItems === 0) {
+                        $availabilityInfo.addClass('out-of-stock');
+                        $('#rental-availability-text').text('<?php _e( 'out of stock', 'smart-rentals-wc' ); ?>');
+                    } else if (availableItems <= 3) {
+                        $availabilityInfo.addClass('low-stock');
+                        $('#rental-availability-text').text(availableItems === 1 ? '<?php _e( 'item left', 'smart-rentals-wc' ); ?>' : '<?php _e( 'items left', 'smart-rentals-wc' ); ?>');
+                    } else {
+                        $availabilityInfo.addClass('in-stock');
+                        $('#rental-availability-text').text('<?php _e( 'items available', 'smart-rentals-wc' ); ?>');
+                    }
                     
                     // Calculate and display total
                     var totalAmount = parseFloat(data.total_price || 0) + parseFloat(securityDeposit || 0);

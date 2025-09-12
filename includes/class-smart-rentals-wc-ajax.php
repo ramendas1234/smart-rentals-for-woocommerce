@@ -165,6 +165,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				$quantity
 			);
 
+			// Get available quantity for display
+			$available_quantity = Smart_Rentals_WC()->options->get_available_quantity( $product_id, $pickup_timestamp, $dropoff_timestamp );
+
 			if ( !$available ) {
 				wp_send_json_error( [ 'message' => __( 'Product not available for selected dates', 'smart-rentals-wc' ) ] );
 			}
@@ -177,6 +180,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				'security_deposit' => $security_deposit,
 				'formatted_deposit' => smart_rentals_wc_price( $security_deposit ),
 				'available' => $available,
+				'available_quantity' => $available_quantity,
 				'cart_data' => [
 					'product_id' => $product_id,
 					'pickup_date' => $pickup_datetime,
