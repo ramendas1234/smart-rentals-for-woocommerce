@@ -158,6 +158,15 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'smart-rentals-wc-template-functions.php' );
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'smart-rentals-wc-template-hooks.php' );
 
+			// Product
+			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-product.php' );
+
+			// Install
+			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-install.php' );
+
+			// Debug
+			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-debug.php' );
+
 			// Elementor
 			if ( defined( 'ELEMENTOR_VERSION' ) ) {
 				require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-elementor.php' );
@@ -228,4 +237,10 @@ if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
 
 	// Global for backwards compatibility.
 	$GLOBALS['Smart_Rentals_WC'] = Smart_Rentals_WC();
+
+	// Activation hook
+	register_activation_hook( __FILE__, [ 'Smart_Rentals_WC_Install', 'install' ] );
+
+	// Uninstall hook
+	register_uninstall_hook( __FILE__, [ 'Smart_Rentals_WC_Install', 'uninstall' ] );
 }

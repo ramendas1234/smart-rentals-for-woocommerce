@@ -82,10 +82,92 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 * Admin page
 		 */
 		public function admin_page() {
-			echo '<div class="wrap">';
-			echo '<h1>' . __( 'Smart Rentals Dashboard', 'smart-rentals-wc' ) . '</h1>';
-			echo '<p>' . __( 'Welcome to Smart Rentals for WooCommerce!', 'smart-rentals-wc' ) . '</p>';
-			echo '</div>';
+			$stats = Smart_Rentals_WC()->options->get_rental_statistics();
+			$upcoming_rentals = Smart_Rentals_WC()->booking->get_upcoming_rentals( 5 );
+			$active_rentals = Smart_Rentals_WC()->booking->get_active_rentals( 5 );
+			
+			?>
+			<div class="wrap smart-rentals-dashboard">
+				<h1><?php _e( 'Smart Rentals Dashboard', 'smart-rentals-wc' ); ?></h1>
+				
+				<div class="smart-rentals-stats">
+					<div class="smart-rentals-stat-box">
+						<h3><?php echo esc_html( $stats['total_rentals'] ); ?></h3>
+						<p><?php _e( 'Total Rentals', 'smart-rentals-wc' ); ?></p>
+					</div>
+					<div class="smart-rentals-stat-box">
+						<h3><?php echo esc_html( $stats['active_rentals'] ); ?></h3>
+						<p><?php _e( 'Active Rentals', 'smart-rentals-wc' ); ?></p>
+					</div>
+					<div class="smart-rentals-stat-box">
+						<h3><?php echo esc_html( $stats['upcoming_rentals'] ); ?></h3>
+						<p><?php _e( 'Upcoming Rentals', 'smart-rentals-wc' ); ?></p>
+					</div>
+					<div class="smart-rentals-stat-box">
+						<h3><?php echo wc_price( $stats['total_revenue'] ); ?></h3>
+						<p><?php _e( 'Total Revenue', 'smart-rentals-wc' ); ?></p>
+					</div>
+				</div>
+
+				<div class="smart-rentals-content">
+					<div class="smart-rentals-section">
+						<h2><?php _e( 'Upcoming Rentals', 'smart-rentals-wc' ); ?></h2>
+						<?php if ( smart_rentals_wc_array_exists( $upcoming_rentals ) ) : ?>
+							<table class="wp-list-table widefat fixed striped">
+								<thead>
+									<tr>
+										<th><?php _e( 'Product', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Pickup Date', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Drop-off Date', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Order', 'smart-rentals-wc' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $upcoming_rentals as $rental ) : ?>
+									<tr>
+										<td><?php echo esc_html( $rental->product_name ); ?></td>
+										<td><?php echo esc_html( $rental->pickup_date ); ?></td>
+										<td><?php echo esc_html( $rental->dropoff_date ); ?></td>
+										<td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . $rental->order_id . '&action=edit' ) ); ?>">#<?php echo esc_html( $rental->order_id ); ?></a></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						<?php else : ?>
+							<p><?php _e( 'No upcoming rentals.', 'smart-rentals-wc' ); ?></p>
+						<?php endif; ?>
+					</div>
+
+					<div class="smart-rentals-section">
+						<h2><?php _e( 'Active Rentals', 'smart-rentals-wc' ); ?></h2>
+						<?php if ( smart_rentals_wc_array_exists( $active_rentals ) ) : ?>
+							<table class="wp-list-table widefat fixed striped">
+								<thead>
+									<tr>
+										<th><?php _e( 'Product', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Pickup Date', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Drop-off Date', 'smart-rentals-wc' ); ?></th>
+										<th><?php _e( 'Order', 'smart-rentals-wc' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $active_rentals as $rental ) : ?>
+									<tr>
+										<td><?php echo esc_html( $rental->product_name ); ?></td>
+										<td><?php echo esc_html( $rental->pickup_date ); ?></td>
+										<td><?php echo esc_html( $rental->dropoff_date ); ?></td>
+										<td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . $rental->order_id . '&action=edit' ) ); ?>">#<?php echo esc_html( $rental->order_id ); ?></a></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						<?php else : ?>
+							<p><?php _e( 'No active rentals.', 'smart-rentals-wc' ); ?></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+			<?php
 		}
 
 		/**
@@ -171,10 +253,64 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 * Bookings page
 		 */
 		public function bookings_page() {
-			echo '<div class="wrap">';
-			echo '<h1>' . __( 'Rental Bookings', 'smart-rentals-wc' ) . '</h1>';
-			echo '<p>' . __( 'Manage your rental bookings here.', 'smart-rentals-wc' ) . '</p>';
-			echo '</div>';
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			$bookings = [];
+			
+			// Get bookings from database if table exists
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$bookings = $wpdb->get_results("
+					SELECT b.*, p.post_title as product_name 
+					FROM $table_name b
+					LEFT JOIN {$wpdb->posts} p ON b.product_id = p.ID
+					ORDER BY b.pickup_date DESC
+					LIMIT 50
+				");
+			}
+
+			?>
+			<div class="wrap">
+				<h1><?php _e( 'Rental Bookings', 'smart-rentals-wc' ); ?></h1>
+				
+				<?php if ( smart_rentals_wc_array_exists( $bookings ) ) : ?>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php _e( 'ID', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Product', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Pickup Date', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Drop-off Date', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Quantity', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Status', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Total', 'smart-rentals-wc' ); ?></th>
+								<th><?php _e( 'Order', 'smart-rentals-wc' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $bookings as $booking ) : ?>
+							<tr>
+								<td><?php echo esc_html( $booking->id ); ?></td>
+								<td><?php echo esc_html( $booking->product_name ); ?></td>
+								<td><?php echo esc_html( $booking->pickup_date ); ?></td>
+								<td><?php echo esc_html( $booking->dropoff_date ); ?></td>
+								<td><?php echo esc_html( $booking->quantity ); ?></td>
+								<td>
+									<span class="status-<?php echo esc_attr( $booking->status ); ?>">
+										<?php echo esc_html( ucfirst( $booking->status ) ); ?>
+									</span>
+								</td>
+								<td><?php echo wc_price( $booking->total_price ); ?></td>
+								<td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . $booking->order_id . '&action=edit' ) ); ?>">#<?php echo esc_html( $booking->order_id ); ?></a></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php else : ?>
+					<p><?php _e( 'No rental bookings found.', 'smart-rentals-wc' ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
 		}
 
 		/**

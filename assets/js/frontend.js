@@ -81,34 +81,38 @@ jQuery(document).ready(function($) {
                 $('#rental-price-display').hide();
                 return;
             }
-            
-            // AJAX call to calculate price on server
-            $.ajax({
-                url: smart_rentals_wc_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'smart_rentals_calculate_price',
-                    nonce: smart_rentals_wc_ajax.nonce,
-                    product_id: $('input[name="add-to-cart"]').val(),
-                    pickup_date: pickupDate,
-                    dropoff_date: dropoffDate,
-                    pickup_time: pickupTime,
-                    dropoff_time: dropoffTime,
-                    quantity: quantity
-                },
-                success: function(response) {
-                    if (response.success && response.data.price > 0) {
-                        $('#rental-price-amount').html(response.data.formatted_price);
-                        $('#rental-duration-text').text(response.data.duration_text);
-                        $('#rental-price-display').show();
-                    } else {
+
+            // Check if AJAX is available
+            if (typeof smart_rentals_wc_ajax !== 'undefined') {
+                // AJAX call to calculate price on server
+                $.ajax({
+                    url: smart_rentals_wc_ajax.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'smart_rentals_calculate_price',
+                        nonce: smart_rentals_wc_ajax.nonce,
+                        product_id: $('button[name="add-to-cart"]').val() || $('input[name="add-to-cart"]').val(),
+                        pickup_date: pickupDate,
+                        dropoff_date: dropoffDate,
+                        pickup_time: pickupTime,
+                        dropoff_time: dropoffTime,
+                        quantity: quantity
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.price > 0) {
+                            $('#rental-price-amount').html(response.data.formatted_price);
+                            $('#rental-duration-text').text(response.data.duration_text);
+                            $('#rental-price-display').show();
+                        } else {
+                            $('#rental-price-display').hide();
+                        }
+                    },
+                    error: function() {
+                        console.log('Error calculating rental price');
                         $('#rental-price-display').hide();
                     }
-                },
-                error: function() {
-                    console.log('Error calculating rental price');
-                }
-            });
+                });
+            }
         },
         
         checkAvailability: function() {
@@ -117,6 +121,11 @@ jQuery(document).ready(function($) {
             var quantity = $('.qty').val() || 1;
             
             if (!pickupDate || !dropoffDate) {
+                return;
+            }
+
+            // Check if AJAX is available
+            if (typeof smart_rentals_wc_ajax === 'undefined') {
                 return;
             }
             
@@ -130,7 +139,7 @@ jQuery(document).ready(function($) {
                 data: {
                     action: 'smart_rentals_check_availability',
                     nonce: smart_rentals_wc_ajax.nonce,
-                    product_id: $('input[name="add-to-cart"]').val(),
+                    product_id: $('button[name="add-to-cart"]').val() || $('input[name="add-to-cart"]').val(),
                     pickup_date: pickupDate,
                     dropoff_date: dropoffDate,
                     quantity: quantity
@@ -180,7 +189,10 @@ jQuery(document).ready(function($) {
             
             if (!pickupDate || !dropoffDate) {
                 e.preventDefault();
-                alert(smart_rentals_wc_ajax.messages.select_dates);
+                var message = (typeof smart_rentals_wc_ajax !== 'undefined') ? 
+                    smart_rentals_wc_ajax.messages.select_dates : 
+                    'Please select pickup and drop-off dates.';
+                alert(message);
                 return false;
             }
             
@@ -189,7 +201,10 @@ jQuery(document).ready(function($) {
             
             if (pickup >= dropoff) {
                 e.preventDefault();
-                alert(smart_rentals_wc_ajax.messages.invalid_dates);
+                var message = (typeof smart_rentals_wc_ajax !== 'undefined') ? 
+                    smart_rentals_wc_ajax.messages.invalid_dates : 
+                    'Drop-off date must be after pickup date.';
+                alert(message);
                 return false;
             }
             

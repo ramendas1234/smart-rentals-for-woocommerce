@@ -259,3 +259,71 @@
     border-top: 1px solid #ddd;
     margin-top: 10px;
 }
+
+/* Booking status indicators */
+.status-pending {
+    color: #f56e28;
+    font-weight: bold;
+}
+
+.status-confirmed {
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.status-active {
+    color: #46b450;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: #666;
+}
+
+.status-cancelled {
+    color: #dc3232;
+    font-weight: bold;
+}
+
+/* Dashboard section styling */
+.smart-rentals-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.smart-rentals-section h2 {
+    margin: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    border-radius: 4px 4px 0 0;
+}
+
+.smart-rentals-section .wp-list-table {
+    border: none;
+    box-shadow: none;
+}
+
+.smart-rentals-section p {
+    padding: 20px;
+    margin: 0;
+}
+
+/* Enhanced form styling */
+.smart-rentals-field-group {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.smart-rentals-field-group h4 {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    color: #23282d;
+}

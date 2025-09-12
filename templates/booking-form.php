@@ -72,9 +72,151 @@ $max_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'max_rental_pe
     </div>
 
     <?php if ( 'yes' === $enable_calendar ) : ?>
-    <div class="smart-rentals-calendar" id="smart-rentals-calendar">
-        <!-- Calendar will be loaded here via JavaScript -->
-        <p><?php _e( 'Loading calendar...', 'smart-rentals-wc' ); ?></p>
-    </div>
+        <?php smart_rentals_wc_get_calendar( $product_id ); ?>
     <?php endif; ?>
 </div>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    var rentalType = '<?php echo esc_js( $rental_type ); ?>';
+    var dailyPrice = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'daily_price' ) ); ?>;
+    var hourlyPrice = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'hourly_price' ) ); ?>;
+    var minPeriod = <?php echo intval( $min_rental_period ); ?>;
+    var maxPeriod = <?php echo intval( $max_rental_period ); ?>;
+    var currencySymbol = '<?php echo esc_js( get_woocommerce_currency_symbol() ); ?>';
+    var productId = <?php echo intval( $product_id ); ?>;
+
+    function calculateRentalPrice() {
+        var pickupDate = $('#pickup_date').val();
+        var dropoffDate = $('#dropoff_date').val();
+        var pickupTime = $('#pickup_time').val() || '00:00';
+        var dropoffTime = $('#dropoff_time').val() || '23:59';
+
+        if (!pickupDate || !dropoffDate) {
+            $('#rental-price-display').hide();
+            return;
+        }
+
+        var pickup = new Date(pickupDate + ' ' + pickupTime);
+        var dropoff = new Date(dropoffDate + ' ' + dropoffTime);
+        
+        if (pickup >= dropoff) {
+            $('#rental-price-display').hide();
+            return;
+        }
+
+        var durationMs = dropoff - pickup;
+        var durationHours = durationMs / (1000 * 60 * 60);
+        var durationDays = durationMs / (1000 * 60 * 60 * 24);
+
+        var totalPrice = 0;
+        var durationText = '';
+
+        switch (rentalType) {
+            case 'day':
+            case 'hotel':
+                var days = Math.max(1, Math.ceil(durationDays));
+                totalPrice = dailyPrice * days;
+                durationText = days + ' ' + (days === 1 ? '<?php echo esc_js( __( 'day', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'days', 'smart-rentals-wc' ) ); ?>');
+                break;
+
+            case 'hour':
+            case 'appointment':
+                var hours = Math.max(1, Math.ceil(durationHours));
+                totalPrice = hourlyPrice * hours;
+                durationText = hours + ' ' + (hours === 1 ? '<?php echo esc_js( __( 'hour', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'hours', 'smart-rentals-wc' ) ); ?>');
+                break;
+
+            case 'mixed':
+                if (durationHours >= 24 && dailyPrice > 0) {
+                    var days = Math.max(1, Math.ceil(durationDays));
+                    totalPrice = dailyPrice * days;
+                    durationText = days + ' ' + (days === 1 ? '<?php echo esc_js( __( 'day', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'days', 'smart-rentals-wc' ) ); ?>');
+                } else if (hourlyPrice > 0) {
+                    var hours = Math.max(1, Math.ceil(durationHours));
+                    totalPrice = hourlyPrice * hours;
+                    durationText = hours + ' ' + (hours === 1 ? '<?php echo esc_js( __( 'hour', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'hours', 'smart-rentals-wc' ) ); ?>');
+                }
+                break;
+        }
+
+        if (totalPrice > 0) {
+            $('#rental-price-amount').text(currencySymbol + totalPrice.toFixed(2));
+            $('#rental-duration-text').text('<?php echo esc_js( __( 'Duration:', 'smart-rentals-wc' ) ); ?> ' + durationText);
+            $('#rental-price-display').show();
+        } else {
+            $('#rental-price-display').hide();
+        }
+    }
+
+    // Bind events
+    $('#pickup_date, #dropoff_date, #pickup_time, #dropoff_time').on('change', function() {
+        calculateRentalPrice();
+        
+        // Also trigger availability check if both dates are selected
+        if ($('#pickup_date').val() && $('#dropoff_date').val()) {
+            setTimeout(function() {
+                if (typeof SmartRentals !== 'undefined' && SmartRentals.checkAvailability) {
+                    SmartRentals.checkAvailability();
+                }
+            }, 500);
+        }
+    });
+
+    // Set minimum dropoff date when pickup date changes
+    $('#pickup_date').on('change', function() {
+        var pickupDate = $(this).val();
+        if (pickupDate) {
+            var minDropoffDate = new Date(pickupDate);
+            minDropoffDate.setDate(minDropoffDate.getDate() + 1);
+            $('#dropoff_date').attr('min', minDropoffDate.toISOString().split('T')[0]);
+        }
+    });
+
+    // Validation before add to cart
+    $('form.cart').on('submit', function(e) {
+        var pickupDate = $('#pickup_date').val();
+        var dropoffDate = $('#dropoff_date').val();
+
+        if (!pickupDate || !dropoffDate) {
+            e.preventDefault();
+            alert('<?php echo esc_js( __( 'Please select pickup and drop-off dates.', 'smart-rentals-wc' ) ); ?>');
+            return false;
+        }
+
+        var pickup = new Date(pickupDate);
+        var dropoff = new Date(dropoffDate);
+
+        if (pickup >= dropoff) {
+            e.preventDefault();
+            alert('<?php echo esc_js( __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ) ); ?>');
+            return false;
+        }
+
+        // Check minimum and maximum periods
+        var durationMs = dropoff - pickup;
+        var durationHours = durationMs / (1000 * 60 * 60);
+        var durationDays = durationMs / (1000 * 60 * 60 * 24);
+
+        if (minPeriod > 0) {
+            if ((rentalType === 'hour' && durationHours < minPeriod) || 
+                (rentalType !== 'hour' && durationDays < minPeriod)) {
+                e.preventDefault();
+                var periodType = rentalType === 'hour' ? '<?php echo esc_js( __( 'hours', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'days', 'smart-rentals-wc' ) ); ?>';
+                alert('<?php echo esc_js( __( 'Minimum rental period is', 'smart-rentals-wc' ) ); ?> ' + minPeriod + ' ' + periodType + '.');
+                return false;
+            }
+        }
+
+        if (maxPeriod > 0) {
+            if ((rentalType === 'hour' && durationHours > maxPeriod) || 
+                (rentalType !== 'hour' && durationDays > maxPeriod)) {
+                e.preventDefault();
+                var periodType = rentalType === 'hour' ? '<?php echo esc_js( __( 'hours', 'smart-rentals-wc' ) ); ?>' : '<?php echo esc_js( __( 'days', 'smart-rentals-wc' ) ); ?>';
+                alert('<?php echo esc_js( __( 'Maximum rental period is', 'smart-rentals-wc' ) ); ?> ' + maxPeriod + ' ' + periodType + '.');
+                return false;
+            }
+        }
+    });
+});
+</script>

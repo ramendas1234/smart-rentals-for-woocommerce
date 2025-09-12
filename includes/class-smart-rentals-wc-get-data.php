@@ -120,6 +120,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				]
 			]);
 
+			if ( !smart_rentals_wc_array_exists( $product_ids ) ) {
+				$product_ids = [];
+			}
+
 			return apply_filters( 'smart_rentals_wc_get_rental_product_ids', $product_ids );
 		}
 
@@ -145,6 +149,26 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			$order_status = $this->get_booking_order_status();
 			$status_placeholders = implode( "','", array_map( 'esc_sql', $order_status ) );
 
+			// First check our custom bookings table
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$booked_dates = $wpdb->get_results( $wpdb->prepare("
+					SELECT 
+						pickup_date,
+						dropoff_date,
+						quantity
+					FROM $table_name
+					WHERE 
+						product_id = %d
+						AND status IN ('confirmed', 'active', 'pending')
+				", $product_id ));
+
+				if ( smart_rentals_wc_array_exists( $booked_dates ) ) {
+					return apply_filters( 'smart_rentals_wc_get_booked_dates', $booked_dates, $product_id );
+				}
+			}
+
+			// Fallback to order meta data
 			$booked_dates = $wpdb->get_results( $wpdb->prepare("
 				SELECT 
 					pickup_date.meta_value as pickup_date,
@@ -163,17 +187,22 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS product_id 
 					ON items.order_item_id = product_id.order_item_id 
 					AND product_id.meta_key = '_product_id'
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS is_rental 
+					ON items.order_item_id = is_rental.order_item_id 
+					AND is_rental.meta_key = %s
 				LEFT JOIN {$wpdb->posts} AS orders 
 					ON items.order_id = orders.ID
 				WHERE 
 					product_id.meta_value = %d
 					AND orders.post_status IN ('{$status_placeholders}')
+					AND is_rental.meta_value = 'yes'
 					AND pickup_date.meta_value IS NOT NULL
 					AND dropoff_date.meta_value IS NOT NULL
 			",
 				smart_rentals_wc_meta_key( 'pickup_date' ),
 				smart_rentals_wc_meta_key( 'dropoff_date' ),
-				'_qty',
+				smart_rentals_wc_meta_key( 'rental_quantity' ),
+				smart_rentals_wc_meta_key( 'is_rental' ),
 				$product_id
 			));
 

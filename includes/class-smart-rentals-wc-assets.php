@@ -24,30 +24,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		 * Frontend scripts
 		 */
 		public function frontend_scripts() {
-			// Only load on single product pages for rental products
-			if ( is_product() ) {
-				global $post;
-				if ( smart_rentals_wc_is_rental_product( $post->ID ) ) {
-					wp_enqueue_script(
-						'smart-rentals-wc-frontend',
-						SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/frontend.js',
-						[ 'jquery' ],
-						Smart_Rentals_WC()->get_version(),
-						true
-					);
+			// Always load frontend scripts for AJAX functionality
+			wp_enqueue_script(
+				'smart-rentals-wc-frontend',
+				SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/frontend.js',
+				[ 'jquery' ],
+				Smart_Rentals_WC()->get_version(),
+				true
+			);
 
-					wp_localize_script( 'smart-rentals-wc-frontend', 'smart_rentals_wc_ajax', [
-						'ajax_url' => admin_url( 'admin-ajax.php' ),
-						'nonce' => wp_create_nonce( 'smart_rentals_wc_nonce' ),
-						'messages' => [
-							'select_dates' => __( 'Please select pickup and drop-off dates.', 'smart-rentals-wc' ),
-							'invalid_dates' => __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ),
-							'loading' => __( 'Loading...', 'smart-rentals-wc' ),
-							'error' => __( 'An error occurred. Please try again.', 'smart-rentals-wc' ),
-						]
-					]);
-				}
-			}
+			wp_localize_script( 'smart-rentals-wc-frontend', 'smart_rentals_wc_ajax', [
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce' => wp_create_nonce( 'smart_rentals_wc_nonce' ),
+				'messages' => [
+					'select_dates' => __( 'Please select pickup and drop-off dates.', 'smart-rentals-wc' ),
+					'invalid_dates' => __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ),
+					'loading' => __( 'Loading...', 'smart-rentals-wc' ),
+					'error' => __( 'An error occurred. Please try again.', 'smart-rentals-wc' ),
+				]
+			]);
 
 			// Load on cart and checkout pages
 			if ( is_cart() || is_checkout() ) {

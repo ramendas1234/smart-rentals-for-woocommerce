@@ -1,8 +1,8 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    // Handle rental checkbox toggle
-    var rentalCheckbox = $('#smart_rentals_enable_rental');
+    // Handle rental checkbox toggle  
+    var rentalCheckbox = $('input[name="smart_rentals_enable_rental"]');
     var rentalFields = $('#smart-rentals-fields');
     
     // Initial state
@@ -20,9 +20,9 @@ jQuery(document).ready(function($) {
     });
     
     // Rental type specific field toggles
-    var rentalType = $('#smart_rentals_rental_type');
-    var dailyPriceField = $('#smart_rentals_daily_price').closest('.form-field');
-    var hourlyPriceField = $('#smart_rentals_hourly_price').closest('.form-field');
+    var rentalType = $('select[name="smart_rentals_rental_type"]');
+    var dailyPriceField = $('input[name="smart_rentals_daily_price"]').closest('.form-field');
+    var hourlyPriceField = $('input[name="smart_rentals_hourly_price"]').closest('.form-field');
     
     function togglePriceFields() {
         var selectedType = rentalType.val();
@@ -83,7 +83,7 @@ jQuery(document).ready(function($) {
             
             // Check for required price fields
             if (rentalTypeVal === 'day' || rentalTypeVal === 'mixed') {
-                var dailyPrice = $('#smart_rentals_daily_price').val();
+                var dailyPrice = $('input[name="smart_rentals_daily_price"]').val();
                 if (!dailyPrice || parseFloat(dailyPrice) <= 0) {
                     hasError = true;
                     errorMessage += 'Please enter a valid daily price.\n';
@@ -91,7 +91,7 @@ jQuery(document).ready(function($) {
             }
             
             if (rentalTypeVal === 'hour' || rentalTypeVal === 'mixed') {
-                var hourlyPrice = $('#smart_rentals_hourly_price').val();
+                var hourlyPrice = $('input[name="smart_rentals_hourly_price"]').val();
                 if (!hourlyPrice || parseFloat(hourlyPrice) <= 0) {
                     hasError = true;
                     errorMessage += 'Please enter a valid hourly price.\n';
@@ -107,17 +107,17 @@ jQuery(document).ready(function($) {
     });
     
     // Auto-calculate mixed pricing suggestions
-    $('#smart_rentals_daily_price').on('blur', function() {
+    $('input[name="smart_rentals_daily_price"]').on('blur', function() {
         var dailyPrice = parseFloat($(this).val());
-        var hourlyPrice = parseFloat($('#smart_rentals_hourly_price').val());
+        var hourlyPrice = parseFloat($('input[name="smart_rentals_hourly_price"]').val());
         
         if (dailyPrice > 0 && !hourlyPrice && rentalType.val() === 'mixed') {
             var suggestedHourly = (dailyPrice / 8).toFixed(2); // Assume 8 hours per day
-            $('#smart_rentals_hourly_price').val(suggestedHourly);
+            $('input[name="smart_rentals_hourly_price"]').val(suggestedHourly);
             
             // Show suggestion message
             if (!$('.pricing-suggestion').length) {
-                $('#smart_rentals_hourly_price').after(
+                $('input[name="smart_rentals_hourly_price"]').after(
                     '<p class="pricing-suggestion" style="color: #666; font-style: italic; margin-top: 5px;">' +
                     'Auto-calculated based on 8 hours per day. You can adjust this value.' +
                     '</p>'
@@ -133,7 +133,7 @@ jQuery(document).ready(function($) {
     });
     
     // Stock validation
-    $('#smart_rentals_rental_stock').on('change', function() {
+    $('input[name="smart_rentals_rental_stock"]').on('change', function() {
         var stock = parseInt($(this).val());
         if (stock < 1) {
             $(this).val(1);
@@ -142,9 +142,9 @@ jQuery(document).ready(function($) {
     });
     
     // Rental period validation
-    $('#smart_rentals_max_rental_period').on('change', function() {
+    $('input[name="smart_rentals_max_rental_period"]').on('change', function() {
         var maxPeriod = parseInt($(this).val());
-        var minPeriod = parseInt($('#smart_rentals_min_rental_period').val());
+        var minPeriod = parseInt($('input[name="smart_rentals_min_rental_period"]').val());
         
         if (maxPeriod > 0 && minPeriod > 0 && maxPeriod < minPeriod) {
             alert('Maximum rental period cannot be less than minimum rental period.');
@@ -152,9 +152,9 @@ jQuery(document).ready(function($) {
         }
     });
     
-    $('#smart_rentals_min_rental_period').on('change', function() {
+    $('input[name="smart_rentals_min_rental_period"]').on('change', function() {
         var minPeriod = parseInt($(this).val());
-        var maxPeriod = parseInt($('#smart_rentals_max_rental_period').val());
+        var maxPeriod = parseInt($('input[name="smart_rentals_max_rental_period"]').val());
         
         if (maxPeriod > 0 && minPeriod > 0 && minPeriod > maxPeriod) {
             alert('Minimum rental period cannot be greater than maximum rental period.');
