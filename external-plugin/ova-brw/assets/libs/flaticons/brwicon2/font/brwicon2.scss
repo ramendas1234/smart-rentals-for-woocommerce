@@ -1,0 +1,69 @@
+$brwicon2-font: "brwicon2";
+
+@font-face {
+    font-family: $brwicon2-font;
+    src: url("./brwicon2.woff2?619d85380d97992af845ea5c482bde5b") format("woff2"),
+url("./brwicon2.woff?619d85380d97992af845ea5c482bde5b") format("woff"),
+url("./brwicon2.eot?619d85380d97992af845ea5c482bde5b#iefix") format("embedded-opentype"),
+url("./brwicon2.ttf?619d85380d97992af845ea5c482bde5b") format("truetype"),
+url("./brwicon2.svg?619d85380d97992af845ea5c482bde5b#brwicon2") format("svg");
+}
+
+i[class^="brwicon2-"]:before, i[class*=" brwicon2-"]:before {
+    font-family: brwicon2 !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+$brwicon2-map: (
+    "spinner-of-dots": "\f101",
+    "down-arrow": "\f102",
+    "up-arrow": "\f103",
+    "minus-sign": "\f104",
+    "plus-sign": "\f105",
+    "question": "\f106",
+    "group": "\f107",
+    "close": "\f108",
+    "price-tag": "\f109",
+    "price-tag-1": "\f10a",
+    "price-tag-2": "\f10b",
+);
+
+.brwicon2-spinner-of-dots:before {
+    content: map-get($brwicon2-map, "spinner-of-dots");
+}
+.brwicon2-down-arrow:before {
+    content: map-get($brwicon2-map, "down-arrow");
+}
+.brwicon2-up-arrow:before {
+    content: map-get($brwicon2-map, "up-arrow");
+}
+.brwicon2-minus-sign:before {
+    content: map-get($brwicon2-map, "minus-sign");
+}
+.brwicon2-plus-sign:before {
+    content: map-get($brwicon2-map, "plus-sign");
+}
+.brwicon2-question:before {
+    content: map-get($brwicon2-map, "question");
+}
+.brwicon2-group:before {
+    content: map-get($brwicon2-map, "group");
+}
+.brwicon2-close:before {
+    content: map-get($brwicon2-map, "close");
+}
+.brwicon2-price-tag:before {
+    content: map-get($brwicon2-map, "price-tag");
+}
+.brwicon2-price-tag-1:before {
+    content: map-get($brwicon2-map, "price-tag-1");
+}
+.brwicon2-price-tag-2:before {
+    content: map-get($brwicon2-map, "price-tag-2");
+}

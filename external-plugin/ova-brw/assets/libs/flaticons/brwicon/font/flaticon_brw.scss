@@ -1,0 +1,89 @@
+$flaticon_brw-font: "flaticon_brw";
+
+@font-face {
+    font-family: $flaticon_brw-font;
+    src: url("./flaticon_brw.ttf?58cc0eaa788c03e022124cb5ca3984ee") format("truetype"),
+url("./flaticon_brw.woff?58cc0eaa788c03e022124cb5ca3984ee") format("woff"),
+url("./flaticon_brw.woff2?58cc0eaa788c03e022124cb5ca3984ee") format("woff2"),
+url("./flaticon_brw.eot?58cc0eaa788c03e022124cb5ca3984ee#iefix") format("embedded-opentype"),
+url("./flaticon_brw.svg?58cc0eaa788c03e022124cb5ca3984ee#flaticon_brw") format("svg");
+}
+
+i[class^="brwicon-"]:before, i[class*=" brwicon-"]:before {
+    font-family: flaticon_brw !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+$flaticon_brw-map: (
+    "calendar": "\f101",
+    "calendar-1": "\f102",
+    "fuel-station": "\f103",
+    "gas-station": "\f104",
+    "right": "\f105",
+    "next": "\f106",
+    "next-1": "\f107",
+    "calendar-2": "\f108",
+    "down-arrow": "\f109",
+    "upload": "\f10a",
+    "star": "\f10b",
+    "star-1": "\f10c",
+    "star-2": "\f10d",
+    "star-3": "\f10e",
+    "left": "\f10f",
+    "right-1": "\f110",
+);
+
+.brwicon-calendar:before {
+    content: map-get($flaticon_brw-map, "calendar");
+}
+.brwicon-calendar-1:before {
+    content: map-get($flaticon_brw-map, "calendar-1");
+}
+.brwicon-fuel-station:before {
+    content: map-get($flaticon_brw-map, "fuel-station");
+}
+.brwicon-gas-station:before {
+    content: map-get($flaticon_brw-map, "gas-station");
+}
+.brwicon-right:before {
+    content: map-get($flaticon_brw-map, "right");
+}
+.brwicon-next:before {
+    content: map-get($flaticon_brw-map, "next");
+}
+.brwicon-next-1:before {
+    content: map-get($flaticon_brw-map, "next-1");
+}
+.brwicon-calendar-2:before {
+    content: map-get($flaticon_brw-map, "calendar-2");
+}
+.brwicon-down-arrow:before {
+    content: map-get($flaticon_brw-map, "down-arrow");
+}
+.brwicon-upload:before {
+    content: map-get($flaticon_brw-map, "upload");
+}
+.brwicon-star:before {
+    content: map-get($flaticon_brw-map, "star");
+}
+.brwicon-star-1:before {
+    content: map-get($flaticon_brw-map, "star-1");
+}
+.brwicon-star-2:before {
+    content: map-get($flaticon_brw-map, "star-2");
+}
+.brwicon-star-3:before {
+    content: map-get($flaticon_brw-map, "star-3");
+}
+.brwicon-left:before {
+    content: map-get($flaticon_brw-map, "left");
+}
+.brwicon-right-1:before {
+    content: map-get($flaticon_brw-map, "right-1");
+}

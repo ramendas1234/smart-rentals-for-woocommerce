@@ -1,0 +1,2687 @@
+<?php if ( !defined( 'ABSPATH' ) ) exit();
+
+/**
+ * OVABRW Rental By Mixed
+ */
+if ( !class_exists( 'OVABRW_Rental_By_Mixed' ) ) {
+
+	class OVABRW_Rental_By_Mixed extends OVABRW_Rental_Types {
+
+		/**
+		 * Constructor
+		 */
+		public function __construct( $rental_id = 0 ) {
+			parent::__construct( $rental_id );
+		}
+
+		/**
+		 * Get type
+		 */
+		public function get_type() {
+			return 'mixed';
+		}
+
+		/**
+		 * Get meta fields
+		 */
+		public function get_meta_fields() {
+			return (array)apply_filters( $this->prefix.$this->get_type().'_get_meta_fields', [
+				'rental-type',
+				'price-day',
+				'price-hour',
+				'insurance',
+				'deposit',
+				'inventory',
+				'daily-price',
+				'locations',
+				'specifications',
+				'features',
+				'discounts',
+				'special-times',
+				'resources',
+				'services',
+				'allowed-dates',
+				'disabled-dates',
+				'advanced-start',
+				'product-templates',
+				'booking-conditions',
+				'custom-checkout-fields',
+				'show-quantity',
+				'pickup-date',
+				'dropoff-date',
+				'pickup-location',
+				'dropoff-location',
+				'extra-tab',
+				'price-format',
+				'frontend-order',
+				'advanced-end',
+				'map'
+			]);
+		}
+
+		/**
+		 * Get create booking meta fields
+		 */
+		public function get_create_booking_meta_fields() {
+			return (array)apply_filters( $this->prefix.$this->get_type().'_get_create_booking_meta_fields', [
+				'price',
+				'pickup-location',
+				'dropoff-location',
+				'pickup-date',
+				'dropoff-date',
+				'quantity',
+				'custom-checkout-fields',
+				'resources',
+				'services',
+				'insurance',
+				'deposit',
+				'remaining',
+				'total',
+				'error'
+			], $this );
+		}
+
+		/**
+		 * Get html price
+		 */
+		public function get_price_html( $price_html = '', $currency = '' ) {
+			$price_hour = (float)$this->get_meta_value( 'regul_price_hour' );
+            $price_day  = (float)$this->get_meta_value( 'regular_price_day' );
+
+            if ( !$price_day ) {
+            	$price_day = (float)get_post_meta( $this->get_id(), '_regular_price', true );
+            }
+
+            // New price
+            $new_price = sprintf( esc_html__( '%s / Hour', 'ova-brw' ), ovabrw_wc_price( $price_hour, [ 'currency' => $currency ] ) ) .'<br>'. sprintf( esc_html__( '%s / Day', 'ova-brw' ), ovabrw_wc_price( $price_day, [ 'currency' => $currency ] ) );
+
+            return apply_filters( $this->prefix.'get_product_price_html', $new_price, $price_html, $currency, $this );
+		}
+
+		/**
+	     * Get datepicker options
+	     */
+	    public function get_datepicker_options() {
+	    	// Get datepicker options
+        	$datepicker = OVABRW()->options->get_datepicker_options();
+
+	    	// Date format
+	    	$date_format = OVABRW()->options->get_date_format();
+
+	    	// Time format
+	    	$time_format = OVABRW()->options->get_time_format();
+
+        	// Rental type
+        	$datepicker['rentalType'] = $this->get_type();
+
+	        // RangePlugin
+        	$datepicker['RangePlugin']['locale']['one'] 	= esc_html__( 'hour', 'ova-brw' );
+        	$datepicker['RangePlugin']['locale']['other'] 	= esc_html__( 'hours', 'ova-brw' );
+
+        	// Min days
+        	$min_hours 	= (float)$this->get_meta_value( 'rent_hour_min' );
+        	$min_days 	= floor( $min_hours / 24 );
+
+        	if ( $min_days ) {
+        		$datepicker['LockPlugin']['minDays'] = $min_days;
+        	}
+
+        	// Max hours
+        	$max_hours 	= (float)$this->get_meta_value( 'rent_hour_max' );
+        	$max_days 	= floor( $max_hours / 24 );
+
+        	if ( $max_days ) {
+        		// Add max days
+        		$datepicker['LockPlugin']['maxDays'] = $max_days;
+        	}
+
+	        // Min date
+        	$min_date = $datepicker['LockPlugin']['minDate'];
+        	if ( !$min_date || strtotime( $min_date ) < current_time( 'timestamp' ) ) {
+	            $min_date = gmdate( $date_format, current_time( 'timestamp' ) );
+	        }
+
+	        // Preparation time
+	        $preparation_time = $this->get_preparation_time();
+	        if ( $preparation_time && strtotime( $preparation_time ) > strtotime( $min_date ) ) {
+	        	$min_date = $preparation_time;
+	        }
+
+	        // Update min date & start date
+	        $datepicker['LockPlugin']['minDate']    = $min_date;
+	        $datepicker['startDate']                = $min_date;
+	        $datepicker['timestamp'] 				= time();
+
+	        // Disable weekdays
+	        $disable_weekdays = $this->get_disable_weekdays();
+	        if ( ovabrw_array_exists( $disable_weekdays ) ) {
+	            $datepicker['disableWeekDays'] = $disable_weekdays;
+	        }
+
+	        // Allowed dates
+	        $allowed_dates = $this->get_allowed_dates( $date_format );
+	        if ( ovabrw_array_exists( $allowed_dates ) ) {
+	        	$datepicker['allowedDates'] = ovabrw_array_merge_unique( $datepicker['allowedDates'], $allowed_dates );
+
+	        	// Get start date
+				$start_date = $this->get_start_date( $date_format );
+				if ( $start_date ) $datepicker['startDate'] = $start_date;
+	        }
+
+	        // Disabled dates
+	        $disabled_dates = $this->get_disabled_dates();
+	        if ( ovabrw_array_exists( ovabrw_get_meta_data( 'full_day', $disabled_dates ) ) ) {
+	        	$datepicker['disableDates'] = ovabrw_array_merge_unique( $datepicker['disableDates'], $disabled_dates['full_day'] );
+	        }
+
+	        // Booked dates
+	        $booked_dates = $this->get_booked_dates();
+	        if ( ovabrw_array_exists( ovabrw_get_meta_data( 'full_day', $booked_dates ) ) ) {
+	        	$datepicker['bookedDates'] = ovabrw_array_merge_unique( $datepicker['bookedDates'], $booked_dates['full_day'] );
+	        }
+	        
+	        // Show price on Calendar
+	        if ( 'yes' === ovabrw_get_option( 'show_price_input_calendar', 'yes' ) ) {
+	        	// Regular price
+				$datepicker['regularPrice'] = $this->get_calendar_regular_price();
+
+				// Daily prices
+	            $daily_prices = $this->get_calendar_daily_prices();
+	            if ( ovabrw_array_exists( $daily_prices ) ) {
+	                $datepicker['dailyPrices'] = $daily_prices;
+	            }
+
+	            // Special prices
+	            $special_prices = $this->get_calendar_special_prices();
+	            if ( ovabrw_array_exists( $special_prices ) ) {
+	                $datepicker['specialPrices'] = $special_prices;
+	            }
+	        }
+
+	    	return apply_filters( $this->prefix.'get_datepicker_options', $datepicker, $this );
+	    }
+
+		/**
+	     * Get regular rental price
+	     */
+	    public function get_calendar_regular_price() {
+	    	// init
+	    	$regular_price = $this->get_meta_value( 'regular_price_day' );
+			if ( 'hour' === apply_filters( $this->prefix.'show_regular_price_by', 'day' ) ) {
+				$product_price = $this->get_meta_value( 'regul_price_hour' );
+			}
+
+	    	// Get price html
+	    	if ( $regular_price ) {
+	    		$regular_price = OVABRW()->options->get_calendar_price_html( $regular_price );
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_calendar_regular_price', $regular_price, $this );
+	    }
+
+	    /**
+	     * Get calendar daily prices
+	     */
+	    public function get_calendar_daily_prices() {
+	    	// init
+	    	$daily_prices = [];
+
+	    	// Days of the week
+	    	$days_of_week = [
+		        '1' => 'monday',
+		        '2' => 'tuesday',
+		        '3' => 'wednesday',
+		        '4' => 'thursday',
+		        '5' => 'friday',
+		        '6' => 'saturday',
+		        '7' => 'sunday'
+	    	];
+
+	    	// Filter price
+	    	$filter_price = apply_filters( $this->prefix.'show_price_calendar_type', 'highest' );
+
+	    	foreach ( $days_of_week as $number_day => $str_day ) {
+    			$price = $this->get_meta_value( 'daily_'.$str_day );
+
+    			if ( '' !== $price ) {
+                	$daily_prices[$number_day] = OVABRW()->options->get_calendar_price_html( $price );
+                }
+    		}
+
+	    	return apply_filters( $this->prefix.'get_calendar_daily_prices', $daily_prices, $this );
+	    }
+
+	    /**
+	     * Get calendar special prices
+	     */
+	    public function get_calendar_special_prices() {
+	    	// init
+	    	$special_prices = [];
+
+	    	// Prices
+	    	$prices = $this->get_meta_value( 'rt_price' );
+			if ( 'hour' === apply_filters( $this->prefix.'show_special_price_by', 'day' ) ) {
+				$prices = $this->get_meta_value( 'rt_price_hour' );
+			}
+
+			// From dates
+			$from_dates = $this->get_meta_value( 'rt_startdate' );
+
+			// To dates
+			$to_dates = $this->get_meta_value( 'rt_enddate' );
+
+	    	// Loop
+	    	if ( ovabrw_array_exists( $prices ) ) {
+				foreach ( $prices as $k => $price ) {
+					$from 	= strtotime( ovabrw_get_meta_data( $k, $from_dates ) );
+					$to 	= strtotime( ovabrw_get_meta_data( $k, $to_dates ) );
+
+					if ( '' === $price || !$from || !$to ) continue;
+
+					$special_prices[] = [
+						'from' 	=> $from,
+						'to' 	=> $to,
+						'price' => OVABRW()->options->get_calendar_price_html( $price )
+					];
+				}
+			} // END loop
+
+	    	return apply_filters( $this->prefix.'get_calendar_special_prices', $special_prices, $this );
+	    }
+
+	    /**
+	     * Get new date
+	     */
+	    public function get_new_date( $args = [] ) {
+	    	// Pick-up date
+	    	$pickup_date = ovabrw_get_meta_data( 'pickup_date', $args );
+
+	    	// Drop-off date
+	    	$dropoff_date = ovabrw_get_meta_data( 'dropoff_date', $args );
+
+	    	// Check dates exists
+	    	if ( !$pickup_date && !$dropoff_date ) return false;
+
+	    	// Drop-off date not exists
+	    	if ( !$dropoff_date && !$this->product->show_date_field( 'dropoff' ) ) {
+	    		$dropoff_date = $pickup_date;
+	    	}
+
+	    	// Check pick-up & drop-off dates
+	    	if ( !$pickup_date || !$dropoff_date ) return false;
+
+	    	return apply_filters( $this->prefix.'get_new_date', [
+	    		'pickup_date' 	=> $pickup_date,
+	    		'dropoff_date' 	=> $dropoff_date
+	    	], $args );
+	    }
+
+	    /**
+	     * Booking validation
+	     */
+	    public function booking_validation( $pickup_date, $dropoff_date, $args = [] ) {
+	    	// Hook name
+	    	$hook_name = $this->prefix.'booking_validation';
+
+	    	// Pick-up date
+	    	$pickup_label = $this->product->get_date_label();
+	    	if ( !$pickup_date ) {
+	    		$mesg = sprintf( esc_html__( '%s is required', 'ova-brw' ), $pickup_label );
+	    		return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+	    	}
+
+	    	// Current time
+			$current_time = $this->get_current_time();
+			if ( $pickup_date < $current_time ) {
+				$mesg = sprintf( esc_html__( '%s must be greater than current time', 'ova-brw' ), $pickup_label );
+	    		return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+	    	// Drop-off date
+	    	$dropoff_label = $this->product->get_date_label( 'dropoff' );
+	    	if ( !$dropoff_date ) {
+				$mesg = sprintf( esc_html__( '%s is required', 'ova-brw' ), $dropoff_label );
+	    		return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Pick-up & Drop-off dates
+			if ( $pickup_date > $dropoff_date ) {
+				$mesg = sprintf( esc_html__( '%s must be greater than %s', 'ova-brw' ), $dropoff_label, $pickup_label );
+	    		return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Min hours validation
+			$mesg = $this->min_hours_validation( $pickup_date, $dropoff_date );
+			if ( $mesg ) {
+				return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Max hours validation
+			$mesg = $this->max_hours_validation( $pickup_date, $dropoff_date );
+			if ( $mesg ) {
+				return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Preparation time
+			$mesg = $this->preparation_time_validation( $pickup_date, $dropoff_date );
+			if ( $mesg ) {
+				return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Disable weekdays
+			$mesg = $this->disable_weekdays_validation( $pickup_date, $dropoff_date );
+			if ( $mesg ) {
+				return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			// Disabled dates
+			$mesg = $this->disabled_dates_validation( $pickup_date, $dropoff_date );
+			if ( $mesg ) {
+				return apply_filters( $hook_name, $mesg, $pickup_date, $dropoff_date, $args, $this );
+			}
+
+			return apply_filters( $hook_name, false, $pickup_date, $dropoff_date, $args, $this );
+	    }
+
+	    /**
+	     * Min hours validation
+	     */
+	    public function min_hours_validation( $pickup_date, $dropoff_date ) {
+	    	// init
+	    	$mesg = false;
+
+	    	// Get min hours
+	    	$min_hours = (float)$this->get_meta_value( 'rent_hour_min' );
+	    	if ( $min_hours ) {
+		    	if ( $min_hours*3600 > ( $dropoff_date - $pickup_date ) ) {
+		    		if ( 1 == $min_hours ) {
+		    			$mesg = sprintf( esc_html__( 'Min rental period: %s hour', 'ova-brw' ), $min_hours );
+		    		} else {
+		    			$mesg = sprintf( esc_html__( 'Min rental period: %s hours', 'ova-brw' ), $min_hours );
+		    		}
+		    	}
+	    	}
+
+	    	return apply_filters( $this->prefix.'min_hours_validation', $mesg, $pickup_date, $dropoff_date, $this );
+	    }
+
+	    /**
+	     * Max hours validation
+	     */
+	    public function max_hours_validation( $pickup_date, $dropoff_date ) {
+	    	// init
+	    	$mesg = false;
+
+	    	// Get max hours
+	    	$max_hours = (float)$this->get_meta_value( 'rent_hour_max' );
+	    	if ( $max_hours ) {
+		    	if ( $max_hours*3600 < ( $dropoff_date - $pickup_date ) ) {
+		    		if ( 1 == $max_hours ) {
+		    			$mesg = sprintf( esc_html__( 'Max rental period: %s hour', 'ova-brw' ), $max_hours );
+		    		} else {
+		    			$mesg = sprintf( esc_html__( 'Max rental period: %s hours', 'ova-brw' ), $max_hours );
+		    		}
+		    	}
+	    	}
+
+	    	return apply_filters( $this->prefix.'max_hours_validation', $mesg, $pickup_date, $dropoff_date, $this );
+	    }
+
+	    /**
+	     * Get time between leases
+	     */
+	    public function get_time_between_leases() {
+	    	return apply_filters( $this->prefix.'get_time_between_leases', (float)$this->get_meta_value( 'prepare_vehicle' ) * 60, $this );
+	    }
+
+	    /**
+	     * Get rental calculations
+	     */
+	    public function get_rental_calculations( $args = [] ) {
+	    	// Pick-up date
+	    	$pickup_date = ovabrw_get_meta_data( 'pickup_date', $args );
+	    	if ( !$pickup_date ) return 0;
+
+	    	// Drop-off date
+	    	$dropoff_date = ovabrw_get_meta_data( 'dropoff_date', $args );
+	    	if ( !$dropoff_date ) return 0;
+
+	    	// init
+	    	$rental_price = 0;
+
+	    	// Get number of rental days
+	    	$numberof_rental_days = $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+	    	if ( $numberof_rental_days ) {
+	    		$from_date 	= $pickup_date;
+	    		$to_date 	= $pickup_date + $numberof_rental_days * 86400;
+
+	    		// Get rental price by days
+	    		$price_by_days = $this->get_rental_price_by_days( $from_date, $to_date, $numberof_rental_days );
+	    		if ( $price_by_days ) {
+	    			$rental_price += (float)$price_by_days;
+	    		}
+	    	}
+
+	    	// Get number of rental hours
+	    	$numberof_rental_hours = $this->get_number_of_rental_hours( $pickup_date, $dropoff_date );
+	    	if ( $numberof_rental_hours ) {
+	    		$from_date 	= $dropoff_date - $numberof_rental_hours * 3600;
+	    		$to_date 	= $dropoff_date;
+
+	    		// Get rental price by hours
+	    		$price_by_hours = $this->get_rental_price_by_hours( $from_date, $to_date, $numberof_rental_hours );
+	    		if ( $price_by_hours ) {
+	    			$rental_price += (float)$price_by_hours;
+	    		}
+	    	}
+
+	    	// Pick-up location
+	    	$pickup_location = ovabrw_get_meta_data( 'pickup_location', $args );
+
+	    	// Drop-off location
+	    	$dropoff_location = ovabrw_get_meta_data( 'dropoff_location', $args );
+
+	    	// Location prices
+	    	$location_prices = $this->get_location_prices( $pickup_location, $dropoff_location );
+	    	if ( $location_prices ) $rental_price += $location_prices;
+
+	    	return apply_filters( $this->prefix.'get_rental_calculations', $rental_price, $args, $this );
+	    }
+
+	    /**
+	     * Get number of rental days
+	     */
+	    public function get_number_of_rental_days( $pickup_date, $dropoff_date ) {
+	    	if ( !$pickup_date || !$dropoff_date ) return 0;
+
+	    	// Number of rental days
+	    	$numberof_rental_days = floor( ( $dropoff_date - $pickup_date ) / 86400 );
+
+	    	return apply_filters( $this->prefix.'get_number_of_rental_days', $numberof_rental_days, $pickup_date, $dropoff_date, $this );
+	    }
+
+	    /**
+	     * Get number of rental hours
+	     */
+	    public function get_number_of_rental_hours( $pickup_date, $dropoff_date ) {
+	    	if ( !$pickup_date || !$dropoff_date ) return 0;
+
+	    	// Get number of rental days
+	    	$numberof_rental_days = $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+
+	    	// Get number of rental hours
+	    	$numberof_rental_hours = ceil( ( $dropoff_date - $pickup_date ) / 3600 ) - $numberof_rental_days * 24;
+	    	if ( !$numberof_rental_hours && ( !$this->product->show_date_field( 'dropoff' ) || $pickup_date === $dropoff_date ) ) {
+	    		$numberof_rental_hours = 1;
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_number_of_rental_hours', $numberof_rental_hours, $pickup_date, $dropoff_date, $this );
+	    }
+
+	    /**
+	     * Get rental price by days
+	     */
+	    public function get_rental_price_by_days( $pickup_date, $dropoff_date, $numberof_rental_days ) {
+	    	if ( !$pickup_date || !$dropoff_date || !$numberof_rental_days ) return 0;
+
+	    	// init
+	    	$total_price = 0;
+
+	    	// Regular price
+	    	$regular_price = (float)$this->get_meta_value( 'regular_price_day' );
+
+	    	// Get special prices by days
+	    	$special_prices = $this->get_special_prices_by_days( $pickup_date, $dropoff_date, $numberof_rental_days );
+
+	    	// Special total price
+	    	$special_total = (float)ovabrw_get_meta_data( 'total', $special_prices );
+
+	    	// Number of rental special days
+	    	$special_qty = (int)ovabrw_get_meta_data( 'quantity', $special_prices );
+
+	    	if ( $numberof_rental_days <= $special_qty ) {
+	    		$total_price = $special_total;
+	    	} else {
+	    		// Daily prices
+				$daily_prices = [
+					'monday' 	=> (float)$this->get_meta_value( 'daily_monday', $regular_price ),
+					'tuesday' 	=> (float)$this->get_meta_value( 'daily_tuesday', $regular_price ),
+					'wednesday' => (float)$this->get_meta_value( 'daily_wednesday', $regular_price ),
+					'thursday' 	=> (float)$this->get_meta_value( 'daily_thursday', $regular_price ),
+					'friday' 	=> (float)$this->get_meta_value( 'daily_friday', $regular_price ),
+					'saturday' 	=> (float)$this->get_meta_value( 'daily_saturday', $regular_price ),
+					'sunday' 	=> (float)$this->get_meta_value( 'daily_sunday', $regular_price )
+				];
+
+				// Get discount prices
+				$discount_prices = $this->get_discount_prices_by_days( $numberof_rental_days - $special_qty );
+				if ( $discount_prices ) {
+					$daily_prices = [
+						'monday' 	=> (float)$discount_prices,
+						'tuesday' 	=> (float)$discount_prices,
+						'wednesday' => (float)$discount_prices,
+						'thursday' 	=> (float)$discount_prices,
+						'friday' 	=> (float)$discount_prices,
+						'saturday' 	=> (float)$discount_prices,
+						'sunday' 	=> (float)$discount_prices
+					];
+				}
+
+				// Week start
+				$weekstart = gmdate( 'N', $pickup_date );
+
+				// Total weekdays
+				$total_weekdays = $this->get_price_by_weekday_start( $weekstart, $numberof_rental_days, $daily_prices );
+
+				// Total weekdays in special time
+				$special_total_weekdays = 0;
+				if ( $special_qty ) {
+					$special_total_weekdays = $this->get_special_total_weekdays( $pickup_date, $dropoff_date, $daily_prices );
+				}
+
+				// Total price
+				$total_price = (float)$total_weekdays + (float)$special_total - (float)$special_total_weekdays;
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_rental_price_by_days', $total_price, $pickup_date, $dropoff_date, $numberof_rental_days, $this );
+	    }
+
+	    /**
+	     * Get special prices by days
+	     */
+	    public function get_special_prices_by_days( $pickup_date, $dropoff_date, $numberof_rental_days ) {
+	    	if ( !$pickup_date || !$dropoff_date ) return [];
+
+	    	// init
+	    	$results = [
+	    		'total' 	=> 0,
+	    		'quantity' 	=> 0
+	    	];
+
+	    	// Get special prices
+	    	$special_prices = $this->get_meta_value( 'rt_price' );
+
+	    	if ( ovabrw_array_exists( $special_prices ) ) {
+	    		// Start date
+	    		$start_date = $this->get_meta_value( 'rt_startdate' );
+
+	    		// End date
+	    		$end_date = $this->get_meta_value( 'rt_enddate' );
+
+	    		// Discounts
+	    		$discounts = $this->get_meta_value( 'rt_discount' );
+
+	    		foreach ( $special_prices as $i => $price ) {
+	    			// From date
+	    			$from_date = strtotime( ovabrw_get_meta_data( $i, $start_date ) );
+	    			if ( !$from_date ) continue;
+
+	    			// To date
+	    			$to_date = strtotime( ovabrw_get_meta_data( $i, $end_date ) );
+	    			if ( !$to_date ) continue;
+
+	    			// Discount
+	    			$discount = ovabrw_get_meta_data( $i, $discounts );
+
+	    			// Rental period
+	    			$rental_period = $discount_price = 0;
+
+	    			if ( $pickup_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_days( $from_date, $dropoff_date );
+	    			} elseif ( $pickup_date >= $from_date && $pickup_date <= $to_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_days( $pickup_date, $to_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_days( $from_date, $to_date );
+	    			}
+
+	    			// Check number of rental days
+	    			if ( $numberof_rental_days <= ( $results['quantity'] + $rental_period ) ) {
+	    				$rental_period = $numberof_rental_days - $results['quantity'];
+
+	    				// Get discount price
+	    				$discount_price = (float)$this->get_special_discount_prices_by_days( $discount, $price, $rental_period );
+
+	    				$results['total'] 		+= $discount_price * $rental_period;
+	    				$results['quantity'] 	+= $numberof_rental_days;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+
+	    			// Get discount price
+	    			$discount_price = (float)$this->get_special_discount_prices_by_days( $discount, $price, $rental_period );
+	    			$results['total'] 		+= $discount_price * $rental_period;
+	    			$results['quantity'] 	+= $rental_period;
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_special_prices_by_days', $results, $pickup_date, $dropoff_date, $numberof_rental_days, $this );
+	    }
+
+	    /**
+	     * Get special discount prices by days
+	     */
+	    public function get_special_discount_prices_by_days( $discount, $price, $rental_period ) {
+	    	if ( !ovabrw_array_exists( $discount ) ) return $price;
+
+	    	// init
+	    	$special_price = $price;
+
+	    	// Discount price
+	    	$disc_price = ovabrw_get_meta_data( 'price', $discount );
+
+	    	// Discount from
+	    	$disc_from = ovabrw_get_meta_data( 'min', $discount );
+
+	    	// Discount to
+	    	$disc_to = ovabrw_get_meta_data( 'max', $discount );
+
+	    	// Discount type
+	    	$disc_type = ovabrw_get_meta_data( 'duration_type', $discount );
+
+	    	if ( ovabrw_array_exists( $disc_price ) ) {
+	    		foreach ( $disc_price as $i => $p ) {
+	    			$from 	= (float)ovabrw_get_meta_data( $i, $disc_from );
+	    			$to 	= (float)ovabrw_get_meta_data( $i, $disc_to );
+	    			$type 	= ovabrw_get_meta_data( $i, $disc_type );
+
+	    			if ( $rental_period >= $from && $rental_period <= $to && 'days' === $type ) {
+	    				$special_price = (float)$p;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_special_discount_prices_by_days', $special_price, $discount, $price, $rental_period, $this );
+	    }
+
+	    /**
+	     * Get discount prices by days
+	     */
+	    public function get_discount_prices_by_days( $numberof_rental_days ) {
+	    	if ( !$numberof_rental_days ) return 0;
+
+	    	// init
+	    	$price = 0;
+
+	    	// Discount price
+	    	$disc_price = $this->get_meta_value( 'global_discount_price' );
+
+	    	if ( ovabrw_array_exists( $disc_price ) ) {
+	    		// Discount from
+	    		$disc_from = $this->get_meta_value( 'global_discount_duration_val_min' );
+
+	    		// Discount to
+	    		$disc_to = $this->get_meta_value( 'global_discount_duration_val_max' );
+
+	    		// Discount type
+	    		$disc_type = $this->get_meta_value( 'global_discount_duration_type' );
+
+	    		// Loop
+	    		foreach ( $disc_price as $i => $p ) {
+	    			$from 	= (float)ovabrw_get_meta_data( $i, $disc_from );
+	    			$to 	= (float)ovabrw_get_meta_data( $i, $disc_to );
+	    			$type 	= ovabrw_get_meta_data( $i, $disc_type );
+
+	    			if ( $numberof_rental_days >= $from && $numberof_rental_days <= $to && 'days' === $type ) {
+	    				$price = (float)$p;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_discount_prices_by_days', $price, $numberof_rental_days, $this );
+	    }
+
+	    /**
+	     * Total weekdays in special time
+	     */
+	    public function get_special_total_weekdays( $pickup_date, $dropoff_date, $daily_prices ) {
+	    	if ( !$pickup_date || !$dropoff_date || !ovabrw_array_exists( $daily_prices ) ) {
+	    		return 0;
+	    	}
+
+	    	// init
+	    	$special_total = 0;
+
+	    	// Get special prices
+	    	$special_prices = $this->get_meta_value( 'rt_price' );
+
+	    	if ( ovabrw_array_exists( $special_prices ) ) {
+	    		// Start date
+	    		$start_date = $this->get_meta_value( 'rt_startdate' );
+
+	    		// End date
+	    		$end_date = $this->get_meta_value( 'rt_enddate' );
+
+	    		foreach ( $special_prices as $i => $price ) {
+	    			// From date
+	    			$from_date = strtotime( ovabrw_get_meta_data( $i, $start_date ) );
+	    			if ( !$from_date ) continue;
+
+	    			// To date
+	    			$to_date = strtotime( ovabrw_get_meta_data( $i, $end_date ) );
+	    			if ( !$to_date ) continue;
+
+	    			// init
+	    			$weekstart = $numberof_days = '';
+
+	    			if ( $pickup_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$weekstart 		= gmdate( 'N', $pickup_date );
+	    				$numberof_days 	= $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$weekstart 		= gmdate( 'N', $from_date );
+	    				$numberof_days 	= $this->get_number_of_rental_days( $from_date, $dropoff_date );
+	    			} elseif ( $pickup_date >= $from_date && $pickup_date <= $to_date && $dropoff_date > $to_date ) {
+	    				$weekstart 		= gmdate( 'N', $pickup_date );
+	    				$numberof_days 	= $this->get_number_of_rental_days( $pickup_date, $to_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date > $to_date ) {
+	    				$weekstart 		= gmdate( 'N', $from_date );
+	    				$numberof_days 	= $this->get_number_of_rental_days( $from_date, $to_date );
+	    			}
+
+	    			$special_total += $this->get_price_by_weekday_start( $weekstart, $numberof_days, $daily_prices );
+	    		}
+	    	}
+
+	    	return apply_filters( OVABRW_PREFIX.'get_special_total_weekdays', $special_total, $pickup_date, $dropoff_date, $daily_prices, $this );
+	    }
+
+	    /**
+	     * Get rental price by hours
+	     */
+	    public function get_rental_price_by_hours( $pickup_date, $dropoff_date, $numberof_rental_hours ) {
+	    	if ( !$pickup_date || !$dropoff_date || !$numberof_rental_hours ) return 0;
+
+	    	// init
+	    	$total_price = 0;
+
+	    	// Regular price
+	    	$regular_price = (float)$this->get_meta_value( 'regul_price_hour' );
+
+	    	// Get special prices by hours
+	    	$special_prices = $this->get_special_prices_by_hours( $pickup_date, $dropoff_date, $numberof_rental_hours );
+
+	    	// Special total price
+	    	$special_total = (float)ovabrw_get_meta_data( 'total', $special_prices );
+
+	    	// Number of rental special hours
+	    	$special_qty = (int)ovabrw_get_meta_data( 'quantity', $special_prices );
+
+	    	if ( $numberof_rental_hours <= $special_qty ) {
+	    		$total_price = $special_total;
+	    	} else {
+	    		// Get discount prices
+				$discount_prices = $this->get_discount_prices_by_hours( $numberof_rental_hours - $special_qty );
+				if ( $discount_prices ) $regular_price = $discount_prices;
+
+				// Total price not in special time
+				$regular_total = $regular_price * ( $numberof_rental_hours - $special_qty );
+
+				// Rental price
+				$total_price = (float)$regular_total + (float)$special_total;
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_rental_price_by_hours', $total_price, $pickup_date, $dropoff_date, $numberof_rental_hours, $this );
+	    }
+
+	    /**
+	     * Get special prices by hours
+	     */
+	    public function get_special_prices_by_hours( $pickup_date, $dropoff_date, $numberof_rental_hours ) {
+	    	if ( !$pickup_date || !$dropoff_date ) return [];
+
+	    	// init
+	    	$results = [
+	    		'total' 	=> 0,
+	    		'quantity' 	=> 0
+	    	];
+
+	    	// Get special prices
+	    	$special_prices = $this->get_meta_value( 'rt_price_hour' );
+
+	    	if ( ovabrw_array_exists( $special_prices ) ) {
+	    		// Start date
+	    		$start_date = $this->get_meta_value( 'rt_startdate' );
+
+	    		// End date
+	    		$end_date = $this->get_meta_value( 'rt_enddate' );
+
+	    		// Discounts
+	    		$discounts = $this->get_meta_value( 'rt_discount' );
+
+	    		foreach ( $special_prices as $i => $price ) {
+	    			// From date
+	    			$from_date = strtotime( ovabrw_get_meta_data( $i, $start_date ) );
+	    			if ( !$from_date ) continue;
+
+	    			// To date
+	    			$to_date = strtotime( ovabrw_get_meta_data( $i, $end_date ) );
+	    			if ( !$to_date ) continue;
+
+	    			// Discount
+	    			$discount = ovabrw_get_meta_data( $i, $discounts );
+
+	    			// Rental period
+	    			$rental_period = $discount_price = 0;
+
+	    			if ( $pickup_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $pickup_date, $dropoff_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $from_date, $dropoff_date );
+	    			} elseif ( $pickup_date >= $from_date && $pickup_date <= $to_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $pickup_date, $to_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $from_date, $to_date );
+	    			}
+
+	    			// Check number of rental hours
+	    			if ( $numberof_rental_hours <= ( $results['quantity'] + $rental_period ) ) {
+	    				$rental_period = $numberof_rental_hours - $results['quantity'];
+
+	    				// Get discount price
+	    				$discount_price = (float)$this->get_special_discount_prices_by_hours( $discount, $price, $rental_period );
+
+	    				$results['total'] 		+= $discount_price * $rental_period;
+	    				$results['quantity'] 	+= $numberof_rental_hours;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+
+	    			// Get discount price
+	    			$discount_price = (float)$this->get_special_discount_prices_by_hours( $discount, $price, $rental_period );
+	    			$results['total'] 		+= $discount_price * $rental_period;
+	    			$results['quantity'] 	+= $rental_period;
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_special_prices_by_hours', $results, $pickup_date, $dropoff_date, $numberof_rental_hours, $this );
+	    }
+
+	    /**
+	     * Get special discount prices by hours
+	     */
+	    public function get_special_discount_prices_by_hours( $discount, $price, $rental_period ) {
+	    	if ( !ovabrw_array_exists( $discount ) ) return $price;
+
+	    	// init
+	    	$special_price = $price;
+
+	    	// Discount price
+	    	$disc_price = ovabrw_get_meta_data( 'price', $discount );
+
+	    	// Discount from
+	    	$disc_from = ovabrw_get_meta_data( 'min', $discount );
+
+	    	// Discount to
+	    	$disc_to = ovabrw_get_meta_data( 'max', $discount );
+
+	    	// Discount type
+	    	$disc_type = ovabrw_get_meta_data( 'duration_type', $discount );
+
+	    	if ( ovabrw_array_exists( $disc_price ) ) {
+	    		foreach ( $disc_price as $i => $p ) {
+	    			$from 	= (float)ovabrw_get_meta_data( $i, $disc_from );
+	    			$to 	= (float)ovabrw_get_meta_data( $i, $disc_to );
+	    			$type 	= ovabrw_get_meta_data( $i, $disc_type );
+
+	    			if ( $rental_period >= $from && $rental_period <= $to && 'hours' === $type ) {
+	    				$special_price = (float)$p;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_special_discount_prices_by_hours', $special_price, $discount, $price, $rental_period, $this );
+	    }
+
+	    /**
+	     * Get discount prices by hours
+	     */
+	    public function get_discount_prices_by_hours( $numberof_rental_hours ) {
+	    	if ( !$numberof_rental_hours ) return 0;
+
+	    	// init
+	    	$price = 0;
+
+	    	// Discount price
+	    	$disc_price = $this->get_meta_value( 'global_discount_price' );
+
+	    	if ( ovabrw_array_exists( $disc_price ) ) {
+	    		// Discount from
+	    		$disc_from = $this->get_meta_value( 'global_discount_duration_val_min' );
+
+	    		// Discount to
+	    		$disc_to = $this->get_meta_value( 'global_discount_duration_val_max' );
+
+	    		// Discount type
+	    		$disc_type = $this->get_meta_value( 'global_discount_duration_type' );
+
+	    		// Loop
+	    		foreach ( $disc_price as $i => $p ) {
+	    			$from 	= (float)ovabrw_get_meta_data( $i, $disc_from );
+	    			$to 	= (float)ovabrw_get_meta_data( $i, $disc_to );
+	    			$type 	= ovabrw_get_meta_data( $i, $disc_type );
+
+	    			if ( $numberof_rental_hours >= $from && $numberof_rental_hours <= $to && 'hours' === $type ) {
+	    				$price = (float)$p;
+
+	    				// Break out of the loop
+	    				break;
+	    			}
+	    		}
+	    	}
+
+	    	return apply_filters( $this->prefix.'get_discount_prices_by_hours', $price, $numberof_rental_hours, $this );
+	    }
+
+	    /**
+		 * Add rental cart item data
+		 */
+		public function add_rental_cart_item_data( $cart_item_data, $product_id, $variation_id, $quantity ) {
+			// Rental type
+	    	$cart_item_data['rental_type'] = $this->get_type();
+
+			// Pick-up location
+			if ( !ovabrw_get_meta_data( 'pickup_location', $cart_item_data ) ) {
+				$pickup_location = trim( sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_pickup_location', $_REQUEST ) ) );
+
+				// Add cart item data
+		    	$cart_item_data['pickup_location'] = $pickup_location;
+			} // END if
+
+	    	// Drop-off location
+	    	if ( !ovabrw_get_meta_data( 'dropoff_location', $cart_item_data ) ) {
+	    		$dropoff_location = trim( sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_dropoff_location', $_REQUEST ) ) );
+
+	    		// Add cart item data
+		    	$cart_item_data['dropoff_location'] = $dropoff_location;
+	    	} // END if
+
+	    	// Pick-up date
+	    	if ( !ovabrw_get_meta_data( 'pickup_date', $cart_item_data ) ) {
+	    		$pickup_date = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_pickup_date', $_REQUEST ) );
+
+	    		// Add cart item data
+		    	$cart_item_data['pickup_date'] = $pickup_date;
+	    	} // END if
+
+	    	// Drop-off date
+	    	if ( !ovabrw_get_meta_data( 'dropoff_date', $cart_item_data ) ) {
+	    		$dropoff_date = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_dropoff_date', $_REQUEST ) );
+	    		if ( !$dropoff_date ) $dropoff_date = $cart_item_data['pickup_date'];
+
+	    		// Add cart item data
+		    	$cart_item_data['dropoff_date'] = $dropoff_date;
+	    	} // END if
+
+	    	// Location prices
+	    	$location_prices = $this->get_location_prices( $cart_item_data['pickup_location'], $cart_item_data['dropoff_location'] );
+	    	if ( $location_prices ) {
+	    		$cart_item_data['location_prices'] = $location_prices;
+	    	}
+
+	    	// Pick-up real date
+	    	$cart_item_data['pickup_real'] = $cart_item_data['pickup_date'];
+
+	    	// Drop-off real dates
+	    	$cart_item_data['dropoff_real'] = $cart_item_data['dropoff_date'];
+
+	    	// Get real data
+	    	$read_data = $this->get_real_data( strtotime( $cart_item_data['pickup_date'] ), strtotime( $cart_item_data['dropoff_date'] ) );
+
+	    	// Quantity real
+	    	$cart_item_data['quantity_real'] = ovabrw_get_meta_data( 'quantity_real', $read_data );
+
+	    	// Price real
+	    	$cart_item_data['price_real'] = ovabrw_get_meta_data( 'price_real', $read_data );
+
+			return apply_filters( $this->prefix.'add_rental_cart_item_data', $cart_item_data, $product_id, $variation_id, $quantity, $this );
+		}
+
+		/**
+		 * Get rental cart item data
+		 */
+		public function get_rental_cart_item_data( $item_data, $cart_item ) {
+			if ( !ovabrw_array_exists( $item_data ) ) $item_data = [];
+			
+			// Pick-up location
+			$pickup_location = ovabrw_get_meta_data( 'pickup_location', $cart_item );
+			if ( $pickup_location ) {
+				$item_data[] = [
+					'key' 		=> esc_html__( 'Pick-up Location', 'ova-brw' ),
+					'value' 	=> wc_clean( $pickup_location ),
+					'display' 	=> wc_clean( $pickup_location ),
+					'hidden' 	=> !$this->product->show_location_field() ? true : false
+				];
+			}
+
+			// Drop-off location
+			$dropoff_location = ovabrw_get_meta_data( 'dropoff_location', $cart_item );
+			if ( $dropoff_location ) {
+				$item_data[] = [
+					'key' 		=> esc_html__( 'Drop-off Location', 'ova-brw' ),
+					'value' 	=> wc_clean( $dropoff_location ),
+					'display' 	=> wc_clean( $dropoff_location ),
+					'hidden' 	=> !$this->product->show_location_field( 'dropoff' ) ? true : false
+				];
+			}
+
+			// Location price
+			$location_price = (float)ovabrw_get_meta_data( 'location_prices', $cart_item );
+			if ( $location_price ) {
+				$item_data[] = [
+					'key'     => esc_html__( 'Location Price', 'ova-brw' ),
+		            'value'   => wc_clean( $location_price ),
+		            'display' => ovabrw_wc_price( $location_price )
+				];
+			}
+
+			// Pick-up date
+			$pickup_date = ovabrw_get_meta_data( 'pickup_date', $cart_item );
+			if ( $pickup_date ) {
+				$item_data[] = [
+					'key'     => $this->product->get_date_label(),
+		            'value'   => wc_clean( $pickup_date ),
+		            'display' => wc_clean( $pickup_date ),
+				];
+			}
+
+			// Drop-off date
+			$dropoff_date = ovabrw_get_meta_data( 'dropoff_date', $cart_item );
+			if ( $dropoff_date ) {
+				$item_data[] = [
+					'key'     => $this->product->get_date_label( 'dropoff' ),
+		            'value'   => wc_clean( $dropoff_date ),
+		            'display' => wc_clean( $dropoff_date ),
+		            'hidden'  => !$this->product->show_date_field( 'dropoff' ) ? true : false
+				];
+			}
+
+			// Quantity
+			$quantity = (int)ovabrw_get_meta_data( 'ovabrw_quantity', $cart_item, 1 );
+			if ( $quantity ) {
+				$item_data[] = [
+					'key'     => esc_html__( 'Quantity', 'ova-brw' ),
+		            'value'   => wc_clean( $quantity ),
+		            'display' => wc_clean( $quantity ),
+		            'hidden'  => !$this->product->show_quantity() ? true : false
+				];
+			}
+
+			// Vehicles available
+			$vehicles_available = ovabrw_get_meta_data( 'vehicles_available', $cart_item );
+			if ( $vehicles_available ) {
+				$item_data[] = [
+					'key'     => esc_html__( 'Vehicle ID(s)', 'ova-brw' ),
+		            'value'   => wc_clean( $vehicles_available ),
+		            'display' => wc_clean( $vehicles_available ),
+		            'hidden'  => !$this->product->show_quantity() ? true : false
+				];
+			}
+
+			return apply_filters( $this->prefix.'get_rental_cart_item_data', $item_data, $cart_item, $this );
+		}
+
+		/**
+		 * Get real data
+		 */
+		public function get_real_data( $pickup_date, $dropoff_date ) {
+			if ( !$pickup_date || !$dropoff_date ) return false;
+
+			// Real data
+			$real_data = [];
+
+			// Number of rental days
+			$numberof_rental_days = $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+
+			// Number of rental hours
+			$numberof_rental_hours = $this->get_number_of_rental_hours( $pickup_date, $dropoff_date );
+
+			// Quatity real
+			$real_data['quantity_real'] = '';
+
+			// Price real
+			$real_data['price_real'] = '';
+
+			// Special prices by days
+			$special_prices = $this->get_meta_value( 'rt_price' );
+			if ( ovabrw_array_exists( $special_prices ) ) {
+				// Special from
+				$special_from = $this->get_meta_value( 'rt_startdate' );
+
+				// Special to
+				$special_to = $this->get_meta_value( 'rt_enddate' );
+
+				// Special discounts
+				$special_discounts = $this->get_meta_value( 'rt_discount' );
+
+				// Loop
+				foreach ( $special_prices as $i => $price ) {
+					// From
+					$from = strtotime( ovabrw_get_meta_data( $i, $special_from ) );
+					if ( !$from ) continue;
+
+					// To
+					$to = strtotime( ovabrw_get_meta_data( $i, $special_to ) );
+					if ( !$to ) continue;
+
+					// Discounts
+					$discounts = ovabrw_get_meta_data( $i, $special_discounts );
+
+					// Number of rental period & discount prices
+					$rental_period = $disc_prices = 0;
+
+					if ( $pickup_date >= $from && $dropoff_date <= $to ) {
+						$rental_period = $this->get_number_of_rental_days( $pickup_date, $dropoff_date );
+					} elseif ( $pickup_date < $from && $dropoff_date >= $from && $dropoff_date <= $to ) {
+						$rental_period = $this->get_number_of_rental_days( $from, $dropoff_date );
+					} elseif ( $pickup_date >= $from && $pickup_date <= $to && $dropoff_date > $to ) {
+						$rental_period = $this->get_number_of_rental_days( $pickup_date, $to );
+					} elseif ( $pickup_date < $from && $dropoff_date > $to ) {
+						$rental_period = $this->get_number_of_rental_days( $from, $to );
+					}
+
+					// Update number of rental days
+					$numberof_rental_days -= $rental_period;
+
+					if ( $numberof_rental_days < 0 ) {
+						$rental_period 			+= $numberof_rental_days;
+						$numberof_rental_days 	= 0;
+					}
+
+					// Number of rental period
+					if ( $rental_period > 0 ) {
+						// Get discount prices
+    					$discount_prices = (float)$this->get_special_discount_prices_by_days( $discounts, $price, $rental_period );
+
+    					// Quantity real
+    					$real_data['quantity_real'] .= sprintf( esc_html__( '%s Special Day(s)', 'ova-brw' ) . '<br>', $rental_period );
+
+    					// Price real
+    					$real_data['price_real'] .= sprintf( esc_html__( '%s/Special Day', 'ova-brw' ) . '<br>', ovabrw_wc_price( wc_get_price_including_tax( $this->product, [ 'price' => $discount_prices ] ) ) );
+					}
+
+					// Break out of the loop
+					if ( $numberof_rental_days <= 0 ) {
+						break;
+					}
+				}
+			}
+
+			// Regular price
+			if ( $numberof_rental_days > 0 ) {
+				$regular_price = (float)$this->get_meta_value( 'regular_price_day' );
+
+				// Get discount prices
+				$discount_prices = $this->get_discount_prices_by_days( $numberof_rental_days );
+				if ( $discount_prices ) {
+					$regular_price = $discount_prices;
+				} else {
+					// Get day of week
+					$dayofweek = OVABRW()->options->get_string_dayofweek( $pickup_date );
+
+					// Daily prices
+					$daily_prices = [
+						'monday' 	=> (float)$this->get_meta_value( 'daily_monday', $regular_price ),
+						'tuesday' 	=> (float)$this->get_meta_value( 'daily_tuesday', $regular_price ),
+						'wednesday' => (float)$this->get_meta_value( 'daily_wednesday', $regular_price ),
+						'thursday' 	=> (float)$this->get_meta_value( 'daily_thursday', $regular_price ),
+						'friday' 	=> (float)$this->get_meta_value( 'daily_friday', $regular_price ),
+						'saturday' 	=> (float)$this->get_meta_value( 'daily_saturday', $regular_price ),
+						'sunday' 	=> (float)$this->get_meta_value( 'daily_sunday', $regular_price )
+					];
+
+					$regular_price = (float)ovabrw_get_meta_data( $dayofweek, $daily_prices );
+				}
+
+				// Quantity real
+				$real_data['quantity_real'] .= sprintf( esc_html__( '%s Day(s)', 'ova-brw' ) . '<br>', $numberof_rental_days );
+
+				// Price real
+				$real_data['price_real'] .= sprintf( esc_html__( '%s/Day', 'ova-brw' ) . '<br>', ovabrw_wc_price( wc_get_price_including_tax( $this->product, [ 'price' => $regular_price ] ) ) );
+			}
+
+			// Get special prices by hours
+	    	$special_prices = $this->get_meta_value( 'rt_price_hour' );
+	    	if ( ovabrw_array_exists( $special_prices ) ) {
+	    		// Start date
+	    		$start_date = $this->get_meta_value( 'rt_startdate' );
+
+	    		// End date
+	    		$end_date = $this->get_meta_value( 'rt_enddate' );
+
+	    		// Discounts
+	    		$discounts = $this->get_meta_value( 'rt_discount' );
+
+	    		foreach ( $special_prices as $i => $price ) {
+	    			// From date
+	    			$from_date = strtotime( ovabrw_get_meta_data( $i, $start_date ) );
+	    			if ( !$from_date ) continue;
+
+	    			// To date
+	    			$to_date = strtotime( ovabrw_get_meta_data( $i, $end_date ) );
+	    			if ( !$to_date ) continue;
+
+	    			// Discount
+	    			$discount = ovabrw_get_meta_data( $i, $discounts );
+
+	    			// Rental period
+	    			$rental_period = $discount_price = 0;
+
+	    			if ( $pickup_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $pickup_date, $dropoff_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date >= $from_date && $dropoff_date <= $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $from_date, $dropoff_date );
+	    			} elseif ( $pickup_date >= $from_date && $pickup_date <= $to_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $pickup_date, $to_date );
+	    			} elseif ( $pickup_date < $from_date && $dropoff_date > $to_date ) {
+	    				$rental_period = $this->get_number_of_rental_hours( $from_date, $to_date );
+	    			}
+
+	    			// Update number of rental hours
+					$numberof_rental_hours -= $rental_period;
+
+					if ( $numberof_rental_hours < 0 ) {
+						$rental_period 			+= $numberof_rental_hours;
+						$numberof_rental_hours 	= 0;
+					}
+
+					// Number of rental period
+					if ( $rental_period > 0 ) {
+						// Get discount prices
+	    				$discount_prices = (float)$this->get_special_discount_prices_by_hours( $discount, $price, $rental_period );
+
+    					// Quantity real
+    					$real_data['quantity_real'] .= sprintf( esc_html__( '%s Special Hour(s)', 'ova-brw' ) . '<br>', $rental_period );
+
+    					// Price real
+    					$real_data['price_real'] .= sprintf( esc_html__( '%s/Special Hour', 'ova-brw' ) . '<br>', ovabrw_wc_price( wc_get_price_including_tax( $this->product, [ 'price' => $discount_prices ] ) ) );
+					}
+
+					// Break out of the loop
+					if ( $numberof_rental_hours <= 0 ) {
+						break;
+					}
+	    		} // END foreach
+	    	} // END if
+
+	    	// Regular price
+			if ( $numberof_rental_hours > 0 ) {
+				// Regular price
+	    		$regular_price = (float)$this->get_meta_value( 'regul_price_hour' );
+
+				// Get discount prices
+				$discount_prices = $this->get_discount_prices_by_hours( $numberof_rental_hours );
+				if ( $discount_prices ) $regular_price = $discount_prices;
+
+				// Quantity real
+				$real_data['quantity_real'] .= sprintf( esc_html__( '%s Hour(s)', 'ova-brw' ) . '<br>', $numberof_rental_hours );
+
+				// Price real
+				$real_data['price_real'] .= sprintf( esc_html__( '%s/Hour', 'ova-brw' ) . '<br>', ovabrw_wc_price( wc_get_price_including_tax( $this->product, [ 'price' => $regular_price ] ) ) );
+			} // END if
+
+	    	return apply_filters( $this->prefix.'get_real_data', $real_data, $pickup_date, $dropoff_date, $this );
+		}
+
+		/**
+		 * Get request booking mail content
+		 */
+		public function get_request_booking_mail_content( $data = [] ) {
+			// Order details
+			$order_details = '<h2>' . esc_html__( 'Order details: '. 'ova-brw' ) . '</h2>';
+
+			// Open <table> tag
+			$order_details .= '<table>';
+
+			// Product link
+			$product_link = '<a href="' . esc_url( $this->product->get_permalink() ) . '">' . wp_kses_post( $this->product->get_title() ) . '</a>';
+			$order_details .= '<tr>';
+    			$order_details .= '<td style="width: 15%">' . esc_html__( 'Product: ', 'ova-brw' ) . '</td>';
+    			$order_details .= '<td style="width: 85%">';
+    				$order_details .= $product_link;
+    			$order_details .= '</td>';
+    		$order_details .= '</tr>';
+
+    		// Customer name
+    		$customer_name = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_name', $data ) );
+    		if ( $customer_name ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Name: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $customer_name ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Customer email
+    		$customer_email = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_email', $data ) );
+    		if ( $customer_email ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Email: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $customer_email ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Customer phone
+    		$customer_phone = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_phone', $data ) );
+    		if ( $customer_phone && 'yes' === ovabrw_get_setting( 'request_booking_form_show_number', 'yes' ) ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Phone: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $customer_phone ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Customer address
+    		$customer_address = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_address', $data ) );
+    		if ( $customer_address && 'yes' === ovabrw_get_setting( 'request_booking_form_show_address', 'yes' ) ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Address: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $customer_address ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Pick-up location
+    		$pickup_location = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_pickup_location', $data ) );
+    		if ( $this->product->show_location_field( 'pickup', 'request' ) && $pickup_location ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Pick-up Location: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html__( $pickup_location ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Drop-off location
+    		$dropoff_location = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_dropoff_location', $data ) );
+    		if ( $this->product->show_location_field( 'dropoff', 'request' ) && $dropoff_location ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Drop-off Location: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $dropoff_location ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Location prices
+    		$location_prices = $this->get_location_prices( $pickup_location, $dropoff_location );
+    		if ( $location_prices ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Location price: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . ovabrw_wc_price( $location_prices ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Pick-up date
+    		$pickup_date = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_pickup_date', $data ) );
+    		if ( $pickup_date ) {
+    			$order_details .= '<tr>';
+					$order_details .= '<td>' . esc_html( $this->product->get_date_label() ) . ':</td>';
+					$order_details .= '<td>' . esc_html( $pickup_date ) . '</td>';
+				$order_details .= '</tr>';
+    		}
+
+    		// Drop-off date
+    		$dropoff_date = sanitize_text_field( ovabrw_get_meta_data( 'ovabrw_dropoff_date', $data ) );
+    		if ( !$dropoff_date ) $dropoff_date = $pickup_date;
+    		if ( $this->product->show_date_field( 'dropoff', 'request' ) && $dropoff_date ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html( $this->product->get_date_label( 'dropoff' ) ) . ':</td>';
+    				$order_details .= '<td>' . esc_html( $dropoff_date ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Quantity
+    		$quantity = (int)ovabrw_get_meta_data( 'ovabrw_quantity', $data, 1 );
+    		if ( $this->product->show_quantity( 'request' ) ) {
+    			$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Quantity: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $quantity ) . '</td>';
+    			$order_details .= '</tr>';
+    		}
+
+    		// Custom checkout fields
+			$cckf = $cckf_qty = $cckf_value = [];
+
+			// Get product cckf
+	    	$product_cckf = $this->product->get_cckf();
+	    	if ( ovabrw_array_exists( $product_cckf ) ) {
+	    		// Loop
+	    		foreach ( $product_cckf as $name => $fields ) {
+	    			if ( 'on' !== ovabrw_get_meta_data( 'enabled', $fields ) ) continue;
+
+	    			// Get type
+	    			$type = ovabrw_get_meta_data( 'type', $fields );
+
+	    			// Label
+	    			$label = ovabrw_get_meta_data( 'label', $fields );
+
+	    			if ( 'file' === $type ) {
+	    				// Get file
+	    				$files = ovabrw_get_meta_data( $name, $_FILES );
+
+    					// File name
+    					$file_name = ovabrw_get_meta_data( 'name', $files );
+    					if ( $file_name ) {
+    						// File size
+    						$file_size = (int)ovabrw_get_meta_data( 'size', $files );
+    						$file_size = $file_size / 1048576;
+
+    						// Max size
+    						$max_size = (float)ovabrw_get_meta_data( 'max_file_size', $fields );
+    						if ( $max_size < $file_size ) continue;
+
+    						// File type
+	                        $accept = apply_filters( OVABRW_PREFIX.'accept_file_upload', '.jpg, .jpeg, .png, .pdf, .doc, .docx', $this );
+
+	                        // Get file extension
+	                        $extension = pathinfo( $file_name, PATHINFO_EXTENSION );
+	                        if ( strpos( $accept, $extension ) === false ) continue;
+
+	                         // Upload file
+	                        $overrides = [ 'test_form' => false ];
+
+	                        if ( !function_exists( 'wp_handle_upload' ) ) {
+								require_once( ABSPATH . 'wp-admin/includes/file.php' );
+							}
+
+							// Upload
+							$upload = wp_handle_upload( $files, $overrides );
+							if ( ovabrw_get_meta_data( 'error', $upload ) ) continue;
+
+	                        // File url
+	                        $file_url = '<a href="'.esc_url( $upload['url'] ).'" target="_blank">';
+								$file_url .= basename( $upload['file'] );
+							$file_url .= '</a>';
+
+							// Order details
+							$order_details .= '<tr>';
+	                        	$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+	                        	$order_details .= '<td>';
+	                        		$order_details .= $file_url;
+	                        	$order_details .= '</td>';
+	                        $order_details .= '</tr>';
+
+	                        // Cckf value
+	                        $cckf_value[$name] = $file_url;
+    					}
+	    			} elseif ( 'checkbox' === $type ) {
+	    				// Option names
+	    				$opt_names = [];
+
+	    				// Get options values
+	    				$opt_values = ovabrw_get_meta_data( $name, $data );
+
+	    				if ( ovabrw_array_exists( $opt_values ) ) {
+	    					// Add cckf
+	    					$cckf[$name] = $opt_values;
+
+	    					// Option quantities
+	    					$opt_qtys = ovabrw_get_meta_data( $name.'_qty', $data );
+	    					if ( ovabrw_array_exists( $opt_qtys ) ) {
+	    						$cckf_qty = array_merge( $cckf_qty, $opt_qtys );
+	    					}
+
+	    					// Option keys
+	    					$opt_keys = ovabrw_get_meta_data( 'ova_checkbox_key', $fields, [] );
+
+	    					// Option texts
+	    					$opt_texts = ovabrw_get_meta_data( 'ova_checkbox_text', $fields, [] );
+
+	    					// Loop
+	    					foreach ( $opt_values as $val ) {
+	    						$val = sanitize_text_field( $val );
+
+	    						// Get index option
+	    						$index = array_search( $val, $opt_keys );
+	    						if ( is_bool( $index ) ) continue;
+
+	    						// Option text
+	    						$opt_text = ovabrw_get_meta_data( $index, $opt_texts );
+
+	    						// Option qty
+	    						$opt_qty = (int)ovabrw_get_meta_data( $val, $cckf_qty );
+
+	    						if ( $opt_qty ) {
+	    							array_push( $opt_names, sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_text, $opt_qty ) );
+	    						} else {
+	    							array_push( $opt_names, $opt_text );
+	    						}
+	    					} // END loop
+	    				}
+
+	    				if ( ovabrw_array_exists( $opt_names ) ) {
+	    					$opt_names = implode( ', ', $opt_names );
+
+	    					// Order details
+	    					$order_details .= '<tr>';
+	                        	$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+	                        	$order_details .= '<td>' . esc_html( $opt_names ) . '</td>';
+	                        $order_details .= '</tr>';
+
+	                        // Cckf value
+	                        $cckf_value[$name] = esc_html( $opt_names );
+	    				}
+	    			} elseif ( 'radio' === $type ) {
+	    				// Get option value
+	    				$opt_value = sanitize_text_field( ovabrw_get_meta_data( $name, $data ) );
+	    				if ( $opt_value ) {
+	    					// Add cckf
+	    					$cckf[$name] = $opt_value;
+
+	    					// Get option quantities
+	    					$opt_qtys = ovabrw_get_meta_data( $name.'_qty', $data, [] );
+
+	    					// Option qty
+	    					$opt_qty = (int)ovabrw_get_meta_data( $opt_value, $opt_qtys );
+
+	    					// Add cart item data
+	    					if ( $opt_qty ) {
+	    						// Add cckf quantity
+	    						$cckf_qty[$name] 	= $opt_qty;
+	    						$opt_value 			= sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_value, $opt_qty );
+	    					}
+
+	    					// Order details
+	    					$order_details .= '<tr>';
+	                        	$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+	                        	$order_details .= '<td>' . esc_html( $opt_value ) . '</td>';
+	                        $order_details .= '</tr>';
+
+	                        // Cckf value
+	                        $cckf_value[$name] = esc_html( $opt_value );
+	    				}
+	    			} elseif ( 'select' === $type ) {
+	    				// Option names
+	    				$opt_names = [];
+
+	    				// Get options value
+	    				$opt_value = sanitize_text_field( ovabrw_get_meta_data( $name, $data ) );
+	    				if ( $opt_value ) {
+	    					// Option keys
+	    					$opt_keys = ovabrw_get_meta_data( 'ova_options_key', $fields );
+
+	    					// Option texts
+	    					$opt_texts = ovabrw_get_meta_data( 'ova_options_text', $fields );
+
+	    					// Option quantities
+	    					$opt_qtys = ovabrw_get_meta_data( $name.'_qty', $data );
+	    					
+	    					// Option quantity
+	    					$opt_qty = (int)ovabrw_get_meta_data( $opt_value, $opt_qtys );
+
+	    					// index option
+	    					$index = array_search( $opt_value, $opt_keys );
+	    					if ( is_bool( $index ) ) continue;
+
+	    					// Add cckf
+	    					$cckf[$name] = $opt_value;
+
+	    					// Option text
+	    					$opt_text = ovabrw_get_meta_data( $index, $opt_texts );
+
+	    					// Add cart item data
+	    					if ( $opt_qty ) {
+	    						// Add cckf quantity
+	    						$cckf_qty[$name] 	= $opt_qty;
+	    						$opt_text 			= sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_text, $opt_qty );
+	    					}
+
+	    					// Order details
+	    					$order_details .= '<tr>';
+	                        	$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+	                        	$order_details .= '<td>' . esc_html( $opt_text ) . '</td>';
+	                        $order_details .= '</tr>';
+
+	                        // Cckf value
+	                        $cckf_value[$name] = esc_html( $opt_text );
+	    				}
+	    			} else {
+	    				// Option value
+	    				$opt_value = sanitize_text_field( ovabrw_get_meta_data( $name, $data ) );
+
+	    				if ( $opt_value ) {
+	    					// Order details
+	    					$order_details .= '<tr>';
+	                        	$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+	                        	$order_details .= '<td>' . esc_html( $opt_value ) . '</td>';
+	                        $order_details .= '</tr>';
+
+	                        // Cckf value
+	                        $cckf_value[$name] = esc_html( $opt_value );
+	    				}
+	    			}
+	    		} // END loop
+	    	}
+
+	    	// Resources
+	    	$resc 			= ovabrw_get_meta_data( 'ovabrw_resource_checkboxs', $data );
+	    	$resc_qtys 		= ovabrw_get_meta_data( 'ovabrw_resource_quantity', $data );
+	    	$resc_values 	= [];
+	    	if ( ovabrw_array_exists( $resc ) ) {
+	    		// Get resource ids
+	    		$resc_ids = $this->get_meta_value( 'resource_id', [] );
+
+	    		// Get resource names
+	    		$resc_names = $this->get_meta_value( 'resource_name', [] );
+
+	    		// Loop
+	    		foreach ( $resc as $opt_id ) {
+	    			$opt_id = sanitize_text_field( $opt_id );
+
+	    			// Get index option
+	    			$index = array_search( $opt_id, $resc_ids );
+	    			if ( is_bool( $index ) ) continue;
+
+	    			// Option name
+	    			$opt_name = ovabrw_get_meta_data( $index, $resc_names );
+	    			if ( !$opt_name ) continue;
+	    			
+	    			// Get option quantity
+	    			$opt_qty = (int)ovabrw_get_meta_data( $opt_id, $resc_qtys );
+	    			if ( $opt_qty ) {
+	    				$opt_name = sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_name, $opt_qty );
+	    			}
+
+	    			// Resource values
+	    			array_push( $resc_values, $opt_name );
+	    		} // END loop
+
+	    		// Resource value
+	    		if ( ovabrw_array_exists( $resc_values ) ) {
+	    			// Order details
+	    			if ( 'yes' === ovabrw_get_setting( 'request_booking_form_show_extra_service', 'yes' ) ) {
+	    				$order_details .= '<tr>';
+	    					$order_details .= '<td>' . sprintf( _n( 'Resource%s', 'Resources%s', count( $resc_values ), 'ova-brw' ), ':' ) . '</td>';
+			    			$order_details .= '<td>' . implode( ', ', $resc_values ) . '</td>';  
+		    			$order_details .= '</tr>';
+	    			}
+	    		}
+	    	} // END resources
+
+	    	// Services
+	    	$services 		= ovabrw_get_meta_data( 'ovabrw_service', $data );
+	    	$services_qty 	= ovabrw_get_meta_data( 'ovabrw_service_qty', $data );
+
+	    	// init
+    		$serv_opts = $serv_qtys = $serv_values = [];
+	    	if ( ovabrw_array_exists( $services ) ) {
+	    		// Get service labels
+	    		$serv_labels = $this->get_meta_value( 'label_service', [] );
+
+	    		// Get option ids
+	    		$opt_ids = $this->get_meta_value( 'service_id', [] );
+
+	    		// Get option names
+	    		$opt_names = $this->get_meta_value( 'service_name', [] );
+
+	    		foreach ( $services as $opt_id ) {
+	    			$opt_id = sanitize_text_field( $opt_id );
+	    			if ( $opt_id ) {
+	    				$serv_opts[] = $opt_id;
+
+	    				// Service qty
+	    				$opt_qty = (int)ovabrw_get_meta_data( $opt_id, $services_qty );
+	    				if ( $opt_qty ) {
+	    					$serv_qtys[$opt_id] = $opt_qty;
+	    				}
+
+	    				// Loop option ids
+		    			foreach ( $opt_ids as $i => $ids ) {
+		    				// Option index
+							$index = array_search( $opt_id, $ids );
+							if ( is_bool( $index ) ) continue;
+
+							// Service label
+							$label = ovabrw_get_meta_data( $i, $serv_labels );
+							if ( !$label ) continue;
+
+							// Option name
+							$opt_name = isset( $opt_names[$i][$index] ) ? $opt_names[$i][$index] : '';
+							if ( !$opt_name ) continue;
+
+							// Add item data
+							if ( $opt_qty ) {
+								$opt_name = sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_name, $opt_qty );
+							}
+
+							// Order details
+							if ( 'yes' === ovabrw_get_setting( 'request_booking_form_show_service', 'yes' ) ) {
+								$order_details .= '<tr>';
+					    			$order_details .= '<td>' . esc_html( $label ) . ':</td>';
+					    			$order_details .= '<td>' . $opt_name . '</td>';  
+				    			$order_details .= '</tr>';
+							}
+
+							// Service values
+							$serv_values[$label] = $opt_name;
+
+							// Break out of the loop
+							break;
+		    			} // END loop option ids
+	    			}
+	    		}
+	    	} // END services
+
+	    	// Customer note
+	    	$customer_note = sanitize_text_field( ovabrw_get_meta_data( 'extra', $data ) );
+	    	if ( 'yes' === ovabrw_get_setting( 'request_booking_form_show_extra_info', 'yes' ) && $customer_note ) {
+	    		$order_details .= '<tr>';
+    				$order_details .= '<td>' . esc_html__( 'Extra: ', 'ova-brw' ) . '</td>';
+    				$order_details .= '<td>' . esc_html( $customer_note ) . '</td>';
+    			$order_details .= '</tr>';
+	    	}
+
+    		// Close <table> tag
+			$order_details .= '</table>';
+
+			// Create new order
+			if ( 'yes' === ovabrw_get_setting( 'request_booking_create_order', 'no' ) ) {
+				$order_data = [
+					'customer_name' 	=> $customer_name,
+					'customer_email' 	=> $customer_email,
+					'customer_phone' 	=> $customer_phone,
+					'customer_address' 	=> $customer_address,
+					'customer_note' 	=> $customer_note,
+					'pickup_location' 	=> $pickup_location,
+					'dropoff_location' 	=> $dropoff_location,
+					'location_prices' 	=> $location_prices,
+					'pickup_date' 		=> $pickup_date,
+					'dropoff_date' 		=> $dropoff_date,
+					'quantity' 			=> $quantity,
+					'cckf' 				=> $cckf,
+					'cckf_qty' 			=> $cckf_qty,
+					'cckf_value' 		=> $cckf_value,
+					'resources' 		=> $resc,
+					'resources_qty' 	=> $resc_qtys,
+					'resources_value' 	=> $resc_values,
+					'services' 			=> $serv_opts,
+					'services_qty' 		=> $serv_qtys,
+					'services_value' 	=> $serv_values
+				];
+
+				// Create new order
+				$order_id = $this->request_booking_create_new_order( $order_data, $data );
+			}
+
+			return apply_filters( $this->prefix.'get_request_booking_mail_content', $order_details, $data, $this );
+		}
+
+		/**
+		 * Request booking create new order
+		 */
+		public function request_booking_create_new_order( $data = [], $args = [] ) {
+			if ( !ovabrw_array_exists( $data ) ) return false;
+
+			// Pick-up location
+			$pickup_location = ovabrw_get_meta_data( 'pickup_location', $data );
+
+			// Drop-off location
+			$dropoff_location = ovabrw_get_meta_data( 'dropoff_location', $data );
+
+			// Location prices
+			$location_prices = ovabrw_get_meta_data( 'location_prices', $data );
+
+			// Pick-up date
+			$pickup_date = ovabrw_get_meta_data( 'pickup_date', $data );
+
+			// Drop-off date
+			$dropoff_date = ovabrw_get_meta_data( 'dropoff_date', $data );
+
+			// Quantity
+			$quantity = (int)ovabrw_get_meta_data( 'quantity', $data, 1 );
+
+			// Custom checkout fields
+			$cckf 		= ovabrw_get_meta_data( 'cckf', $data );
+			$cckf_qty 	= ovabrw_get_meta_data( 'cckf_qty', $data );
+
+			// Resources
+			$resources 		= ovabrw_get_meta_data( 'resources', $data );
+			$resources_qty 	= ovabrw_get_meta_data( 'resources_qty', $data );
+
+			// Services
+			$services 		= ovabrw_get_meta_data( 'services', $data );
+			$services_qty 	= ovabrw_get_meta_data( 'services_qty', $data );
+
+			// Subtotal
+	        $subtotal = ovabrw_convert_price( $this->get_total([
+	        	'pickup_date' 		=> strtotime( $pickup_date ),
+	        	'dropoff_date' 		=> strtotime( $dropoff_date ),
+	        	'pickup_location' 	=> $pickup_location,
+	        	'dropoff_location' 	=> $dropoff_location,
+	        	'quantity' 			=> $quantity,
+	        	'cckf'  			=> $cckf,
+	        	'cckf_qty' 			=> $cckf_qty,
+	        	'resources' 		=> $resources,
+	        	'resources_qty' 	=> $resources_qty,
+	        	'services' 			=> $services,
+	        	'services_qty' 		=> $services_qty
+	        ]));
+	        
+	        // Set order total
+	        $order_total = $subtotal;
+
+	        // Insurance amount
+	        $insurance = (float)$this->get_meta_value( 'amount_insurance' ) * $quantity;
+
+	        // Create new order
+	        $new_order = wc_create_order([
+	        	'status'        => '',
+	        	'customer_note' => ovabrw_get_meta_data( 'customer_note', $data )
+	        ]);
+
+	        // Order id
+	        $order_id = $new_order->get_id();
+
+	        // Billing
+	        $new_order->set_address([
+	        	'first_name' 	=> ovabrw_get_meta_data( 'customer_name', $data ), // First name
+			    'last_name' 	=> '', // Last name
+			    'company'       => '', // Company name
+			    'address_1'     => ovabrw_get_meta_data( 'customer_address', $data ), // Address line 1
+			    'address_2'     => '', // Address line 2
+			    'city'          => '', // City
+			    'state'         => '', // State or county
+			    'postcode'      => '', // Postcode or ZIP
+			    'country'       => '', // Country code (ISO 3166-1 alpha-2)
+			    'email'         => ovabrw_get_meta_data( 'customer_email', $data ), // Email address
+			    'phone'         => ovabrw_get_meta_data( 'customer_phone', $data ) // Phone number
+	        ], 'billing' );
+
+	        // Set customer
+            $user = get_user_by( 'email', ovabrw_get_meta_data( 'customer_email', $data ) );
+            if ( $user ) {
+                $new_order->set_customer_id( $user->ID );
+            }
+
+            // Tax enabled
+	        $tax_amount = $tax_rate_id = 0;
+
+	        // Taxable
+            $item_taxes = false;
+	        if ( wc_tax_enabled() ) {
+	        	// Get tax rates
+	        	$tax_rates = WC_Tax::get_rates( $this->product->get_tax_class() );
+
+	        	// Tax rate id
+                if ( ovabrw_array_exists( $tax_rates ) ) {
+		            $tax_rate_id = key( $tax_rates );
+		        }
+
+		        // Prices include tax
+	        	if ( wc_prices_include_tax() ) {
+		        	$taxes 		= WC_Tax::calc_inclusive_tax( $subtotal, $tax_rates );
+		        	$tax_amount = WC_Tax::get_tax_total( $taxes );
+                    $subtotal 	-= $tax_amount;
+	        	} else {
+	        		$taxes 		= WC_Tax::calc_exclusive_tax( $subtotal, $tax_rates );
+                    $tax_amount = WC_Tax::get_tax_total( $taxes );
+                    $order_total += $tax_amount;
+	        	}
+
+	        	// Item taxes
+	        	$item_taxes = [
+	        		'total'    => $taxes,
+                    'subtotal' => $taxes
+	        	];
+	        }
+
+	        // Handle items
+	        $item_id = $new_order->add_product( $this->product, $quantity, [
+	        	'totals' => [
+	        		'subtotal' 	=> $subtotal,
+	                'total' 	=> $subtotal
+	        	]
+	        ]);
+
+	        // Get order line item
+        	$line_item = $new_order->get_item( $item_id );
+        	if ( $line_item ) {
+        		// Rental type
+        		$line_item->add_meta_data( 'rental_type', $this->get_type(), true );
+
+        		// Pick-up location
+        		if ( $pickup_location ) {
+        			$line_item->add_meta_data( 'ovabrw_pickup_loc', $pickup_location, true );
+        		}
+
+        		// Drop-off location
+        		if ( $dropoff_location ) {
+        			$line_item->add_meta_data( 'ovabrw_pickoff_loc', $dropoff_location, true );
+        		}
+
+        		// Location prices
+        		if ( $location_prices ) {
+        			$line_item->add_meta_data( 'ovabrw_location_prices', $location_prices, true );
+        		}
+
+        		// Pick-up date
+        		if ( $pickup_date ) {
+        			$line_item->add_meta_data( 'ovabrw_pickup_date', $pickup_date, true );
+        			$line_item->add_meta_data( 'ovabrw_pickup_date_strtotime', strtotime( $pickup_date ), true );
+        		}
+
+        		// Drop-off date
+        		if ( $dropoff_date ) {
+        			$line_item->add_meta_data( 'ovabrw_pickoff_date', $dropoff_date, true );
+        			$line_item->add_meta_data( 'ovabrw_pickoff_date_strtotime', strtotime( $dropoff_date ), true );
+        		}
+
+		    	// Pick-up real date
+		    	$line_item->add_meta_data( 'ovabrw_pickup_date_real', $pickup_date, true );
+		    	
+		    	// Drop-off real dates
+		    	$line_item->add_meta_data( 'ovabrw_pickoff_date_real', $dropoff_date, true );
+
+		    	// Quantity
+		    	$line_item->add_meta_data( 'ovabrw_number_vehicle', $quantity, true );
+
+		    	// Custom checkout fields
+		    	if ( ovabrw_array_exists( $cckf ) ) {
+		    		// CCKF value
+		    		$cckf_value = ovabrw_get_meta_data( 'cckf_value', $data );
+		    		if ( ovabrw_array_exists( $cckf_value ) ) {
+		    			foreach ( $cckf_value as $name => $value ) {
+		    				$line_item->add_meta_data( $name, $value, true );
+		    			}
+		    		}
+
+		    		// CCKF
+		    		$line_item->add_meta_data( 'ovabrw_custom_ckf', $cckf, true );
+
+		    		// CCKF quantity
+		    		if ( ovabrw_array_exists( $cckf_qty ) ) {
+		    			$line_item->add_meta_data( 'ovabrw_custom_ckf_qty', $cckf_qty, true );
+		    		}
+		    	} // END if
+
+		    	// Resources
+		    	if ( ovabrw_array_exists( $resources ) ) {
+		    		// Resource values
+		    		$resc_values = ovabrw_get_meta_data( 'resources_value', $data );
+		    		if ( ovabrw_array_exists( $resc_values ) ) {
+		    			$line_item->add_meta_data( sprintf( _n( 'Resource%s', 'Resources%s', count( $resc_values ), 'ova-brw' ), '' ), implode( ', ', $resc_values ), true );
+		    		}
+
+		    		// Add resources
+		    		$line_item->add_meta_data( 'ovabrw_resources', $resources, true );
+
+		    		// Add resources quantity
+		    		if ( ovabrw_array_exists( $resources_qty ) ) {
+		    			$line_item->add_meta_data( 'ovabrw_resources_qty', $resources_qty, true );
+		    		}
+		    	} // END if
+
+		    	// Services
+		    	if ( ovabrw_array_exists( $services ) ) {
+		    		// Service values
+		    		$serv_values = ovabrw_get_meta_data( 'services_value', $data );
+		    		if ( ovabrw_array_exists( $serv_values ) ) {
+		    			foreach ( $serv_values as $label => $opt_name ) {
+		    				$line_item->add_meta_data( $label, $opt_name, true );
+		    			}
+		    		}
+
+		    		// Add services
+		    		$line_item->add_meta_data( 'ovabrw_services', $services, true );
+
+		    		// Add services quantity
+		    		if ( ovabrw_array_exists( $services_qty ) ) {
+		    			$line_item->add_meta_data( 'ovabrw_services_qty', $services_qty, true );
+		    		}
+		    	} // END if
+
+		    	// Update item tax
+	            $line_item->set_props([
+	            	'taxes' => $item_taxes
+	            ]);
+
+	            // Save item
+	            $line_item->save();
+        	}
+
+        	// Insurance
+        	if ( $insurance ) {
+        		// Update order total
+        		$order_total += $insurance;
+
+        		// Add insurance amount meta data
+	        	$new_order->add_meta_data( '_ova_insurance_amount', $insurance, true );
+
+	        	// Get insurance name
+	        	$insurance_name = OVABRW()->options->get_insurance_name();
+
+	        	// Add item fee
+	        	$item_fee = new WC_Order_Item_Fee();
+                $item_fee->set_props([
+                	'name'      => $insurance_name,
+                    'tax_class' => 0,
+                    'total'     => $insurance,
+                    'order_id'  => $order_id
+                ]);
+                $item_fee->save();
+
+                // Add item fee
+                $new_order->add_item( $item_fee );
+
+                // Add insurance key
+                $new_order->add_meta_data( '_ova_insurance_key', sanitize_title( $insurance_name ), true );
+        	} // END if
+
+        	// Set order tax
+	        if ( wc_tax_enabled() && $tax_amount ) {
+	        	// New order item tax
+	            $item_tax = new WC_Order_Item_Tax();
+
+	            // Set taxes
+	            $item_tax->set_props([
+	            	'rate_id'            => $tax_rate_id,
+	                'tax_total'          => $tax_amount,
+	                'shipping_tax_total' => 0,
+	                'rate_code'          => WC_Tax::get_rate_code( $tax_rate_id ),
+	                'label'              => WC_Tax::get_rate_label( $tax_rate_id ),
+	                'compound'           => WC_Tax::is_compound( $tax_rate_id ),
+	                'rate_percent'       => WC_Tax::get_rate_percent_value( $tax_rate_id )
+	            ]);
+
+	            // Save
+	            $item_tax->save();
+	            $new_order->add_item( $item_tax );
+	            $new_order->set_cart_tax( $tax_amount );
+	        } // END if
+
+	        // Set order status
+	        $new_order->set_status( ovabrw_get_setting( 'request_booking_order_status', 'wc-on-hold' ) );
+
+	        // Set date created
+	        $new_order->set_date_created( gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) ) );
+
+	        // Set total
+	        $new_order->set_total( $order_total );
+
+	        // Save
+	        $new_order->save();
+
+			return apply_filters( $this->prefix.'request_booking_create_new_order', $order_id, $data, $args, $this );
+		}
+
+		/**
+		 * New booking handle item
+		 */
+		public function new_booking_handle_item( $meta_key, $args, $order ) {
+			// init
+			$results = [
+				'is_deposit' 		=> false,
+				'deposit_amount' 	=> 0,
+				'remaining_amount' 	=> 0,
+				'remaining_tax' 	=> 0,
+				'insurance_amount' 	=> 0,
+				'insurance_tax' 	=> 0,
+				'tax_rate_id' 		=> 0,
+				'tax_amount' 		=> 0,
+				'subtotal' 			=> 0
+			];
+
+			// Item meta data
+			$item_meta = [];
+
+			// Rental type
+			$item_meta['rental_type'] = $this->get_type();
+
+			// Pick-up location
+			$pickup_location = isset( $args['ovabrw_pickup_location'][$meta_key] ) ? $args['ovabrw_pickup_location'][$meta_key] : '';
+			if ( $pickup_location ) {
+				$item_meta['ovabrw_pickup_loc'] = $pickup_location;
+			}
+
+			// Drop-off location
+			$dropoff_location = isset( $args['ovabrw_dropoff_location'][$meta_key] ) ? $args['ovabrw_dropoff_location'][$meta_key] : '';
+			if ( $dropoff_location ) {
+				$item_meta['ovabrw_pickoff_loc'] = $dropoff_location;
+			}
+
+			// Location prices
+			$location_prices = $this->get_location_prices( $pickup_location, $dropoff_location );
+			if ( $location_prices ) {
+				$item_meta['ovabrw_location_prices'] = $location_prices;
+			}
+
+			// Pick-up date
+			$pickup_date = isset( $args['ovabrw_pickup_date'][$meta_key] ) ? $args['ovabrw_pickup_date'][$meta_key] : '';
+			if ( $pickup_date ) {
+				$item_meta['ovabrw_pickup_date'] 			= $pickup_date;
+				$item_meta['ovabrw_pickup_date_strtotime'] 	= strtotime( $pickup_date );
+			}
+
+			// Drop-off date
+			$dropoff_date = isset( $args['ovabrw_dropoff_date'][$meta_key] ) ? $args['ovabrw_dropoff_date'][$meta_key] : '';
+			if ( !$dropoff_date ) $dropoff_date = $pickup_date;
+			if ( $dropoff_date ) {
+				$item_meta['ovabrw_pickoff_date'] 			= $dropoff_date;
+				$item_meta['ovabrw_pickoff_date_strtotime'] = strtotime( $dropoff_date );
+			}
+
+			// Pick-up date real
+    		$item_meta['ovabrw_pickup_date_real'] = $pickup_date;
+
+    		// Drop-off date real
+    		$item_meta['ovabrw_pickoff_date_real'] = $dropoff_date;
+
+			// Get real data
+	    	$read_data = $this->get_real_data( strtotime( $pickup_date ), strtotime( $dropoff_date ) );
+	    	if ( ovabrw_array_exists( $read_data ) ) {
+	    		// Quantity real
+				$quantity_real = ovabrw_get_meta_data( 'quantity_real', $read_data );
+				if ( $quantity_real ) {
+					$item_meta['ovabrw_total_days'] = str_replace( '<br>', ', ', $quantity_real );
+				}
+
+				// Price real
+				$price_real = ovabrw_get_meta_data( 'price_real', $read_data );
+				if ( $price_real ) {
+					$item_meta['ovabrw_price_detail'] = str_replace( '<br>', ', ', $price_real );
+				}
+	    	}
+
+			// Quantity
+			$quantity = isset( $args['ovabrw_quantity'][$meta_key] ) ? (int)$args['ovabrw_quantity'][$meta_key] : 1;
+			if ( $quantity ) {
+				$item_meta['ovabrw_number_vehicle'] = $quantity;
+			}
+
+			// Vehicle ID
+			$vehicle_id = isset( $args['ovabrw_vehicle_id'][$meta_key] ) ? $args['ovabrw_vehicle_id'][$meta_key] : '';
+			if ( $vehicle_id ) {
+				$item_meta['id_vehicle'] = $vehicle_id;
+			}
+
+			// Custom checkout fields
+			$cckf = $cckf_qty = [];
+
+			// Get product cckf
+	    	$product_cckf = $this->product->get_cckf();
+	    	if ( ovabrw_array_exists( $product_cckf ) ) {
+	    		// Loop
+	    		foreach ( $product_cckf as $name => $fields ) {
+	    			if ( 'on' !== ovabrw_get_meta_data( 'enabled', $fields ) ) continue;
+
+	    			// Get type
+	    			$type = ovabrw_get_meta_data( 'type', $fields );
+
+	    			if ( 'file' === $type ) {
+	    				// Get file
+	    				$files = ovabrw_get_meta_data( sanitize_file_name( $name.'_'.$meta_key ), $_FILES );
+
+    					// File name
+    					$file_name = ovabrw_get_meta_data( 'name', $files );
+    					if ( $file_name ) {
+    						// File size
+    						$file_size = (int)ovabrw_get_meta_data( 'size', $files );
+    						$file_size = $file_size / 1048576;
+
+    						// Max size
+    						$max_size = (float)ovabrw_get_meta_data( 'max_file_size', $fields );
+    						if ( $max_size < $file_size ) continue;
+
+    						// File type
+	                        $accept = apply_filters( OVABRW_PREFIX.'accept_file_upload', '.jpg, .jpeg, .png, .pdf, .doc, .docx', $this );
+
+	                        // Get file extension
+	                        $extension = pathinfo( $file_name, PATHINFO_EXTENSION );
+	                        if ( strpos( $accept, $extension ) === false ) continue;
+
+	                         // Upload file
+	                        $overrides = [ 'test_form' => false ];
+
+	                        if ( ! function_exists( 'wp_handle_upload' ) ) {
+								require_once( ABSPATH . 'wp-admin/includes/file.php' );
+							}
+
+							// Upload
+							$upload = wp_handle_upload( $files, $overrides );
+							if ( ovabrw_get_meta_data( 'error', $upload ) ) continue;
+
+	                        // File url
+	                        $file_url = '<a href="'.esc_url( $upload['url'] ).'" target="_blank">';
+								$file_url .= basename( $upload['file'] );
+							$file_url .= '</a>';
+
+							// Add cart item data
+							$item_meta[$name] = $file_url;
+    					}
+	    			} elseif ( 'checkbox' === $type ) {
+	    				// Option names
+	    				$opt_names = [];
+
+	    				// Get options values
+	    				$opt_values = isset( $args[$name][$meta_key] ) ? $args[$name][$meta_key] : '';
+
+	    				if ( ovabrw_array_exists( $opt_values ) ) {
+	    					// Add cckf
+	    					$cckf[$name] = $opt_values;
+
+	    					// Option quantities
+	    					$opt_qtys = isset( $args[$name.'_qty'][$meta_key] ) ? $args[$name.'_qty'][$meta_key] : '';
+	    					if ( ovabrw_array_exists( $opt_qtys ) ) {
+	    						$cckf_qty = array_merge( $cckf_qty, $opt_qtys );
+	    					}
+
+	    					// Option keys
+	    					$opt_keys = ovabrw_get_meta_data( 'ova_checkbox_key', $fields, [] );
+
+	    					// Option texts
+	    					$opt_texts = ovabrw_get_meta_data( 'ova_checkbox_text', $fields, [] );
+
+	    					// Loop
+	    					foreach ( $opt_values as $val ) {
+	    						// Get index option
+	    						$index = array_search( $val, $opt_keys );
+	    						if ( is_bool( $index ) ) continue;
+
+	    						// Option text
+	    						$opt_text = ovabrw_get_meta_data( $index, $opt_texts );
+
+	    						// Option qty
+	    						$opt_qty = (int)ovabrw_get_meta_data( $val, $cckf_qty );
+
+	    						if ( $opt_qty ) {
+	    							array_push( $opt_names, sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_text, $opt_qty ) );
+	    						} else {
+	    							array_push( $opt_names, $opt_text );
+	    						}
+	    					} // END loop
+	    				}
+
+	    				// Add cart item data
+	    				if ( ovabrw_array_exists( $opt_names ) ) {
+	    					$item_meta[$name] = implode( ', ', $opt_names );
+	    				}
+	    			} elseif ( 'radio' === $type ) {
+	    				// Get option value
+	    				$opt_value = isset( $args[$name][$meta_key] ) ? $args[$name][$meta_key] : '';
+	    				if ( $opt_value ) {
+	    					// Add cckf
+	    					$cckf[$name] = $opt_value;
+
+	    					// Get option quantities
+	    					$opt_qtys = isset( $args[$name.'_qty'][$meta_key] ) ? $args[$name.'_qty'][$meta_key] : '';
+
+	    					// Option qty
+	    					$opt_qty = (int)ovabrw_get_meta_data( $opt_value, $opt_qtys );
+
+	    					// Add cart item data
+	    					if ( $opt_qty ) {
+	    						// Add cckf quantity
+	    						$cckf_qty[$name] = $opt_qty;
+	    						$item_meta[$name] = sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_value, $opt_qty );
+	    					} else {
+	    						$item_meta[$name] = $opt_value;
+	    					}
+	    				}
+	    			} elseif ( 'select' === $type ) {
+	    				// Option names
+	    				$opt_names = [];
+
+	    				// Get options value
+	    				$opt_value = isset( $args[$name][$meta_key] ) ? $args[$name][$meta_key] : '';
+	    				if ( $opt_value ) {
+	    					// Option keys
+	    					$opt_keys = ovabrw_get_meta_data( 'ova_options_key', $fields );
+
+	    					// Option texts
+	    					$opt_texts = ovabrw_get_meta_data( 'ova_options_text', $fields );
+
+	    					// Option quantities
+	    					$opt_qtys = isset( $args[$name.'_qty'][$meta_key] ) ? $args[$name.'_qty'][$meta_key] : '';
+	    					
+	    					// Option quantity
+	    					$opt_qty = (int)ovabrw_get_meta_data( $opt_value, $opt_qtys );
+
+	    					// index option
+	    					$index = array_search( $opt_value, $opt_keys );
+	    					if ( is_bool( $index ) ) continue;
+
+	    					// Add cckf
+	    					$cckf[$name] = $opt_value;
+
+	    					// Option text
+	    					$opt_text = ovabrw_get_meta_data( $index, $opt_texts );
+
+	    					// Add cart item data
+	    					if ( $opt_qty ) {
+	    						// Add cckf quantity
+	    						$cckf_qty[$name] = $opt_qty;
+	    						$item_meta[$name] = sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_text, $opt_qty );
+	    					} else {
+	    						$item_meta[$name] = $opt_text;
+	    					}
+	    				}
+	    			} else {
+	    				// Option value
+	    				$opt_value = isset( $args[$name][$meta_key] ) ? $args[$name][$meta_key] : '';
+
+	    				if ( $opt_value ) {
+	    					// Add cart item data
+	    					$item_meta[$name] = $opt_value;
+	    				}
+	    			}
+	    		} // END loop
+	    	}
+
+	    	// Add cckf to cart item data
+	    	if ( ovabrw_array_exists( $cckf ) ) {
+	    		$item_meta['ovabrw_custom_ckf'] 	= $cckf;
+	    		$item_meta['ovabrw_custom_ckf_qty'] = $cckf_qty;
+	    	}
+
+			// Resources
+			$resources = isset( $args['ovabrw_resource_checkboxs'][$meta_key] ) ? $args['ovabrw_resource_checkboxs'][$meta_key] : '';
+			if ( ovabrw_array_exists( $resources ) ) {
+				// Resources quantity
+				$resources_qty = isset( $args['ovabrw_resource_quantity'][$meta_key] ) ? $args['ovabrw_resource_quantity'][$meta_key] : '';
+
+	    		// Get resource ids
+	    		$resc_ids = $this->get_meta_value( 'resource_id', [] );
+
+	    		// Get resource names
+	    		$resc_names = $this->get_meta_value( 'resource_name', [] );
+
+	    		// init option names
+	    		$opt_names = [];
+
+	    		foreach ( $resources as $opt_id ) {
+	    			// Get index option
+	    			$index = array_search( $opt_id, $resc_ids );
+	    			if ( is_bool( $index ) ) continue;
+
+	    			// Option name
+	    			$opt_name = ovabrw_get_meta_data( $index, $resc_names );
+	    			if ( !$opt_name ) continue;
+
+	    			// Option quantity
+	    			$opt_qty = (int)ovabrw_get_meta_data( $opt_id, $resources_qty );
+	    			if ( $opt_qty ) {
+	    				$opt_names[] = sprintf( esc_html__( '%s (%s)', 'ova-brw' ), $opt_name, $opt_qty );
+	    			} else {
+	    				$opt_names[] = $opt_name;
+	    			}
+	    		}
+
+	    		// Add option names
+	    		if ( ovabrw_array_exists( $opt_names ) ) {
+	    			$item_meta[sprintf( _n( 'Resource%s', 'Resources%s', count( $opt_names ), 'ova-brw' ), '' )] = implode( ', ', $opt_names );
+	    		}
+
+	    		// Add resources
+	    		$item_meta['ovabrw_resources'] = $resources;
+
+	    		// Add resources quantity
+	    		if ( ovabrw_array_exists( $resources_qty ) ) {
+	    			$item_meta['ovabrw_resources_qty'] = $resources_qty;
+	    		}
+	    	} // END if
+
+			// Services
+			$services = isset( $args['ovabrw_service'][$meta_key] ) ? $args['ovabrw_service'][$meta_key] : '';
+			if ( ovabrw_array_exists( $services ) ) {
+	    		// Services quantity
+				$services_qty = isset( $args['ovabrw_service_qty'][$meta_key] ) ? $args['ovabrw_service_qty'][$meta_key] : '';
+
+	    		// Get service labels
+	    		$serv_labels = $this->get_meta_value( 'label_service', [] );
+
+	    		// Get option ids
+	    		$opt_ids = $this->get_meta_value( 'service_id', [] );
+
+	    		// Get option names
+	    		$opt_names = $this->get_meta_value( 'service_name', [] );
+
+	    		// Loop
+	    		foreach ( $services as $opt_id ) {
+	    			// Option quantity
+	    			$opt_qty = (int)ovabrw_get_meta_data( $opt_id, $services_qty );
+
+	    			// Loop option ids
+	    			foreach ( $opt_ids as $i => $ids ) {
+	    				// Get index option
+	    				$index = array_search( $opt_id, $ids );
+	    				if ( is_bool( $index ) ) continue;
+
+	    				// Service label
+	    				$label = ovabrw_get_meta_data( $i, $serv_labels );
+	    				if ( !$label ) continue;
+
+	    				// Option name
+	    				$opt_name = isset( $opt_names[$i][$index] ) ? $opt_names[$i][$index] : '';
+	    				if ( !$opt_name ) continue;
+
+	    				// Opt qty
+	    				if ( $opt_qty ) {
+	    					$opt_name = sprintf( esc_html__( '%s (x%s)', 'ova-brw' ), $opt_name, $opt_qty );
+	    				}
+
+	    				// Add option name
+	    				$item_meta[$label] = $opt_name;
+	    			}
+	    			// END loop option ids
+	    		} // END loop services
+
+	    		// Add services
+	    		$item_meta['ovabrw_services'] = $services;
+
+	    		// Add services quantity
+	    		if ( ovabrw_array_exists( $services_qty ) ) {
+	    			$item_meta['ovabrw_services_qty'] = $services_qty;
+	    		}
+	    	} // END if
+
+	    	// Insurance
+			$insurance = isset( $args['ovabrw_amount_insurance'][$meta_key] ) ? (float)$args['ovabrw_amount_insurance'][$meta_key] : '';
+			if ( $insurance ) {
+				// Add item meta
+				$item_meta['ovabrw_insurance_amount'] = $insurance;
+
+				// Item data
+				$results['insurance_amount'] += $insurance;
+
+				// Get insurance tax
+				$insurance_tax = OVABRW()->options->get_insurance_tax_amount( $insurance );
+				if ( $insurance_tax ) {
+					// Add item meta
+					$item_meta['ovabrw_insurance_tax'] = $insurance_tax;
+
+					// Item data
+					$results['insurance_tax'] += $insurance_tax;
+				}
+			}
+
+			// Deposit
+			$deposit = isset( $args['ovabrw_amount_deposite'][$meta_key] ) ? (float)$args['ovabrw_amount_deposite'][$meta_key] : '';
+
+			// Remaining
+			$remaining = isset( $args['ovabrw_amount_remaining'][$meta_key] ) ? (float)$args['ovabrw_amount_remaining'][$meta_key] : '';
+
+			// Subtotal
+			$subtotal = isset( $args['ovabrw_total'][$meta_key] ) ? (float)$args['ovabrw_total'][$meta_key] : 0;
+			if ( $insurance ) $subtotal -= $insurance;
+			if ( $deposit ) {
+				// Item data
+				$results['is_deposit'] = true;
+
+				// Deposit amount
+				$results['deposit_amount'] = $deposit;
+
+				// Remaining amount
+				$results['remaining_amount'] = $remaining;
+
+				// Subtotal
+				$results['subtotal'] = $deposit;
+
+				// Deposit type
+				$item_meta['ovabrw_deposit_type'] = 'value';
+
+				// Deposit value
+				$item_meta['ovabrw_deposit_value'] = $deposit;
+
+				// Deposit amount
+				$item_meta['ovabrw_deposit_amount'] = $deposit;
+
+				// Remaining
+				$item_meta['ovabrw_remaining_amount'] = $remaining;
+
+				// Total payable
+				$item_meta['ovabrw_total_payable'] = $subtotal;
+
+				// Subtotal
+				$subtotal = $deposit;
+			} else {
+				// Subtotal
+				$results['subtotal'] = $subtotal;
+			} // END if
+
+			// Taxable
+			$taxes = false;
+			if ( wc_tax_enabled() ) {
+				$tax_rates = WC_Tax::get_rates( $this->product->get_tax_class() );
+                if ( ovabrw_array_exists( $tax_rates ) ) {
+                    $results['tax_rate_id'] = key( $tax_rates );
+                }
+
+                // Remaining tax
+                $remaining_tax = OVABRW()->options->get_taxes_by_price( $this->product, $remaining );
+                if ( $remaining_tax ) {
+                	// Item data
+                	$results['remaining_tax'] = $remaining_tax;
+
+                	// Item meta
+                	$item_meta['ovabrw_remaining_tax'] = $remaining_tax;
+                }
+
+                // Prices include tax
+                if ( wc_prices_include_tax() ) {
+                	// Get taxes
+                    $taxes = WC_Tax::calc_inclusive_tax( $subtotal, $tax_rates );
+
+                    // Tax total
+                    $tax_total = WC_Tax::get_tax_total( $taxes );
+
+                    // Subtotal
+                    $subtotal -= $tax_total;
+
+                    // Item data
+                    $results['tax_amount'] += $tax_total;
+                } else {
+                	// Get taxes
+                    $taxes = WC_Tax::calc_exclusive_tax( $item_subtotal, $tax_rates );
+
+                    // Tax total
+                    $tax_total = WC_Tax::get_tax_total( $taxes );
+                    
+                    // Item data
+                    $results['tax_amount'] += $tax_total;
+
+                    // Item data
+                    $results['subtotal'] += $remaining_tax;
+                }
+
+                // Taxes
+                $taxes = [
+                	'total'    => $taxes,
+                    'subtotal' => $taxes
+                ];
+			} // END if
+
+			// Get item id
+            $item_id = $order->add_product( $this->product, $quantity, [
+                'totals' => [
+                    'subtotal'  => $subtotal,
+                    'total'     => $subtotal
+                ],
+                'taxes'  => $taxes
+            ]);
+
+            // Get order line item
+            $item = $order->get_item( $item_id );
+
+            // Update item meta data
+            foreach ( $item_meta as $meta_key => $meta_value ) {
+                $item->add_meta_data( $meta_key, $meta_value, true );
+            }
+
+            // Save item
+            $item->save();
+
+			return apply_filters( $this->prefix.'new_booking_handle_item', $results, $meta_key, $args, $order, $this );
+		}
+
+		/**
+	     * Get add to cart data
+	     */
+	    public function get_add_to_cart_data() {
+	    	// Cart item
+	    	$cart_item_data = [];
+
+	    	// Pick-up location
+	    	$pickup_location = ovabrw_get_meta_data( 'pickup_location', $_REQUEST );
+	    	if ( $this->product->show_location_field( 'pickup' ) ) {
+	    		if ( !$pickup_location ) return false;
+	    		$cart_item_data['pickup_location'] = $pickup_location;
+	    	}
+
+	    	// Drop-off location
+	    	$dropoff_location = ovabrw_get_meta_data( 'dropoff_location', $_REQUEST );
+	    	if ( $this->product->show_location_field( 'dropoff' ) ) {
+	    		if ( !$dropoff_location ) return false;
+	    		$cart_item_data['dropoff_location'] = $dropoff_location;
+	    	}
+
+	    	// Validation locations
+	    	if ( ovabrw_get_meta_data( 'pickup_location', $cart_item_data ) && ovabrw_get_meta_data( 'dropoff_location', $cart_item_data ) ) {
+	    		if ( !$this->location_validation( $cart_item_data['pickup_location'], $cart_item_data['dropoff_location'] ) ) {
+	    			return false;
+	    		}
+	    	}
+
+	    	// Pick-up date
+	    	$pickup_date = strtotime( ovabrw_get_meta_data( 'pickup_date', $_REQUEST ) );
+	    	if ( !$pickup_date ) return false;
+
+	    	// Drop-off date
+	    	$dropoff_date = strtotime( ovabrw_get_meta_data( 'dropoff_date', $_REQUEST ) );
+	    	if ( $this->product->show_date_field( 'dropoff' ) ) {
+	    		if ( !$dropoff_date ) return false;
+	    	} else {
+	    		if ( !$dropoff_date ) $dropoff_date = $pickup_date;
+	    	}
+
+	    	// Get date format
+	    	$date_format = OVABRW()->options->get_date_format();
+
+	    	// Get time format
+	    	$time_format = OVABRW()->options->get_time_format();
+
+	    	// Add pick-up date
+	    	if ( $this->product->has_timepicker( 'pickup' ) ) {
+	    		$cart_item_data['pickup_date'] = gmdate( $date_format . ' ' . $time_format, $pickup_date );
+	    	} else {
+	    		$cart_item_data['pickup_date'] = gmdate( $date_format, $pickup_date );
+	    	} // END
+
+	    	// Add drop-off date
+	    	if ( $this->product->has_timepicker( 'dropoff' ) ) {
+	    		$cart_item_data['dropoff_date'] = gmdate( $date_format . ' ' . $time_format, $dropoff_date );
+	    	} else {
+	    		$cart_item_data['dropoff_date'] = gmdate( $date_format, $dropoff_date );
+	    	} // END
+
+	    	// Add quantity
+	    	$cart_item_data['ovabrw_quantity'] = ovabrw_get_meta_data( 'quantity', $_REQUEST, 1 );
+
+	    	return apply_filters( $this->prefix.'get_add_to_cart_data', $cart_item_data, $this );
+	    }
+	}
+}

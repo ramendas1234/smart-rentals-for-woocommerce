@@ -1,0 +1,68 @@
+@font-face {
+    font-family: "flaticon_brw";
+    src: url("./flaticon_brw.ttf?58cc0eaa788c03e022124cb5ca3984ee") format("truetype"),
+url("./flaticon_brw.woff?58cc0eaa788c03e022124cb5ca3984ee") format("woff"),
+url("./flaticon_brw.woff2?58cc0eaa788c03e022124cb5ca3984ee") format("woff2"),
+url("./flaticon_brw.eot?58cc0eaa788c03e022124cb5ca3984ee#iefix") format("embedded-opentype"),
+url("./flaticon_brw.svg?58cc0eaa788c03e022124cb5ca3984ee#flaticon_brw") format("svg");
+}
+
+i[class^="brwicon-"]:before, i[class*=" brwicon-"]:before {
+    font-family: flaticon_brw !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.brwicon-calendar:before {
+    content: "\f101";
+}
+.brwicon-calendar-1:before {
+    content: "\f102";
+}
+.brwicon-fuel-station:before {
+    content: "\f103";
+}
+.brwicon-gas-station:before {
+    content: "\f104";
+}
+.brwicon-right:before {
+    content: "\f105";
+}
+.brwicon-next:before {
+    content: "\f106";
+}
+.brwicon-next-1:before {
+    content: "\f107";
+}
+.brwicon-calendar-2:before {
+    content: "\f108";
+}
+.brwicon-down-arrow:before {
+    content: "\f109";
+}
+.brwicon-upload:before {
+    content: "\f10a";
+}
+.brwicon-star:before {
+    content: "\f10b";
+}
+.brwicon-star-1:before {
+    content: "\f10c";
+}
+.brwicon-star-2:before {
+    content: "\f10d";
+}
+.brwicon-star-3:before {
+    content: "\f10e";
+}
+.brwicon-left:before {
+    content: "\f10f";
+}
+.brwicon-right-1:before {
+    content: "\f110";
+}
