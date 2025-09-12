@@ -42,24 +42,24 @@ if ( !class_exists( 'Smart_Rentals_WC_Rental' ) ) {
 				case 'day':
 				case 'hotel':
 					if ( $daily_price > 0 ) {
-						$rental_price = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
 					}
 					break;
 
 				case 'hour':
 				case 'appointment':
 					if ( $hourly_price > 0 ) {
-						$rental_price = wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
 					}
 					break;
 
 				case 'mixed':
 					$price_parts = [];
 					if ( $daily_price > 0 ) {
-						$price_parts[] = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
+						$price_parts[] = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
 					}
 					if ( $hourly_price > 0 ) {
-						$price_parts[] = wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
+						$price_parts[] = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
 					}
 					if ( smart_rentals_wc_array_exists( $price_parts ) ) {
 						$rental_price = implode( ' / ', $price_parts );
@@ -68,7 +68,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Rental' ) ) {
 
 				default:
 					if ( $daily_price > 0 ) {
-						$rental_price = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
 					}
 					break;
 			}
@@ -105,7 +105,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Rental' ) ) {
 				<?php if ( $security_deposit > 0 ) : ?>
 					<p class="security-deposit">
 						<strong><?php _e( 'Security Deposit:', 'smart-rentals-wc' ); ?></strong>
-						<?php echo wc_price( $security_deposit ); ?>
+						<?php echo smart_rentals_wc_price( $security_deposit ); ?>
 						<small><?php _e( '(refundable)', 'smart-rentals-wc' ); ?></small>
 					</p>
 				<?php endif; ?>

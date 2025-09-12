@@ -36,15 +36,49 @@ A comprehensive WooCommerce rental and booking plugin with advanced features for
 
 ## Installation
 
-1. Upload the plugin files to `/wp-content/plugins/smart-rentals-for-woocommerce/`
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Configure the plugin settings under 'Smart Rentals' in your admin menu
+### Method 1: Manual Installation
+1. Download the plugin files from the repository
+2. Upload the entire `smart-rentals-for-woocommerce` folder to `/wp-content/plugins/`
+3. Activate the plugin through the 'Plugins' menu in WordPress
+4. The plugin will automatically create necessary database tables
+5. Configure the plugin settings under 'Smart Rentals' in your admin menu
+
+### Method 2: Git Clone
+```bash
+cd /wp-content/plugins/
+git clone https://github.com/ramendas1234/smart-rentals-for-woocommerce.git
+git checkout plugin-development
+```
+
+### Post-Installation Steps
+1. Go to **Smart Rentals → Settings** and configure basic settings
+2. Visit **Smart Rentals → Debug Info** to verify installation
+3. Create your first rental product (see Usage section below)
 
 ## Requirements
 
 - WordPress 5.0 or higher
 - WooCommerce 4.0 or higher
 - PHP 7.4 or higher
+- MySQL 5.6 or higher
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue: "WC_Product class not found"**
+- **Solution**: Ensure WooCommerce is installed and activated before our plugin
+- **Check**: Go to Smart Rentals → Debug Info to verify WooCommerce status
+
+**Issue: "Rental fields not showing"**
+- **Solution**: Make sure you're editing a product and have checked the "Rental Product" checkbox
+- **Check**: Look for JavaScript errors in browser console
+
+**Issue: "Database tables missing"**
+- **Solution**: Deactivate and reactivate the plugin, or visit Debug Info page and click "Recreate Database Tables"
+
+**Issue: "Booking form not appearing"**
+- **Solution**: Check that the product has "Rental Product" checkbox enabled and rental type is selected
 
 ## Usage
 
@@ -58,6 +92,49 @@ A comprehensive WooCommerce rental and booking plugin with advanced features for
    - Configure minimum/maximum rental periods
    - Set rental stock quantity
    - Add security deposit if needed
+
+### Step-by-Step Testing Guide
+
+#### 1. **Create Your First Rental Product**
+```
+1. Go to Products → Add New (or edit existing product)
+2. In General tab, check ☑️ "Rental Product"
+3. Select "Rental Type" (e.g., "Daily")
+4. Set "Daily Price" (e.g., 50.00)
+5. Set "Rental Stock" (e.g., 5)
+6. Optionally set "Security Deposit" (e.g., 100.00)
+7. Check ☑️ "Show Calendar" if desired
+8. Save/Update the product
+```
+
+#### 2. **Test Frontend Booking**
+```
+1. Visit the product page on frontend
+2. You should see "Rental Details" section with date fields
+3. Select a pickup date (today or later)
+4. Select a drop-off date (after pickup date)
+5. Watch the price calculate automatically
+6. Click "Add to Cart"
+7. Check cart - should show rental details
+8. Complete checkout process
+```
+
+#### 3. **Verify in Admin**
+```
+1. Go to Smart Rentals → Dashboard
+2. Check statistics are updating
+3. Go to Smart Rentals → Bookings
+4. Verify your test booking appears
+5. Go to Smart Rentals → Debug Info
+6. Verify all systems are working
+```
+
+#### 4. **Test Different Rental Types**
+```
+- Daily: Set daily price, test multi-day rentals
+- Hourly: Set hourly price, test with time fields
+- Mixed: Set both prices, test 24+ hour vs shorter rentals
+```
 
 ### Rental Types
 

@@ -83,7 +83,7 @@ jQuery(document).ready(function($) {
     var hourlyPrice = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'hourly_price' ) ); ?>;
     var minPeriod = <?php echo intval( $min_rental_period ); ?>;
     var maxPeriod = <?php echo intval( $max_rental_period ); ?>;
-    var currencySymbol = '<?php echo esc_js( get_woocommerce_currency_symbol() ); ?>';
+    var currencySymbol = '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? esc_js( get_woocommerce_currency_symbol() ) : '$'; ?>';
     var productId = <?php echo intval( $product_id ); ?>;
 
     function calculateRentalPrice() {

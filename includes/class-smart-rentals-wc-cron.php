@@ -162,5 +162,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Cron' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Cron();
 }

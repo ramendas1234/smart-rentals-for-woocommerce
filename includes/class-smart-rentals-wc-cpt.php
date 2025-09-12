@@ -77,5 +77,4 @@ if ( !class_exists( 'Smart_Rentals_WC_CPT' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_CPT();
 }

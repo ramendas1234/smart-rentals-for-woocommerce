@@ -104,7 +104,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						<p><?php _e( 'Upcoming Rentals', 'smart-rentals-wc' ); ?></p>
 					</div>
 					<div class="smart-rentals-stat-box">
-						<h3><?php echo wc_price( $stats['total_revenue'] ); ?></h3>
+						<h3><?php echo function_exists( 'wc_price' ) ? wc_price( $stats['total_revenue'] ) : '$' . number_format( $stats['total_revenue'], 2 ); ?></h3>
 						<p><?php _e( 'Total Revenue', 'smart-rentals-wc' ); ?></p>
 					</div>
 				</div>
@@ -300,7 +300,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 										<?php echo esc_html( ucfirst( $booking->status ) ); ?>
 									</span>
 								</td>
-								<td><?php echo wc_price( $booking->total_price ); ?></td>
+								<td><?php echo function_exists( 'wc_price' ) ? wc_price( $booking->total_price ) : '$' . number_format( $booking->total_price, 2 ); ?></td>
 								<td><a href="<?php echo esc_url( admin_url( 'post.php?post=' . $booking->order_id . '&action=edit' ) ); ?>">#<?php echo esc_html( $booking->order_id ); ?></a></td>
 							</tr>
 							<?php endforeach; ?>
@@ -319,6 +319,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		public function add_rental_checkbox() {
 			global $post;
 
+			// Only show checkbox if WooCommerce functions are available
+			if ( !function_exists( 'woocommerce_wp_checkbox' ) ) {
+				return;
+			}
+
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'enable_rental' ),
 				'label' => __( 'Rental Product', 'smart-rentals-wc' ),
@@ -332,6 +337,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 */
 		public function add_rental_fields() {
 			global $post;
+
+			// Only show fields if WooCommerce functions are available
+			if ( !function_exists( 'woocommerce_wp_select' ) || !function_exists( 'woocommerce_wp_text_input' ) ) {
+				return;
+			}
 
 			echo '<div id="smart-rentals-fields" style="display: none;">';
 			
@@ -356,7 +366,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Daily price
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'daily_price' ),
-				'label' => __( 'Daily Price', 'smart-rentals-wc' ) . ' (' . get_woocommerce_currency_symbol() . ')',
+				'label' => __( 'Daily Price', 'smart-rentals-wc' ) . ' (' . ( function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$' ) . ')',
 				'placeholder' => '0.00',
 				'type' => 'number',
 				'custom_attributes' => [
@@ -368,7 +378,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Hourly price
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'hourly_price' ),
-				'label' => __( 'Hourly Price', 'smart-rentals-wc' ) . ' (' . get_woocommerce_currency_symbol() . ')',
+				'label' => __( 'Hourly Price', 'smart-rentals-wc' ) . ' (' . ( function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$' ) . ')',
 				'placeholder' => '0.00',
 				'type' => 'number',
 				'custom_attributes' => [
@@ -419,7 +429,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Security deposit
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'security_deposit' ),
-				'label' => __( 'Security Deposit', 'smart-rentals-wc' ) . ' (' . get_woocommerce_currency_symbol() . ')',
+				'label' => __( 'Security Deposit', 'smart-rentals-wc' ) . ' (' . ( function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$' ) . ')',
 				'placeholder' => '0.00',
 				'type' => 'number',
 				'custom_attributes' => [
@@ -611,16 +621,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				$rental_price = '';
 				
 				if ( 'day' === $rental_type && $daily_price ) {
-					$rental_price = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
+					$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
 				} elseif ( 'hour' === $rental_type && $hourly_price ) {
-					$rental_price = wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
+					$rental_price = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
 				} elseif ( 'mixed' === $rental_type ) {
 					if ( $daily_price && $hourly_price ) {
-						$rental_price = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' ) . ' / ' . wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' ) . ' / ' . smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
 					} elseif ( $daily_price ) {
-						$rental_price = wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
 					} elseif ( $hourly_price ) {
-						$rental_price = wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
+						$rental_price = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
 					}
 				}
 				

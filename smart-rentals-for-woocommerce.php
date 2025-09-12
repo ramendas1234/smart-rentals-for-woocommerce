@@ -132,27 +132,35 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 
 			// Assets
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-assets.php';
+			new Smart_Rentals_WC_Assets();
 
 			// Hooks
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-hooks.php';
+			new Smart_Rentals_WC_Hooks();
 
 			// Ajax
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-ajax.php';
+			new Smart_Rentals_WC_Ajax();
 
 			// Deposit
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-deposit.php';
+			new Smart_Rentals_WC_Deposit();
 
 			// CPT
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-cpt.php';
+			new Smart_Rentals_WC_CPT();
 
 			// Shortcodes
 			require_once SMART_RENTALS_WC_PLUGIN_INC. 'class-smart-rentals-wc-shortcodes.php';
+			new Smart_Rentals_WC_Shortcodes();
 
 			// Mail
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-mail.php';
+			new Smart_Rentals_WC_Mail();
 
 			// Cron
 			require_once SMART_RENTALS_WC_PLUGIN_INC .  'class-smart-rentals-wc-cron.php';
+			new Smart_Rentals_WC_Cron();
 
 			// Templates
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'smart-rentals-wc-template-functions.php' );
@@ -160,12 +168,14 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 
 			// Product
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-product.php' );
+			new Smart_Rentals_WC_Product();
 
 			// Install
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-install.php' );
 
 			// Debug
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-debug.php' );
+			new Smart_Rentals_WC_Debug();
 
 			// Elementor
 			if ( defined( 'ELEMENTOR_VERSION' ) ) {
@@ -189,24 +199,30 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			// Cart & Checkout Blocks Integrations
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-blocks.php';
 
-			// Register IntegrationInterface
-			if ( class_exists( 'Smart_Rentals_WC_Blocks' ) ) {
+			// Register IntegrationInterface only if blocks are available
+			if ( class_exists( 'Smart_Rentals_WC_Blocks' ) && method_exists( 'Smart_Rentals_WC_Blocks', 'get_script_handles' ) ) {
 				add_action(
 				    'woocommerce_blocks_mini-cart_block_registration',
 				    function( $integration_registry ) {
-				        $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        if ( method_exists( $integration_registry, 'register' ) ) {
+				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        }
 				    }
 				);
 				add_action(
 				    'woocommerce_blocks_cart_block_registration',
 				    function( $integration_registry ) {
-				        $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        if ( method_exists( $integration_registry, 'register' ) ) {
+				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        }
 				    }
 				);
 				add_action(
 				    'woocommerce_blocks_checkout_block_registration',
 				    function( $integration_registry ) {
-				        $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        if ( method_exists( $integration_registry, 'register' ) ) {
+				            $integration_registry->register( new Smart_Rentals_WC_Blocks() );
+				        }
 				    }
 				);
 			}
@@ -229,18 +245,36 @@ if ( !function_exists( 'is_plugin_active' ) ) {
 	include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 }
 
-// Returns the main instance of Smart_Rentals_WC.
-if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) {
+// Check if WooCommerce is active before initializing
+add_action( 'plugins_loaded', function() {
+	if ( !class_exists( 'WooCommerce' ) ) {
+		add_action( 'admin_notices', function() {
+			echo '<div class="notice notice-error"><p>';
+			echo __( 'Smart Rentals for WooCommerce requires WooCommerce to be installed and activated.', 'smart-rentals-wc' );
+			echo '</p></div>';
+		});
+		return;
+	}
+
+	// Initialize plugin
 	function Smart_Rentals_WC() {
 		return Smart_Rentals_WC::instance();
 	}
 
 	// Global for backwards compatibility.
 	$GLOBALS['Smart_Rentals_WC'] = Smart_Rentals_WC();
+});
 
-	// Activation hook
-	register_activation_hook( __FILE__, [ 'Smart_Rentals_WC_Install', 'install' ] );
+// Activation hook
+register_activation_hook( __FILE__, function() {
+	if ( class_exists( 'Smart_Rentals_WC_Install' ) ) {
+		Smart_Rentals_WC_Install::install();
+	}
+});
 
-	// Uninstall hook
-	register_uninstall_hook( __FILE__, [ 'Smart_Rentals_WC_Install', 'uninstall' ] );
-}
+// Uninstall hook
+register_uninstall_hook( __FILE__, function() {
+	if ( class_exists( 'Smart_Rentals_WC_Install' ) ) {
+		Smart_Rentals_WC_Install::uninstall();
+	}
+});

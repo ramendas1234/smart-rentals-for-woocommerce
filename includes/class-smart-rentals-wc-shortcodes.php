@@ -167,5 +167,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Shortcodes' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Shortcodes();
 }

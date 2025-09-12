@@ -206,5 +206,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Deposit' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Deposit();
 }

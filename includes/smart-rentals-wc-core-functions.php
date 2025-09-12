@@ -6,6 +6,15 @@
 if ( !defined( 'ABSPATH' ) ) exit();
 
 /**
+ * Check if WooCommerce is available
+ */
+if ( !function_exists( 'smart_rentals_wc_is_woocommerce_active' ) ) {
+    function smart_rentals_wc_is_woocommerce_active() {
+        return class_exists( 'WooCommerce' ) && function_exists( 'WC' );
+    }
+}
+
+/**
  * Get meta key with prefix
  */
 if ( !function_exists( 'smart_rentals_wc_meta_key' ) ) {
@@ -124,7 +133,10 @@ if ( !function_exists( 'smart_rentals_wc_get_setting' ) ) {
  */
 if ( !function_exists( 'smart_rentals_wc_format_price' ) ) {
     function smart_rentals_wc_format_price( $price ) {
-        return wc_format_decimal( $price, wc_get_price_decimals() );
+        if ( function_exists( 'wc_format_decimal' ) && function_exists( 'wc_get_price_decimals' ) ) {
+            return wc_format_decimal( $price, wc_get_price_decimals() );
+        }
+        return floatval( $price );
     }
 }
 
@@ -154,6 +166,10 @@ if ( !function_exists( 'smart_rentals_wc_format_number' ) ) {
  */
 if ( !function_exists( 'smart_rentals_wc_get_rental_product' ) ) {
     function smart_rentals_wc_get_rental_product( $product_id = null ) {
+        if ( !function_exists( 'wc_get_product' ) ) {
+            return false;
+        }
+        
         if ( !$product_id ) {
             global $post;
             $product_id = $post ? $post->ID : null;
@@ -216,7 +232,7 @@ if ( !function_exists( 'smart_rentals_wc_checked' ) ) {
  */
 if ( !function_exists( 'smart_rentals_wc_price' ) ) {
     function smart_rentals_wc_price( $price, $args = [], $format = true ) {
-        if ( $format ) {
+        if ( $format && function_exists( 'wc_price' ) ) {
             return wc_price( $price, $args );
         }
         return $price;

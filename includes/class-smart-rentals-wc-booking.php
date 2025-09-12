@@ -259,7 +259,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			if ( $total_price > 0 ) {
 				$unit_price = $total_price / $rental_data['rental_quantity'];
-				return wc_price( $unit_price );
+				return smart_rentals_wc_price( $unit_price );
 			}
 
 			return $product_price;
@@ -430,10 +430,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 		 * Order item display meta value
 		 */
 		public function order_item_display_meta_value( $meta_value, $meta, $item ) {
-			// Format rental total as price
-			if ( smart_rentals_wc_meta_key( 'rental_total' ) === $meta->key ) {
-				return wc_price( $meta_value );
-			}
+		// Format rental total as price
+		if ( smart_rentals_wc_meta_key( 'rental_total' ) === $meta->key ) {
+			return smart_rentals_wc_price( $meta_value );
+		}
 
 			return $meta_value;
 		}

@@ -65,5 +65,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Hooks();
 }

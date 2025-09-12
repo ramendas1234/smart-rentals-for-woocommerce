@@ -90,7 +90,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			if ( $total_price > 0 ) {
 				wp_send_json_success([
 					'price' => $total_price,
-					'formatted_price' => wc_price( $total_price ),
+					'formatted_price' => smart_rentals_wc_price( $total_price ),
 					'duration_text' => $duration_text,
 				]);
 			} else {
@@ -328,5 +328,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Ajax();
 }

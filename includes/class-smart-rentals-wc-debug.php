@@ -102,7 +102,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Debug' ) ) {
 					</tr>
 					<tr>
 						<th><?php _e( 'WooCommerce Version', 'smart-rentals-wc' ); ?></th>
-						<td><?php echo esc_html( WC()->version ); ?></td>
+						<td><?php echo function_exists( 'WC' ) && WC() ? esc_html( WC()->version ) : __( 'Not available', 'smart-rentals-wc' ); ?></td>
 					</tr>
 					<tr>
 						<th><?php _e( 'WordPress Version', 'smart-rentals-wc' ); ?></th>
@@ -166,10 +166,13 @@ if ( !class_exists( 'Smart_Rentals_WC_Debug' ) ) {
 						</thead>
 						<tbody>
 							<?php foreach ( array_slice( $rental_products, 0, 10 ) as $product_id ) : ?>
-							<?php $product = wc_get_product( $product_id ); ?>
+							<?php 
+							$product = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : null;
+							$product_name = $product ? $product->get_name() : get_the_title( $product_id );
+							?>
 							<tr>
 								<td><?php echo esc_html( $product_id ); ?></td>
-								<td><?php echo esc_html( $product ? $product->get_name() : 'Unknown' ); ?></td>
+								<td><?php echo esc_html( $product_name ?: 'Unknown' ); ?></td>
 								<td><?php echo esc_html( smart_rentals_wc_get_post_meta( $product_id, 'rental_type' ) ?: 'Not set' ); ?></td>
 								<td><?php echo esc_html( smart_rentals_wc_get_post_meta( $product_id, 'daily_price' ) ?: 'Not set' ); ?></td>
 								<td><?php echo esc_html( smart_rentals_wc_get_post_meta( $product_id, 'hourly_price' ) ?: 'Not set' ); ?></td>
@@ -203,5 +206,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Debug' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Debug();
 }

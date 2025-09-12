@@ -48,7 +48,7 @@ if ( !function_exists( 'smart_rentals_wc_get_price_display' ) ) {
             <?php if ( $security_deposit > 0 ) : ?>
                 <p class="security-deposit">
                     <strong><?php _e( 'Security Deposit:', 'smart-rentals-wc' ); ?></strong>
-                    <?php echo wc_price( $security_deposit ); ?>
+                    <?php echo smart_rentals_wc_price( $security_deposit ); ?>
                     <small><?php _e( '(refundable)', 'smart-rentals-wc' ); ?></small>
                 </p>
             <?php endif; ?>

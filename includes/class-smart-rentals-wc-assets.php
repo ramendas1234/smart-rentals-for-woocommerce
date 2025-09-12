@@ -89,5 +89,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		}
 	}
 
-	new Smart_Rentals_WC_Assets();
 }

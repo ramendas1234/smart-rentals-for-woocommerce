@@ -231,5 +231,4 @@ Best regards,
 		}
 	}
 
-	new Smart_Rentals_WC_Mail();
 }
