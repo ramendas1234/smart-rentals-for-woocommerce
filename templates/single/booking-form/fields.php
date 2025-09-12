@@ -146,7 +146,7 @@ jQuery(document).ready(function($) {
         // Configuration for daterangepicker.com
         var dateRangeConfig = {
             // Core settings
-            autoApply: false,  // This is KEY - shows Apply/Cancel buttons
+            autoApply: false,  // Shows Apply/Cancel buttons
             autoUpdateInput: false,  // Don't auto-update inputs until Apply is clicked
             showDropdowns: true,
             showWeekNumbers: false,
@@ -154,6 +154,7 @@ jQuery(document).ready(function($) {
             timePicker: hasTimepicker,
             timePicker24Hour: true,
             timePickerIncrement: 30,
+            timePickerSeconds: false,
             linkedCalendars: false,
             showCustomRangeLabel: true,
             alwaysShowCalendars: true,
@@ -203,18 +204,29 @@ jQuery(document).ready(function($) {
             
             // Date constraints
             minDate: moment(),
-            maxDate: moment().add(1, 'year'),
-            
-            // Pre-defined ranges for quick selection
-            ranges: {
+            maxDate: moment().add(1, 'year')
+        };
+        
+        // Add ranges only for non-time picker modes (daily rentals)
+        if (!hasTimepicker) {
+            dateRangeConfig.ranges = {
                 '<?php _e( 'Today', 'smart-rentals-wc' ); ?>': [moment(), moment()],
                 '<?php _e( 'Tomorrow', 'smart-rentals-wc' ); ?>': [moment().add(1, 'day'), moment().add(1, 'day')],
                 '<?php _e( 'Next 3 Days', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'days')],
                 '<?php _e( 'Next Week', 'smart-rentals-wc' ); ?>': [moment(), moment().add(6, 'days')],
                 '<?php _e( 'Next 2 Weeks', 'smart-rentals-wc' ); ?>': [moment(), moment().add(13, 'days')],
                 '<?php _e( 'Next Month', 'smart-rentals-wc' ); ?>': [moment(), moment().add(29, 'days')]
-            }
-        };
+            };
+        } else {
+            // For hourly rentals, provide time-based ranges
+            dateRangeConfig.ranges = {
+                '<?php _e( 'Next 2 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'hours')],
+                '<?php _e( 'Next 4 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(4, 'hours')],
+                '<?php _e( 'Next 8 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(8, 'hours')],
+                '<?php _e( 'Next 12 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(12, 'hours')],
+                '<?php _e( 'Next Day', 'smart-rentals-wc' ); ?>': [moment(), moment().add(1, 'day')]
+            };
+        }
         
         // Initialize daterangepicker on a single input that controls both fields
         $('#pickup_date').daterangepicker(dateRangeConfig);
@@ -222,13 +234,37 @@ jQuery(document).ready(function($) {
         // Handle Apply button click - THIS IS KEY!
         $('#pickup_date').on('apply.daterangepicker', function(ev, picker) {
             console.log('Apply button clicked - triggering calculation');
+            console.log('Start Date:', picker.startDate.format());
+            console.log('End Date:', picker.endDate.format());
             
             var startDate = picker.startDate;
             var endDate = picker.endDate;
             
-            // Format dates for individual fields
-            var pickupFormatted = startDate.format(hasTimepicker ? 'YYYY-MM-DD HH:mm' : 'YYYY-MM-DD');
-            var dropoffFormatted = endDate.format(hasTimepicker ? 'YYYY-MM-DD HH:mm' : 'YYYY-MM-DD');
+            // Validate the date range
+            if (!startDate.isValid() || !endDate.isValid()) {
+                console.error('Invalid dates selected');
+                return;
+            }
+            
+            if (startDate.isSameOrAfter(endDate)) {
+                console.error('Start date must be before end date');
+                return;
+            }
+            
+            // Format dates for individual fields with proper timezone handling
+            var pickupFormatted, dropoffFormatted;
+            
+            if (hasTimepicker) {
+                // For hourly rentals, include time
+                pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
+                dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
+            } else {
+                // For daily rentals, date only
+                pickupFormatted = startDate.format('YYYY-MM-DD');
+                dropoffFormatted = endDate.format('YYYY-MM-DD');
+            }
+            
+            console.log('Formatted dates - Pickup:', pickupFormatted, 'Dropoff:', dropoffFormatted);
             
             // Update individual fields
             $('#pickup_date').val(pickupFormatted);
@@ -245,7 +281,10 @@ jQuery(document).ready(function($) {
             
             // ONLY NOW trigger the calculation (no excessive AJAX calls!)
             if (typeof window.smartRentalsCalculateTotal === 'function') {
+                console.log('Triggering calculation with dates:', pickupFormatted, dropoffFormatted);
                 setTimeout(window.smartRentalsCalculateTotal, 300);
+            } else {
+                console.error('smartRentalsCalculateTotal function not available');
             }
         });
         
@@ -270,30 +309,52 @@ jQuery(document).ready(function($) {
     
     // Fallback for basic date pickers
     function initBasicDatePickers() {
-        $('#pickup_date, #dropoff_date').attr('type', 'date').removeAttr('readonly');
-        
-        var today = new Date().toISOString().split('T')[0];
-        $('#pickup_date').attr('min', today);
+        if (hasTimepicker) {
+            // For hourly rentals, use datetime-local inputs
+            $('#pickup_date, #dropoff_date').attr('type', 'datetime-local').removeAttr('readonly');
+            
+            var now = new Date();
+            var minDateTime = now.toISOString().slice(0, 16);
+            $('#pickup_date').attr('min', minDateTime);
+        } else {
+            // For daily rentals, use date inputs
+            $('#pickup_date, #dropoff_date').attr('type', 'date').removeAttr('readonly');
+            
+            var today = new Date().toISOString().split('T')[0];
+            $('#pickup_date').attr('min', today);
+        }
         
         $('#pickup_date').on('change', function() {
             var pickupDate = $(this).val();
             if (pickupDate) {
-                var minDropoff = new Date(pickupDate);
-                minDropoff.setDate(minDropoff.getDate() + 1);
-                $('#dropoff_date').attr('min', minDropoff.toISOString().split('T')[0]);
+                if (hasTimepicker) {
+                    // For datetime, ensure dropoff is at least 1 hour later
+                    var pickupMoment = new Date(pickupDate);
+                    pickupMoment.setHours(pickupMoment.getHours() + 1);
+                    $('#dropoff_date').attr('min', pickupMoment.toISOString().slice(0, 16));
+                } else {
+                    // For date, ensure dropoff is at least 1 day later
+                    var minDropoff = new Date(pickupDate);
+                    minDropoff.setDate(minDropoff.getDate() + 1);
+                    $('#dropoff_date').attr('min', minDropoff.toISOString().split('T')[0]);
+                }
             }
         });
         
         // Only trigger calculation on change for fallback
         $('#pickup_date, #dropoff_date').on('change', function() {
-            if ($('#pickup_date').val() && $('#dropoff_date').val()) {
+            var pickupVal = $('#pickup_date').val();
+            var dropoffVal = $('#dropoff_date').val();
+            
+            if (pickupVal && dropoffVal) {
+                console.log('Fallback calculation with dates:', pickupVal, dropoffVal);
                 if (typeof window.smartRentalsCalculateTotal === 'function') {
                     setTimeout(window.smartRentalsCalculateTotal, 100);
                 }
             }
         });
         
-        console.log('Basic date pickers initialized for rental type:', rentalType);
+        console.log('Basic date pickers initialized for rental type:', rentalType, 'with timepicker:', hasTimepicker);
     }
     
     // Show range duration with enhanced UI

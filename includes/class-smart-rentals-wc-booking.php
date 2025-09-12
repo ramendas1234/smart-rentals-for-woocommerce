@@ -72,19 +72,29 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				return false;
 			}
 
-			// Validate dates
-			$pickup_timestamp = strtotime( $pickup_date );
-			$dropoff_timestamp = strtotime( $dropoff_date );
+			// Enhanced datetime validation with multiple format support
+			$pickup_timestamp = $this->parse_datetime_string( $pickup_date );
+			$dropoff_timestamp = $this->parse_datetime_string( $dropoff_date );
 
-			if ( !$pickup_timestamp || !$dropoff_timestamp ) {
-				wc_add_notice( __( 'Invalid date format. Please select valid dates.', 'smart-rentals-wc' ), 'error' );
+			if ( !$pickup_timestamp ) {
+				smart_rentals_wc_log( 'Invalid pickup date format: ' . $pickup_date );
+				wc_add_notice( __( 'Invalid pickup date format. Please select a valid date.', 'smart-rentals-wc' ), 'error' );
+				return false;
+			}
+
+			if ( !$dropoff_timestamp ) {
+				smart_rentals_wc_log( 'Invalid dropoff date format: ' . $dropoff_date );
+				wc_add_notice( __( 'Invalid drop-off date format. Please select a valid date.', 'smart-rentals-wc' ), 'error' );
 				return false;
 			}
 
 			if ( $pickup_timestamp >= $dropoff_timestamp ) {
+				smart_rentals_wc_log( 'Invalid date range - Pickup: ' . $pickup_date . ' (' . $pickup_timestamp . '), Dropoff: ' . $dropoff_date . ' (' . $dropoff_timestamp . ')' );
 				wc_add_notice( __( 'Drop-off date must be after pickup date.', 'smart-rentals-wc' ), 'error' );
 				return false;
 			}
+
+			smart_rentals_wc_log( 'Valid date range for cart - Pickup: ' . $pickup_date . ', Dropoff: ' . $dropoff_date );
 
 			// Check minimum rental period
 			$min_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'min_rental_period' );
@@ -489,9 +499,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				$rental_data = $cart_item['rental_data'];
 				$product_id = $rental_data['product_id'];
 
-				// Final availability check
-				$pickup_timestamp = strtotime( $rental_data['pickup_date'] );
-				$dropoff_timestamp = strtotime( $rental_data['dropoff_date'] );
+				// Final availability check with enhanced datetime parsing
+				$pickup_timestamp = $this->parse_datetime_string( $rental_data['pickup_date'] );
+				$dropoff_timestamp = $this->parse_datetime_string( $rental_data['dropoff_date'] );
 				
 				if ( !Smart_Rentals_WC()->options->check_availability( 
 					$product_id, 
@@ -655,6 +665,44 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				[ '%s' ],
 				[ '%d' ]
 			);
+		}
+
+		/**
+		 * Parse datetime string with multiple format support
+		 */
+		private function parse_datetime_string( $datetime_string ) {
+			if ( empty( $datetime_string ) ) {
+				return false;
+			}
+
+			// Try different datetime formats
+			$formats = [
+				'Y-m-d H:i',     // 2025-09-14 10:00
+				'Y-m-d H:i:s',   // 2025-09-14 10:00:00
+				'Y-m-d',         // 2025-09-14
+				'm/d/Y H:i',     // 09/14/2025 10:00
+				'm/d/Y',         // 09/14/2025
+				'd-m-Y H:i',     // 14-09-2025 10:00
+				'd-m-Y',         // 14-09-2025
+			];
+
+			foreach ( $formats as $format ) {
+				$timestamp = DateTime::createFromFormat( $format, $datetime_string );
+				if ( $timestamp && $timestamp->format( $format ) === $datetime_string ) {
+					smart_rentals_wc_log( 'Successfully parsed datetime in booking: ' . $datetime_string . ' with format: ' . $format );
+					return $timestamp->getTimestamp();
+				}
+			}
+
+			// Fallback to strtotime
+			$timestamp = strtotime( $datetime_string );
+			if ( $timestamp ) {
+				smart_rentals_wc_log( 'Parsed datetime in booking with strtotime: ' . $datetime_string . ' -> ' . $timestamp );
+				return $timestamp;
+			}
+
+			smart_rentals_wc_log( 'Failed to parse datetime in booking: ' . $datetime_string );
+			return false;
 		}
 
 		/**

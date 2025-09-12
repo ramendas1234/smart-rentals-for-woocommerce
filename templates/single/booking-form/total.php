@@ -48,6 +48,8 @@ jQuery(document).ready(function($) {
     
     var productId = <?php echo intval( $product_id ); ?>;
     var securityDeposit = <?php echo floatval( $security_deposit ); ?>;
+    var rentalType = '<?php echo esc_js( smart_rentals_wc_get_post_meta( $product_id, 'rental_type' ) ); ?>';
+    var hasTimepicker = <?php echo in_array( smart_rentals_wc_get_post_meta( $product_id, 'rental_type' ), [ 'hour', 'mixed', 'appointment' ] ) ? 'true' : 'false'; ?>;
     
     // Make calculation function globally available
     window.smartRentalsCalculateTotal = function() {
@@ -59,20 +61,40 @@ jQuery(document).ready(function($) {
             pickup: pickupDate,
             dropoff: dropoffDate,
             quantity: quantity,
-            productId: productId
+            productId: productId,
+            hasTimepicker: hasTimepicker
         });
         
         if (!pickupDate || !dropoffDate) {
             $('#smart-rentals-total-display').hide();
             $('#smart-rentals-error-display').hide();
+            console.log('No dates provided, hiding displays');
             return;
         }
         
-        // Validate dates
-        var pickup = new Date(pickupDate);
-        var dropoff = new Date(dropoffDate);
+        // Enhanced date validation for datetime formats
+        var pickup, dropoff;
+        
+        if (hasTimepicker) {
+            // For datetime formats, parse as datetime
+            pickup = new Date(pickupDate.replace(' ', 'T')); // Convert to ISO format
+            dropoff = new Date(dropoffDate.replace(' ', 'T'));
+        } else {
+            // For date-only formats
+            pickup = new Date(pickupDate);
+            dropoff = new Date(dropoffDate);
+        }
+        
+        console.log('Parsed dates:', { pickup: pickup, dropoff: dropoff });
+        
+        if (isNaN(pickup.getTime()) || isNaN(dropoff.getTime())) {
+            console.error('Invalid date objects created');
+            showError('Invalid date format. Please select valid dates.');
+            return;
+        }
         
         if (pickup >= dropoff) {
+            console.error('Pickup date is not before dropoff date');
             showError('Drop-off date must be after pickup date.');
             return;
         }

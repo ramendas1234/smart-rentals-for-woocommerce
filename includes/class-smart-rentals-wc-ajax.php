@@ -46,6 +46,44 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 		}
 
 		/**
+		 * Parse datetime string with multiple format support
+		 */
+		private function parse_datetime_string( $datetime_string ) {
+			if ( empty( $datetime_string ) ) {
+				return false;
+			}
+
+			// Try different datetime formats
+			$formats = [
+				'Y-m-d H:i',     // 2025-09-14 10:00
+				'Y-m-d H:i:s',   // 2025-09-14 10:00:00
+				'Y-m-d',         // 2025-09-14
+				'm/d/Y H:i',     // 09/14/2025 10:00
+				'm/d/Y',         // 09/14/2025
+				'd-m-Y H:i',     // 14-09-2025 10:00
+				'd-m-Y',         // 14-09-2025
+			];
+
+			foreach ( $formats as $format ) {
+				$timestamp = DateTime::createFromFormat( $format, $datetime_string );
+				if ( $timestamp && $timestamp->format( $format ) === $datetime_string ) {
+					smart_rentals_wc_log( 'Successfully parsed datetime: ' . $datetime_string . ' with format: ' . $format );
+					return $timestamp->getTimestamp();
+				}
+			}
+
+			// Fallback to strtotime
+			$timestamp = strtotime( $datetime_string );
+			if ( $timestamp ) {
+				smart_rentals_wc_log( 'Parsed datetime with strtotime: ' . $datetime_string . ' -> ' . $timestamp );
+				return $timestamp;
+			}
+
+			smart_rentals_wc_log( 'Failed to parse datetime: ' . $datetime_string );
+			return false;
+		}
+
+		/**
 		 * Calculate rental total
 		 */
 		public function smart_rentals_calculate_total() {
@@ -72,24 +110,35 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			// Get form data
 			$pickup_date = sanitize_text_field( smart_rentals_wc_get_meta_data( 'pickup_date', $_POST ) );
 			$dropoff_date = sanitize_text_field( smart_rentals_wc_get_meta_data( 'dropoff_date', $_POST ) );
-			$pickup_time = sanitize_text_field( smart_rentals_wc_get_meta_data( 'pickup_time', $_POST, '' ) );
-			$dropoff_time = sanitize_text_field( smart_rentals_wc_get_meta_data( 'dropoff_time', $_POST, '' ) );
 			$quantity = intval( smart_rentals_wc_get_meta_data( 'quantity', $_POST, 1 ) );
 
 			if ( !$pickup_date || !$dropoff_date ) {
+				smart_rentals_wc_log( 'Missing dates - Pickup: ' . $pickup_date . ', Dropoff: ' . $dropoff_date );
 				wp_send_json_error( [ 'message' => __( 'Pickup and drop-off dates are required', 'smart-rentals-wc' ) ] );
 			}
 
-			// Create datetime strings
-			$pickup_datetime = $pickup_date . ( $pickup_time ? ' ' . $pickup_time : ' 00:00' );
-			$dropoff_datetime = $dropoff_date . ( $dropoff_time ? ' ' . $dropoff_time : ' 23:59' );
+			// Parse datetime strings properly with enhanced handling
+			// Handle different datetime formats that might come from daterangepicker
+			$pickup_timestamp = $this->parse_datetime_string( $pickup_date );
+			$dropoff_timestamp = $this->parse_datetime_string( $dropoff_date );
 
-			$pickup_timestamp = strtotime( $pickup_datetime );
-			$dropoff_timestamp = strtotime( $dropoff_datetime );
-
-			if ( !$pickup_timestamp || !$dropoff_timestamp || $pickup_timestamp >= $dropoff_timestamp ) {
-				wp_send_json_error( [ 'message' => __( 'Invalid date range', 'smart-rentals-wc' ) ] );
+			// Enhanced validation with detailed logging
+			if ( !$pickup_timestamp ) {
+				smart_rentals_wc_log( 'Invalid pickup date format: ' . $pickup_date );
+				wp_send_json_error( [ 'message' => __( 'Invalid pickup date format', 'smart-rentals-wc' ) ] );
 			}
+
+			if ( !$dropoff_timestamp ) {
+				smart_rentals_wc_log( 'Invalid dropoff date format: ' . $dropoff_date );
+				wp_send_json_error( [ 'message' => __( 'Invalid drop-off date format', 'smart-rentals-wc' ) ] );
+			}
+
+			if ( $pickup_timestamp >= $dropoff_timestamp ) {
+				smart_rentals_wc_log( 'Invalid date range - Pickup: ' . $pickup_date . ' (' . $pickup_timestamp . '), Dropoff: ' . $dropoff_date . ' (' . $dropoff_timestamp . ')' );
+				wp_send_json_error( [ 'message' => __( 'Drop-off date must be after pickup date', 'smart-rentals-wc' ) ] );
+			}
+
+			smart_rentals_wc_log( 'Valid date range - Pickup: ' . $pickup_date . ', Dropoff: ' . $dropoff_date );
 
 			// Calculate price
 			$total_price = Smart_Rentals_WC()->options->calculate_rental_price(
