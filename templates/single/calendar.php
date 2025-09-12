@@ -32,7 +32,7 @@ $days_in_month = date( 't', $first_day_of_month );
 $first_day_of_week = date( 'w', $first_day_of_month ); // 0 = Sunday
 $month_name = date( 'F Y', $first_day_of_month );
 
-// Navigation URLs
+// Navigation data for AJAX
 $prev_month = $current_month - 1;
 $prev_year = $current_year;
 if ( $prev_month < 1 ) {
@@ -47,10 +47,6 @@ if ( $next_month > 12 ) {
     $next_year++;
 }
 
-$base_url = get_permalink( $product_id );
-$prev_url = add_query_arg( [ 'cal_month' => $prev_month, 'cal_year' => $prev_year ], $base_url );
-$next_url = add_query_arg( [ 'cal_month' => $next_month, 'cal_year' => $next_year ], $base_url );
-
 ?>
 
 <div class="smart-rentals-calendar-container">
@@ -64,18 +60,18 @@ $next_url = add_query_arg( [ 'cal_month' => $next_month, 'cal_year' => $next_yea
         </p>
     </div>
 
-    <div class="smart-rentals-calendar">
+    <div class="smart-rentals-calendar" id="smart-rentals-calendar-<?php echo $product_id; ?>" data-product-id="<?php echo $product_id; ?>">
         <!-- Calendar Navigation -->
         <div class="calendar-nav">
-            <a href="<?php echo esc_url( $prev_url ); ?>" class="nav-prev">
+            <button type="button" class="nav-prev" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>">
                 <i class="dashicons dashicons-arrow-left-alt2"></i>
                 <?php _e( 'Previous', 'smart-rentals-wc' ); ?>
-            </a>
+            </button>
             <h4 class="current-month"><?php echo esc_html( $month_name ); ?></h4>
-            <a href="<?php echo esc_url( $next_url ); ?>" class="nav-next">
+            <button type="button" class="nav-next" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>">
                 <?php _e( 'Next', 'smart-rentals-wc' ); ?>
                 <i class="dashicons dashicons-arrow-right-alt2"></i>
-            </a>
+            </button>
         </div>
 
         <!-- Calendar Grid -->
@@ -106,8 +102,27 @@ $next_url = add_query_arg( [ 'cal_month' => $next_month, 'cal_year' => $next_yea
                     $is_today = ( $date === date( 'Y-m-d' ) );
                     $is_past = ( $timestamp < strtotime( 'today' ) );
                     
-                    // Check availability for this date
-                    $available_quantity = Smart_Rentals_WC()->options->get_available_quantity( $product_id, $timestamp, $timestamp + 86400 );
+                    // Check availability for this date (more accurate check)
+                    $total_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
+                    $total_stock = $total_stock ? intval( $total_stock ) : 1;
+                    
+                    // Check for existing bookings on this date
+                    global $wpdb;
+                    $bookings_table = $wpdb->prefix . 'smart_rentals_bookings';
+                    
+                    $booked_quantity = 0;
+                    if ( $wpdb->get_var( "SHOW TABLES LIKE '$bookings_table'" ) === $bookings_table ) {
+                        $booked_quantity = $wpdb->get_var( $wpdb->prepare(
+                            "SELECT COALESCE(SUM(quantity), 0) FROM $bookings_table 
+                             WHERE product_id = %d 
+                             AND status IN ('confirmed', 'pending', 'processing', 'completed')
+                             AND %s BETWEEN pickup_date AND dropoff_date",
+                            $product_id,
+                            $date
+                        ));
+                    }
+                    
+                    $available_quantity = $total_stock - intval( $booked_quantity );
                     $is_available = ( $available_quantity > 0 );
                     
                     // Get price for this day
@@ -162,3 +177,49 @@ $next_url = add_query_arg( [ 'cal_month' => $next_month, 'cal_year' => $next_yea
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    // AJAX Calendar Navigation
+    $('.smart-rentals-calendar .nav-prev, .smart-rentals-calendar .nav-next').on('click', function(e) {
+        e.preventDefault();
+        
+        var $button = $(this);
+        var $calendar = $button.closest('.smart-rentals-calendar-container');
+        var productId = $button.closest('.smart-rentals-calendar').data('product-id');
+        var month = $button.data('month');
+        var year = $button.data('year');
+        
+        // Show loading
+        $calendar.addClass('loading');
+        $button.prop('disabled', true);
+        
+        // AJAX request
+        $.ajax({
+            url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
+            type: 'POST',
+            data: {
+                action: 'smart_rentals_load_calendar',
+                product_id: productId,
+                month: month,
+                year: year,
+                nonce: '<?php echo wp_create_nonce( 'smart_rentals_calendar_nonce' ); ?>'
+            },
+            success: function(response) {
+                if (response.success && response.data.html) {
+                    $calendar.replaceWith(response.data.html);
+                } else {
+                    console.error('Calendar load failed:', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Calendar AJAX error:', error);
+            },
+            complete: function() {
+                $calendar.removeClass('loading');
+                $button.prop('disabled', false);
+            }
+        });
+    });
+});
+</script>

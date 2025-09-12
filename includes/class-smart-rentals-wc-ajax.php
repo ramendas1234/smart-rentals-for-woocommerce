@@ -25,6 +25,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				'check_availability',
 				'add_to_cart',
 				'get_calendar_data',
+				'load_calendar',
 			];
 
 			foreach ( $ajax_actions as $action ) {
@@ -389,6 +390,43 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				'events' => $events,
 				'product_id' => $product_id,
 			]);
+		}
+
+		/**
+		 * Load calendar via AJAX
+		 */
+		public function smart_rentals_load_calendar() {
+			// Verify nonce
+			if ( !wp_verify_nonce( $_POST['nonce'], 'smart_rentals_calendar_nonce' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Security check failed', 'smart-rentals-wc' ) ] );
+			}
+
+			$product_id = intval( $_POST['product_id'] );
+			$month = intval( $_POST['month'] );
+			$year = intval( $_POST['year'] );
+
+			if ( !$product_id || !smart_rentals_wc_is_rental_product( $product_id ) ) {
+				wp_send_json_error( [ 'message' => __( 'Invalid product', 'smart-rentals-wc' ) ] );
+			}
+
+			// Validate month and year
+			if ( $month < 1 || $month > 12 || $year < date( 'Y' ) || $year > date( 'Y' ) + 2 ) {
+				wp_send_json_error( [ 'message' => __( 'Invalid date range', 'smart-rentals-wc' ) ] );
+			}
+
+			// Set GET parameters for the template
+			$_GET['cal_month'] = $month;
+			$_GET['cal_year'] = $year;
+
+			// Capture the calendar template output
+			ob_start();
+			$template_path = SMART_RENTALS_WC_PLUGIN_TEMPLATES . 'single/calendar.php';
+			if ( file_exists( $template_path ) ) {
+				include $template_path;
+			}
+			$html = ob_get_clean();
+
+			wp_send_json_success( [ 'html' => $html ] );
 		}
 	}
 }

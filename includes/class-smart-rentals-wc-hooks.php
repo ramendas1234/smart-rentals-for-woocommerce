@@ -26,8 +26,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_price' ], 9 );
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_booking_form' ], 25 );
 			
-			// Calendar display below product image
-			add_action( 'woocommerce_before_single_product_summary', [ $this, 'rental_product_calendar' ], 25 );
+			// Calendar display after product gallery (below gallery, not beside)
+			add_action( 'woocommerce_after_single_product_summary', [ $this, 'rental_product_calendar' ], 5 );
 
 			// Rental booking form components (following external plugin)
 			add_action( 'smart_rentals_booking_form', [ $this, 'rental_booking_form_fields' ], 5 );
