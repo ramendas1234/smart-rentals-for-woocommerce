@@ -328,7 +328,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			}
 
 			// Include the calendar template
-			$template_path = SMART_RENTALS_WC_PATH . 'templates/single/calendar.php';
+			$template_path = SMART_RENTALS_WC_PLUGIN_TEMPLATES . 'single/calendar.php';
 			if ( file_exists( $template_path ) ) {
 				$product_id = $post->ID;
 				include $template_path;

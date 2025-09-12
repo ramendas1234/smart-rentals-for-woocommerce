@@ -440,19 +440,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'description' => __( 'Security deposit amount', 'smart-rentals-wc' ),
 			]);
 
-			// Show Calendar option
+			// Show Availability Calendar option
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'show_calendar' ),
 				'label' => __( 'Show Availability Calendar', 'smart-rentals-wc' ),
 				'desc_tip' => true,
 				'description' => __( 'Display a monthly calendar showing availability and daily pricing below the product image. This is for informational purposes only and does not affect the booking form.', 'smart-rentals-wc' ),
-			]);
-
-			// Enable calendar
-			woocommerce_wp_checkbox([
-				'id' => smart_rentals_wc_meta_key( 'enable_calendar' ),
-				'label' => __( 'Show Calendar', 'smart-rentals-wc' ),
-				'description' => __( 'Display calendar for date selection', 'smart-rentals-wc' ),
 			]);
 
 			echo '</div>';
@@ -476,7 +469,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'max_rental_period' => 'number',
 					'rental_stock' => 'number',
 					'security_deposit' => 'price',
-					'enable_calendar' => 'checkbox',
 					'show_calendar' => 'checkbox',
 				];
 
