@@ -49,18 +49,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 		 * Calculate rental total
 		 */
 		public function smart_rentals_calculate_total() {
+			// Debug logging
+			smart_rentals_wc_log( 'Calculate total called with data: ' . print_r( $_POST, true ) );
+			
 			$this->verify_nonce();
 
 			// Product ID
 			$product_id = absint( smart_rentals_wc_get_meta_data( 'product_id', $_POST ) );
 			if ( !$product_id ) {
+				smart_rentals_wc_log( 'Calculate total failed: No product ID' );
 				wp_send_json_error( [ 'message' => __( 'Product ID is required', 'smart-rentals-wc' ) ] );
 			}
 
 			// Check if it's a rental product
 			if ( !smart_rentals_wc_is_rental_product( $product_id ) ) {
+				smart_rentals_wc_log( 'Calculate total failed: Product ' . $product_id . ' is not a rental product' );
 				wp_send_json_error( [ 'message' => __( 'Product is not a rental product', 'smart-rentals-wc' ) ] );
 			}
+
+			smart_rentals_wc_log( 'Processing rental calculation for product: ' . $product_id );
 
 			// Get form data
 			$pickup_date = sanitize_text_field( smart_rentals_wc_get_meta_data( 'pickup_date', $_POST ) );
@@ -128,6 +135,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 					'quantity' => $quantity,
 				]
 			];
+
+			// Debug logging
+			smart_rentals_wc_log( 'Calculate total response: ' . print_r( $response_data, true ) );
 
 			wp_send_json_success( $response_data );
 		}

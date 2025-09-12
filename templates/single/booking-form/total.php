@@ -109,8 +109,8 @@ jQuery(document).ready(function($) {
                 if (response.success && response.data) {
                     var data = response.data;
                     
-                    // Update display
-                    $('#rental-subtotal-amount').text(data.formatted_price || '0');
+                    // Update display (use .html() instead of .text() for formatted prices)
+                    $('#rental-subtotal-amount').html(data.formatted_price || '0');
                     $('#rental-duration-text').text(data.duration_text || '-');
                     
                     var totalAmount = data.total_price + securityDeposit;

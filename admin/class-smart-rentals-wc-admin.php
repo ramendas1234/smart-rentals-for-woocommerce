@@ -497,6 +497,40 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						smart_rentals_wc_update_post_meta( $post_id, $field, 'no' );
 					}
 				}
+
+				// Set WooCommerce regular price for validation
+				$this->set_woocommerce_price( $post_id );
+			}
+		}
+
+		/**
+		 * Set WooCommerce regular price for rental products
+		 */
+		private function set_woocommerce_price( $post_id ) {
+			$daily_price = smart_rentals_wc_get_post_meta( $post_id, 'daily_price' );
+			$hourly_price = smart_rentals_wc_get_post_meta( $post_id, 'hourly_price' );
+
+			// Set regular price for WooCommerce validation
+			$price_to_set = 0;
+			
+			if ( $daily_price > 0 ) {
+				$price_to_set = $daily_price;
+			} elseif ( $hourly_price > 0 ) {
+				$price_to_set = $hourly_price;
+			}
+
+			if ( $price_to_set > 0 ) {
+				// Set WooCommerce regular price
+				update_post_meta( $post_id, '_regular_price', $price_to_set );
+				update_post_meta( $post_id, '_price', $price_to_set );
+				
+				// Mark as virtual product (rentals typically are)
+				update_post_meta( $post_id, '_virtual', 'yes' );
+				
+				// Set stock status
+				update_post_meta( $post_id, '_stock_status', 'instock' );
+				
+				smart_rentals_wc_log( "Set WooCommerce price for rental product {$post_id}: {$price_to_set}" );
 			}
 		}
 
