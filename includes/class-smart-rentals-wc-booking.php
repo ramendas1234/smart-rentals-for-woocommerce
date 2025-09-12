@@ -176,6 +176,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			$dropoff_time = isset( $_POST['dropoff_time'] ) ? sanitize_text_field( $_POST['dropoff_time'] ) : '';
 
 			if ( $pickup_date && $dropoff_date ) {
+				// Calculate duration text for display in cart
+				$duration_text = Smart_Rentals_WC()->options->get_rental_duration_text( 
+					$pickup_date, 
+					$dropoff_date 
+				);
+				
 				$cart_item_data['rental_data'] = [
 					'pickup_date' => $pickup_date,
 					'dropoff_date' => $dropoff_date,
@@ -185,6 +191,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					'rental_quantity' => $quantity,
 					'pickup_location' => isset( $_POST['pickup_location'] ) ? sanitize_text_field( $_POST['pickup_location'] ) : '',
 					'dropoff_location' => isset( $_POST['dropoff_location'] ) ? sanitize_text_field( $_POST['dropoff_location'] ) : '',
+					'duration_text' => $duration_text
 				];
 
 				// Make each rental booking unique

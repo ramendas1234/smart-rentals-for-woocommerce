@@ -153,6 +153,7 @@ jQuery(document).ready(function($) {
                             dropoff_date: dropoffDate,
                             product_id: productId,
                             rental_quantity: quantity,
+                            duration_text: data.duration_text
                         }
                     };
                     

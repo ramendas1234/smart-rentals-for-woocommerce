@@ -921,6 +921,58 @@
     role: alert;
 }
 
+/* ========================================
+   RENTAL QUANTITY DISPLAY IN CART
+   ======================================== */
+
+/* Rental quantity/duration display in cart */
+.rental-duration,
+.rental-quantity {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.rental-duration {
+    background: #e3f2fd;
+    border-color: #bbdefb;
+    color: #1976d2;
+}
+
+.rental-quantity {
+    background: #f3e5f5;
+    border-color: #ce93d8;
+    color: #7b1fa2;
+}
+
+/* Cart table styling for rental products */
+.woocommerce-cart-form .cart_item .product-quantity .rental-duration,
+.woocommerce-cart-form .cart_item .product-quantity .rental-quantity {
+    margin: 0;
+    text-align: center;
+    min-width: 80px;
+}
+
+/* Checkout page styling */
+.woocommerce-checkout .shop_table .cart_item .product-quantity .rental-duration,
+.woocommerce-checkout .shop_table .cart_item .product-quantity .rental-quantity {
+    margin: 0;
+    text-align: center;
+}
+
+/* Mini cart styling */
+.widget_shopping_cart_content .mini_cart_item .quantity .rental-duration,
+.widget_shopping_cart_content .mini_cart_item .quantity .rental-quantity {
+    font-size: 0.8em;
+    padding: 2px 6px;
+}
+
 /* Print styles */
 @media print {
     .smart-rentals-booking-form {
@@ -929,6 +981,12 @@
     }
     
     .smart-rentals-message {
+        background: #fff !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .rental-duration,
+    .rental-quantity {
         background: #fff !important;
         border: 1px solid #000 !important;
     }
