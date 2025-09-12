@@ -24,7 +24,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		 * Frontend scripts
 		 */
 		public function frontend_scripts() {
-			// Load Moment.js (required for daterangepicker)
+			// Load Moment.js (required for daterangepicker.com)
 			wp_enqueue_script(
 				'moment',
 				'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js',
@@ -33,10 +33,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 				true
 			);
 
-			// Load daterangepicker library
+			// Load the actual daterangepicker.com library
 			wp_enqueue_script(
 				'daterangepicker',
-				'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js',
+				'https://cdn.jsdelivr.net/gh/dangrossman/daterangepicker@master/daterangepicker.min.js',
 				[ 'jquery', 'moment' ],
 				'3.14.1',
 				true
@@ -92,10 +92,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 		 * Frontend styles
 		 */
 		public function frontend_styles() {
-			// Load daterangepicker styles
+			// Load the actual daterangepicker.com CSS
 			wp_enqueue_style(
 				'daterangepicker',
-				'https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css',
+				'https://cdn.jsdelivr.net/gh/dangrossman/daterangepicker@master/daterangepicker.css',
 				[],
 				'3.14.1'
 			);

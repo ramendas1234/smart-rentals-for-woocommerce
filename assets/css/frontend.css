@@ -163,16 +163,18 @@
     }
 }
 
-/* Modern daterangepicker styling */
+/* Daterangepicker.com styling with Apply button emphasis */
 .daterangepicker {
     border: none;
     border-radius: 15px;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
     padding: 0;
     overflow: hidden;
     z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Calendar styling */
 .daterangepicker .calendar-table {
     background: white;
     border: none;
@@ -191,37 +193,43 @@
 
 .daterangepicker .calendar-table td {
     border: none;
-    padding: 8px;
+    padding: 6px;
+    text-align: center;
 }
 
 .daterangepicker .calendar-table td.available {
-    border-radius: 8px;
+    border-radius: 6px;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .daterangepicker .calendar-table td.available:hover {
     background: #f0f4ff !important;
     color: #667eea !important;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    font-weight: 600;
 }
 
+/* Range highlighting - KEY FEATURE */
 .daterangepicker .calendar-table td.in-range {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%) !important;
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%) !important;
     color: #667eea !important;
     border-radius: 0 !important;
+    font-weight: 500;
 }
 
 .daterangepicker .calendar-table td.start-date,
 .daterangepicker .calendar-table td.end-date {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: white !important;
-    font-weight: 600;
-    border-radius: 8px !important;
-    transform: scale(1.1);
+    font-weight: 700;
+    border-radius: 6px !important;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .daterangepicker .calendar-table td.start-date.end-date {
-    border-radius: 8px !important;
+    border-radius: 6px !important;
 }
 
 .daterangepicker .calendar-table td.today {
@@ -231,59 +239,106 @@
     border: 2px solid #ffc107;
 }
 
+/* Ranges sidebar */
 .daterangepicker .ranges {
-    background: #f8f9fa;
-    border-right: 1px solid #e9ecef;
-    border-radius: 15px 0 0 15px;
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    border-right: 1px solid #dee2e6;
+    border-radius: 15px 0 0 0;
+    padding: 10px 0;
 }
 
 .daterangepicker .ranges li {
     color: #495057;
     border-radius: 8px;
-    margin: 4px 8px;
-    padding: 8px 12px;
+    margin: 2px 8px;
+    padding: 10px 15px;
     transition: all 0.2s ease;
     font-weight: 500;
+    cursor: pointer;
 }
 
 .daterangepicker .ranges li:hover {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .daterangepicker .ranges li.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+/* Month navigation */
 .daterangepicker .calendar-table .month {
     color: #333;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
 }
 
-.daterangepicker .drp-buttons {
-    border-top: 1px solid #e9ecef;
-    background: #f8f9fa;
-    padding: 15px;
-}
-
-.daterangepicker .drp-buttons .btn {
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 600;
+.daterangepicker .prev, .daterangepicker .next {
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
     transition: all 0.2s ease;
 }
 
-.daterangepicker .drp-buttons .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
+.daterangepicker .prev:hover, .daterangepicker .next:hover {
+    background: #764ba2;
+    transform: scale(1.1);
 }
 
-.daterangepicker .drp-buttons .btn-primary:hover {
+/* Apply/Cancel buttons - MOST IMPORTANT STYLING */
+.daterangepicker .drp-buttons {
+    border-top: 2px solid #e9ecef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 20px;
+    text-align: center;
+    border-radius: 0 0 15px 15px;
+}
+
+.daterangepicker .drp-buttons .btn {
+    border-radius: 25px;
+    padding: 12px 25px;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 5px;
+    min-width: 100px;
+}
+
+/* Apply button - make it prominent! */
+.daterangepicker .drp-buttons .btn-success {
+    background: linear-gradient(135deg, #46b450 0%, #27ae60 100%) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(70, 180, 80, 0.4);
+}
+
+.daterangepicker .drp-buttons .btn-success:hover {
+    background: linear-gradient(135deg, #27ae60 0%, #46b450 100%) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(70, 180, 80, 0.5);
+}
+
+/* Cancel button */
+.daterangepicker .drp-buttons .btn-secondary {
+    background: #6c757d !important;
+    border: none !important;
+    color: white !important;
+}
+
+.daterangepicker .drp-buttons .btn-secondary:hover {
+    background: #5a6268 !important;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 /* Success animation for selected dates */

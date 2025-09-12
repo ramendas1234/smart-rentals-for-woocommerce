@@ -132,8 +132,25 @@ git checkout plugin-development
 #### 4. **Test Different Rental Types**
 ```
 - Daily: Set daily price, test multi-day rentals
-- Hourly: Set hourly price, test with time fields
+- Hourly: Set hourly price, test with time fields  
 - Mixed: Set both prices, test 24+ hour vs shorter rentals
+- Hotel: Test nightly accommodation booking
+- Appointment: Test precise time slot booking
+- Period/Package: Test package-based pricing
+- Transportation: Test fixed trip pricing
+- Taxi: Test time/distance-based pricing
+```
+
+#### 5. **Test Modern Date Picker**
+```
+1. Click on pickup or dropoff date field
+2. Beautiful daterangepicker.com calendar opens
+3. Select pickup date → See start date highlighted
+4. Select dropoff date → See range highlighting
+5. Try quick preset buttons (Today, Next Week, etc.)
+6. Click APPLY button → AJAX calculation triggers ONCE
+7. Verify individual dates show in each field
+8. Test on mobile for responsive design
 ```
 
 ### Rental Types
