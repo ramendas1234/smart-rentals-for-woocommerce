@@ -5,28 +5,43 @@
 jQuery(document).ready(function($) {
     'use strict';
 
+    // Debug log
+    console.log('Smart Rentals Order Edit script loaded');
+    console.log('Found rental edit toggles:', $('.rental-edit-toggle').length);
+
     // Toggle edit fields
-    $('.rental-edit-toggle').on('click', function() {
+    $(document).on('click', '.rental-edit-toggle', function(e) {
+        e.preventDefault();
+        console.log('Edit button clicked');
+        
         var itemId = $(this).data('item-id');
         var $container = $(this).closest('.rental-edit-container');
         var $fields = $container.find('.rental-edit-fields');
         var $display = $container.find('.rental-display-info');
+
+        console.log('Container found:', $container.length);
+        console.log('Fields found:', $fields.length);
+        console.log('Display found:', $display.length);
 
         if ($fields.is(':visible')) {
             // Hide edit fields, show display
             $fields.hide();
             $display.show();
             $(this).text(smartRentalsOrderEdit.strings.edit || 'Edit Rental Details');
+            console.log('Switched to display mode');
         } else {
             // Show edit fields, hide display
             $fields.show();
             $display.hide();
-            $(this).text('Cancel Edit');
+            $(this).text(smartRentalsOrderEdit.strings.cancel || 'Cancel Edit');
+            console.log('Switched to edit mode');
         }
     });
 
     // Check availability
-    $('.rental-check-availability').on('click', function() {
+    $(document).on('click', '.rental-check-availability', function(e) {
+        e.preventDefault();
+        console.log('Check availability clicked');
         var itemId = $(this).data('item-id');
         var productId = $(this).data('product-id');
         var $container = $(this).closest('.rental-edit-container');
@@ -77,7 +92,7 @@ jQuery(document).ready(function($) {
     });
 
     // Auto-check availability when dates change
-    $('.rental-date-input, .rental-quantity-input').on('change', function() {
+    $(document).on('change', '.rental-date-input, .rental-quantity-input', function() {
         var $container = $(this).closest('.rental-edit-container');
         var $checkButton = $container.find('.rental-check-availability');
         var $result = $container.find('.rental-availability-result');

@@ -368,42 +368,44 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
          * Enqueue admin scripts
          */
         public function admin_scripts( $hook ) {
-            if ( 'post.php' !== $hook || !isset( $_GET['post'] ) ) {
+            // Check if we're on the order edit screen
+            if ( 'post.php' !== $hook && 'edit.php' !== $hook ) {
                 return;
             }
 
-            $post_id = intval( $_GET['post'] );
-            $order = wc_get_order( $post_id );
+            global $post;
+            if ( !$post || $post->post_type !== 'shop_order' ) {
+                return;
+            }
+
+            // Always enqueue for order edit pages (we'll check for rental items in JS)
+            wp_enqueue_script( 
+                'smart-rentals-order-edit', 
+                SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/admin-order-edit.js', 
+                [ 'jquery' ], 
+                SMART_RENTALS_WC_VERSION, 
+                true 
+            );
             
-            if ( !$order ) {
-                return;
-            }
+            wp_localize_script( 'smart-rentals-order-edit', 'smartRentalsOrderEdit', [
+                'ajax_url' => admin_url( 'admin-ajax.php' ),
+                'nonce' => wp_create_nonce( 'smart-rentals-order-edit' ),
+                'strings' => [
+                    'checking' => __( 'Checking availability...', 'smart-rentals-wc' ),
+                    'available' => __( 'Available', 'smart-rentals-wc' ),
+                    'not_available' => __( 'Not available', 'smart-rentals-wc' ),
+                    'error' => __( 'Error checking availability', 'smart-rentals-wc' ),
+                    'edit' => __( 'Edit Rental Details', 'smart-rentals-wc' ),
+                    'cancel' => __( 'Cancel Edit', 'smart-rentals-wc' ),
+                ]
+            ]);
 
-            // Check if order has rental items
-            $has_rental_items = false;
-            foreach ( $order->get_items() as $item ) {
-                $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
-                if ( $is_rental === 'yes' ) {
-                    $has_rental_items = true;
-                    break;
-                }
-            }
-
-            if ( $has_rental_items ) {
-                wp_enqueue_script( 'smart-rentals-order-edit', SMART_RENTALS_WC_PLUGIN_ASSETS . 'js/admin-order-edit.js', [ 'jquery' ], SMART_RENTALS_WC_VERSION, true );
-                wp_localize_script( 'smart-rentals-order-edit', 'smartRentalsOrderEdit', [
-                    'ajax_url' => admin_url( 'admin-ajax.php' ),
-                    'nonce' => wp_create_nonce( 'smart-rentals-order-edit' ),
-                    'strings' => [
-                        'checking' => __( 'Checking availability...', 'smart-rentals-wc' ),
-                        'available' => __( 'Available', 'smart-rentals-wc' ),
-                        'not_available' => __( 'Not available', 'smart-rentals-wc' ),
-                        'error' => __( 'Error checking availability', 'smart-rentals-wc' ),
-                    ]
-                ]);
-
-                wp_enqueue_style( 'smart-rentals-order-edit', SMART_RENTALS_WC_PLUGIN_ASSETS . 'css/admin-order-edit.css', [], SMART_RENTALS_WC_VERSION );
-            }
+            wp_enqueue_style( 
+                'smart-rentals-order-edit', 
+                SMART_RENTALS_WC_PLUGIN_URI . 'assets/css/admin-order-edit.css', 
+                [], 
+                SMART_RENTALS_WC_VERSION 
+            );
         }
     }
 }
