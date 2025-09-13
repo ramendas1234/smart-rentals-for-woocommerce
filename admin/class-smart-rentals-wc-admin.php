@@ -73,11 +73,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 
 			add_submenu_page(
 				'smart-rentals-wc',
-				__( 'Bookings', 'smart-rentals-wc' ),
-				__( 'Bookings', 'smart-rentals-wc' ),
+				__( 'Manage Bookings', 'smart-rentals-wc' ),
+				__( 'Manage Bookings', 'smart-rentals-wc' ),
 				'manage_woocommerce',
 				'smart-rentals-wc-bookings',
-				[ $this, 'bookings_page' ]
+				[ $this, 'manage_bookings_page' ]
 			);
 
 			add_submenu_page(
@@ -179,6 +179,153 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					</div>
 				</div>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Manage Bookings page
+		 */
+		public function manage_bookings_page() {
+			// Include the booking list class
+			require_once SMART_RENTALS_WC_PLUGIN_PATH . 'admin/class-smart-rentals-wc-booking-list.php';
+			
+			// Create booking list instance
+			$booking_list = new Smart_Rentals_WC_Booking_List();
+			$booking_list->prepare_items();
+			
+			// Get rental product IDs for filter
+			$rental_products = Smart_Rentals_WC()->options->get_rental_product_ids();
+			
+			// Get filter values
+			$order_id = isset( $_GET['order_id'] ) ? intval( $_GET['order_id'] ) : '';
+			$customer_name = isset( $_GET['customer_name'] ) ? sanitize_text_field( $_GET['customer_name'] ) : '';
+			$product_id = isset( $_GET['product_id'] ) ? intval( $_GET['product_id'] ) : '';
+			$order_status = isset( $_GET['order_status'] ) ? sanitize_text_field( $_GET['order_status'] ) : '';
+			$from_date = isset( $_GET['from_date'] ) ? sanitize_text_field( $_GET['from_date'] ) : '';
+			$to_date = isset( $_GET['to_date'] ) ? sanitize_text_field( $_GET['to_date'] ) : '';
+			$search_by = isset( $_GET['search_by'] ) ? sanitize_text_field( $_GET['search_by'] ) : '';
+			
+			?>
+			<div class="wrap">
+				<h1><?php _e( 'Manage Bookings', 'smart-rentals-wc' ); ?></h1>
+				
+				<!-- Filters -->
+				<div class="booking-filters" style="background: #fff; padding: 20px; margin: 20px 0; border: 1px solid #ccd0d4;">
+					<form method="GET" action="">
+						<input type="hidden" name="page" value="smart-rentals-wc-bookings" />
+						
+						<div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: end;">
+							<!-- Order ID -->
+							<div class="filter-field">
+								<label for="order_id"><?php _e( 'Order ID', 'smart-rentals-wc' ); ?></label><br>
+								<input type="number" name="order_id" id="order_id" value="<?php echo esc_attr( $order_id ); ?>" placeholder="<?php _e( 'Order ID', 'smart-rentals-wc' ); ?>" />
+							</div>
+							
+							<!-- Customer Name -->
+							<div class="filter-field">
+								<label for="customer_name"><?php _e( 'Customer Name', 'smart-rentals-wc' ); ?></label><br>
+								<input type="text" name="customer_name" id="customer_name" value="<?php echo esc_attr( $customer_name ); ?>" placeholder="<?php _e( 'Customer Name', 'smart-rentals-wc' ); ?>" />
+							</div>
+							
+							<!-- Product -->
+							<div class="filter-field">
+								<label for="product_id"><?php _e( 'Product', 'smart-rentals-wc' ); ?></label><br>
+								<select name="product_id" id="product_id">
+									<option value=""><?php _e( '-- All Products --', 'smart-rentals-wc' ); ?></option>
+									<?php if ( smart_rentals_wc_array_exists( $rental_products ) ) : ?>
+										<?php foreach ( $rental_products as $pid ) : ?>
+											<option value="<?php echo esc_attr( $pid ); ?>" <?php selected( $product_id, $pid ); ?>>
+												<?php echo esc_html( get_the_title( $pid ) ); ?>
+											</option>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</select>
+							</div>
+							
+							<!-- Order Status -->
+							<div class="filter-field">
+								<label for="order_status"><?php _e( 'Order Status', 'smart-rentals-wc' ); ?></label><br>
+								<select name="order_status" id="order_status">
+									<option value=""><?php _e( '-- All Statuses --', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-pending" <?php selected( $order_status, 'wc-pending' ); ?>><?php _e( 'Pending Payment', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-processing" <?php selected( $order_status, 'wc-processing' ); ?>><?php _e( 'Processing', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-on-hold" <?php selected( $order_status, 'wc-on-hold' ); ?>><?php _e( 'On Hold', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-completed" <?php selected( $order_status, 'wc-completed' ); ?>><?php _e( 'Completed', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-cancelled" <?php selected( $order_status, 'wc-cancelled' ); ?>><?php _e( 'Cancelled', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-refunded" <?php selected( $order_status, 'wc-refunded' ); ?>><?php _e( 'Refunded', 'smart-rentals-wc' ); ?></option>
+									<option value="wc-failed" <?php selected( $order_status, 'wc-failed' ); ?>><?php _e( 'Failed', 'smart-rentals-wc' ); ?></option>
+								</select>
+							</div>
+							
+							<!-- Search By Date -->
+							<div class="filter-field">
+								<label for="search_by"><?php _e( 'Search By', 'smart-rentals-wc' ); ?></label><br>
+								<select name="search_by" id="search_by">
+									<option value=""><?php _e( '-- Search By --', 'smart-rentals-wc' ); ?></option>
+									<option value="pickup_date" <?php selected( $search_by, 'pickup_date' ); ?>><?php _e( 'Pickup Date', 'smart-rentals-wc' ); ?></option>
+									<option value="dropoff_date" <?php selected( $search_by, 'dropoff_date' ); ?>><?php _e( 'Dropoff Date', 'smart-rentals-wc' ); ?></option>
+								</select>
+							</div>
+							
+							<!-- From Date -->
+							<div class="filter-field">
+								<label for="from_date"><?php _e( 'From Date', 'smart-rentals-wc' ); ?></label><br>
+								<input type="date" name="from_date" id="from_date" value="<?php echo esc_attr( $from_date ); ?>" />
+							</div>
+							
+							<!-- To Date -->
+							<div class="filter-field">
+								<label for="to_date"><?php _e( 'To Date', 'smart-rentals-wc' ); ?></label><br>
+								<input type="date" name="to_date" id="to_date" value="<?php echo esc_attr( $to_date ); ?>" />
+							</div>
+							
+							<!-- Filter Button -->
+							<div class="filter-field">
+								<button type="submit" class="button button-primary"><?php _e( 'Filter', 'smart-rentals-wc' ); ?></button>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=smart-rentals-wc-bookings' ) ); ?>" class="button"><?php _e( 'Clear', 'smart-rentals-wc' ); ?></a>
+							</div>
+						</div>
+					</form>
+				</div>
+				
+				<!-- Bookings Table -->
+				<form method="post">
+					<?php $booking_list->display(); ?>
+				</form>
+			</div>
+			
+			<style>
+			.filter-field {
+				min-width: 150px;
+			}
+			.filter-field label {
+				font-weight: 600;
+				margin-bottom: 5px;
+				display: block;
+			}
+			.filter-field input,
+			.filter-field select {
+				width: 100%;
+				max-width: 200px;
+			}
+			.order-status {
+				display: inline-block;
+				padding: 4px 8px;
+				border-radius: 3px;
+				font-size: 11px;
+				font-weight: 600;
+				text-align: center;
+				color: #fff;
+				background: #999;
+			}
+			.order-status.status-pending { background: #ffba00; }
+			.order-status.status-processing { background: #c6e1c6; color: #5b841b; }
+			.order-status.status-on-hold { background: #f8dda7; color: #94660c; }
+			.order-status.status-completed { background: #c8d7e1; color: #2e4453; }
+			.order-status.status-cancelled { background: #eba3a3; color: #761919; }
+			.order-status.status-refunded { background: #eba3a3; color: #761919; }
+			.order-status.status-failed { background: #eba3a3; color: #761919; }
+			</style>
 			<?php
 		}
 
