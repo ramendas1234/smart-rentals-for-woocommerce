@@ -21,11 +21,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Admin menu
 			add_action( 'admin_menu', [ $this, 'admin_menu' ] );
 
-			// Add rental checkbox to product general tab
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_checkbox' ] );
+			// Add rental checkbox to product general tab (beside Virtual/Downloadable)
+			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_checkbox' ], 15 );
 
-			// Add rental fields after checkbox
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_fields' ] );
+			// Add Rental Options tab
+			add_filter( 'woocommerce_product_data_tabs', [ $this, 'add_rental_options_tab' ] );
+			
+			// Add rental fields to Rental Options tab
+			add_action( 'woocommerce_product_data_panels', [ $this, 'add_rental_options_panel' ] );
 
 			// Save rental meta
 			add_action( 'woocommerce_process_product_meta', [ $this, 'save_rental_meta' ], 11, 2 );
@@ -323,7 +326,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		}
 
 		/**
-		 * Add rental checkbox to product general tab
+		 * Add rental checkbox beside Virtual/Downloadable checkboxes
 		 */
 		public function add_rental_checkbox() {
 			global $post;
@@ -333,26 +336,42 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				return;
 			}
 
+			// Add rental checkbox inline with Virtual/Downloadable
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'enable_rental' ),
-				'label' => __( 'Rental Product', 'smart-rentals-wc' ),
+				'wrapper_class' => 'show_if_simple',
+				'label' => __( 'Rental', 'smart-rentals-wc' ),
 				'description' => __( 'Enable rental/booking functionality for this product', 'smart-rentals-wc' ),
 				'desc_tip' => true,
 			]);
 		}
 
 		/**
-		 * Add rental fields after checkbox
+		 * Add Rental Options tab to product data tabs
 		 */
-		public function add_rental_fields() {
+		public function add_rental_options_tab( $tabs ) {
+			$tabs['smart_rentals'] = [
+				'label'    => __( 'Rental Options', 'smart-rentals-wc' ),
+				'target'   => 'smart_rentals_product_data',
+				'class'    => [ 'show_if_rental', 'hide_if_grouped', 'hide_if_external', 'smart_rentals_options' ],
+				'priority' => 25,
+			];
+			return $tabs;
+		}
+
+		/**
+		 * Add Rental Options tab panel content
+		 */
+		public function add_rental_options_panel() {
 			global $post;
 
-			// Only show fields if WooCommerce functions are available
+			// Only show panel if WooCommerce functions are available
 			if ( !function_exists( 'woocommerce_wp_select' ) || !function_exists( 'woocommerce_wp_text_input' ) ) {
 				return;
 			}
 
-			echo '<div id="smart-rentals-fields" style="display: none;">';
+			echo '<div id="smart_rentals_product_data" class="panel woocommerce_options_panel hidden">';
+			echo '<div class="options_group">';
 			
 			// Rental type
 			woocommerce_wp_select([
@@ -374,6 +393,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'description' => __( 'Select the rental pricing type. Currently only Daily, Hourly, and Mixed types are fully supported.', 'smart-rentals-wc' ),
 			]);
 
+			echo '</div>';
+			echo '<div class="options_group">';
+
 			// Daily price
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'daily_price' ),
@@ -384,6 +406,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'step' => '0.01',
 					'min' => '0',
 				],
+				'desc_tip' => true,
+				'description' => __( 'Daily rental price', 'smart-rentals-wc' ),
 			]);
 
 			// Hourly price
@@ -396,7 +420,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'step' => '0.01',
 					'min' => '0',
 				],
+				'desc_tip' => true,
+				'description' => __( 'Hourly rental price', 'smart-rentals-wc' ),
 			]);
+
+			echo '</div>';
+			echo '<div class="options_group">';
 
 			// Minimum rental period (optional)
 			woocommerce_wp_text_input([
@@ -423,6 +452,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'desc_tip' => true,
 				'description' => __( 'Maximum rental duration in days/hours. Leave blank to allow unlimited duration.', 'smart-rentals-wc' ),
 			]);
+
+			echo '</div>';
+			echo '<div class="options_group">';
 
 			// Inventory/Stock
 			woocommerce_wp_text_input([
@@ -451,6 +483,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'description' => __( 'Security deposit amount', 'smart-rentals-wc' ),
 			]);
 
+			echo '</div>';
+			echo '<div class="options_group">';
+
 			// Show Availability Calendar option
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'show_calendar' ),
@@ -460,6 +495,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			]);
 
 			echo '</div>';
+			echo '</div>';
+		}
+
+		/**
+		 * Add rental fields after checkbox (DEPRECATED - moved to Rental Options tab)
+		 */
+		public function add_rental_fields() {
+			// This method is deprecated - all rental fields are now in the Rental Options tab
+			// Keeping for backward compatibility, but it does nothing
+			return;
 		}
 
 		/**

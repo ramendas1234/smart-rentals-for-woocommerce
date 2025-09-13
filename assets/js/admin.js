@@ -1,21 +1,48 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    // Handle rental checkbox toggle  
+    // Handle rental checkbox toggle for new tab system
     var rentalCheckbox = $('input[name="smart_rentals_enable_rental"]');
-    var rentalFields = $('#smart-rentals-fields');
+    var rentalTab = $('li.smart_rentals_options a');
+    var rentalTabLink = $('.smart_rentals_tab');
     
-    // Initial state
-    if (rentalCheckbox.is(':checked')) {
-        rentalFields.show();
+    // Function to toggle rental tab visibility
+    function toggleRentalTab() {
+        if (rentalCheckbox.is(':checked')) {
+            // Show rental tab
+            $('li.smart_rentals_options').show();
+            $('body').addClass('rental-product-enabled');
+            
+            // Add show_if_rental class to product
+            $('#product-type').trigger('change');
+        } else {
+            // Hide rental tab and switch to General tab if currently on Rental tab
+            if ($('#smart_rentals_product_data').is(':visible')) {
+                $('.general_tab a').trigger('click');
+            }
+            $('li.smart_rentals_options').hide();
+            $('body').removeClass('rental-product-enabled');
+        }
     }
     
-    // Toggle rental fields when checkbox changes
+    // Initial state
+    toggleRentalTab();
+    
+    // Toggle rental tab when checkbox changes
     rentalCheckbox.on('change', function() {
-        if ($(this).is(':checked')) {
-            rentalFields.slideDown();
+        toggleRentalTab();
+    });
+    
+    // Handle product type changes to show/hide rental elements
+    $('#product-type').on('change', function() {
+        var productType = $(this).val();
+        
+        if (productType === 'simple' || productType === 'variable') {
+            rentalCheckbox.closest('p').show();
         } else {
-            rentalFields.slideUp();
+            rentalCheckbox.closest('p').hide();
+            rentalCheckbox.prop('checked', false);
+            toggleRentalTab();
         }
     });
     
@@ -126,6 +153,22 @@ jQuery(document).ready(function($) {
             }
         }
     });
+    
+    // Add custom CSS for rental tab
+    if (!$('#smart-rentals-admin-css').length) {
+        $('head').append('<style id="smart-rentals-admin-css">' +
+            '/* Rental tab styling */' +
+            'li.smart_rentals_options { display: none; }' +
+            'body.rental-product-enabled li.smart_rentals_options { display: block; }' +
+            'li.smart_rentals_options a::before { content: "\\f508"; font-family: dashicons; margin-right: 5px; }' +
+            '.show_if_rental { display: none; }' +
+            'body.rental-product-enabled .show_if_rental { display: block; }' +
+            '#smart_rentals_product_data .options_group { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }' +
+            '#smart_rentals_product_data .options_group:last-child { border-bottom: none; margin-bottom: 0; }' +
+            '/* Rental checkbox inline styling */' +
+            'p.form-field._rental_field { display: inline-block; margin-right: 20px; }' +
+            '</style>');
+    }
     
     // Auto-calculate mixed pricing suggestions
     $('input[name="smart_rentals_daily_price"]').on('blur', function() {
