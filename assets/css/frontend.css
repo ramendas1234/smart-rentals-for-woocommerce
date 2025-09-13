@@ -1171,42 +1171,43 @@
    AVAILABILITY CALENDAR STYLES
    ======================================== */
 
-/* Calendar Container - Smaller and more compact */
+/* Compact Calendar Container */
 .smart-rentals-calendar-container {
-    margin: 20px 0;
+    margin: 15px 0;
     background: #ffffff;
     border: 1px solid #e3e6ea;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    max-width: 800px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    font-size: 13px;
 }
 
 .smart-rentals-calendar-header {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     color: #495057;
-    padding: 15px 20px;
+    padding: 12px 15px;
     text-align: center;
     border-bottom: 1px solid #dee2e6;
 }
 
 .calendar-title {
-    margin: 0 0 6px 0;
-    font-size: 18px;
+    margin: 0 0 4px 0;
+    font-size: 16px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .calendar-title .dashicons {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .calendar-description {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.8;
 }
 
@@ -1215,7 +1216,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 10px 15px;
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
 }
@@ -1252,7 +1253,7 @@
 
 .current-month {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #2c3e50;
 }
@@ -1286,11 +1287,11 @@
     background: #e9ecef;
 }
 
-/* Calendar Days - More compact */
+/* Compact Calendar Days */
 .calendar-day {
     background: white;
-    min-height: 65px;
-    padding: 6px 4px;
+    min-height: 55px;
+    padding: 4px 2px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1302,7 +1303,7 @@
 
 .calendar-day.empty {
     background: #f8f9fa;
-    min-height: 65px;
+    min-height: 55px;
 }
 
 .calendar-day.today {
@@ -1345,18 +1346,18 @@
 }
 
 .day-number {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     color: #2c3e50;
 }
 
 .availability-indicator {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 500;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-bottom: 2px;
+    padding: 1px 4px;
+    border-radius: 8px;
+    margin-bottom: 1px;
 }
 
 .available-count {
@@ -1380,21 +1381,21 @@
 }
 
 .day-price {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: #28a745;
     background: rgba(40, 167, 69, 0.1);
-    padding: 2px 6px;
-    border-radius: 8px;
-    margin-top: 2px;
+    padding: 1px 4px;
+    border-radius: 6px;
+    margin-top: 1px;
 }
 
-/* Calendar Legend */
+/* Compact Calendar Legend */
 .calendar-legend {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    padding: 15px 20px;
+    gap: 20px;
+    padding: 10px 15px;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
 }
@@ -1428,14 +1429,14 @@
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 12px;
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
     border: 1px solid #dee2e6;
 }
 

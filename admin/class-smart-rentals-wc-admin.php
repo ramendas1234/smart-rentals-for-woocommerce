@@ -1047,9 +1047,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								// Handle array fields like disabled_weekdays and disabled_dates
 								if ( is_array( $value ) ) {
 									$value = array_map( 'sanitize_text_field', $value );
-									// Remove empty values
+									// Remove empty values but keep '0' (Sunday)
 									$value = array_filter( $value, function( $item ) {
-										return !empty( trim( $item ) );
+										return $item !== '' && $item !== null;
 									});
 									// Reset array keys
 									$value = array_values( $value );

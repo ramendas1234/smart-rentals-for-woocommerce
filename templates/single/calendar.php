@@ -154,16 +154,13 @@ if ( $next_month > 12 ) {
                     echo '<span class="day-number">' . $day . '</span>';
                     
                     if ( !$is_past ) {
-                        if ( $is_disabled_date ) {
-                            echo '<span class="availability-indicator disabled-date-text">' . __( 'Blocked Date', 'smart-rentals-wc' ) . '</span>';
-                        } elseif ( $is_disabled_weekday ) {
-                            echo '<span class="availability-indicator disabled-weekday-text">' . __( 'Disabled Day', 'smart-rentals-wc' ) . '</span>';
-                        } elseif ( $is_available ) {
+                        if ( $is_available ) {
                             echo '<span class="availability-indicator available-count">' . $available_quantity . ' ' . __( 'available', 'smart-rentals-wc' ) . '</span>';
                             if ( $price_display ) {
                                 echo '<span class="day-price">' . $price_display . '</span>';
                             }
                         } else {
+                            // All disabled/blocked/booked dates show as unavailable
                             echo '<span class="availability-indicator unavailable-text">' . __( 'Unavailable', 'smart-rentals-wc' ) . '</span>';
                         }
                     }
@@ -174,7 +171,7 @@ if ( $next_month > 12 ) {
             </div>
         </div>
 
-        <!-- Calendar Legend -->
+        <!-- Simplified Calendar Legend -->
         <div class="calendar-legend">
             <div class="legend-item">
                 <span class="legend-color available"></span>
@@ -184,22 +181,6 @@ if ( $next_month > 12 ) {
                 <span class="legend-color unavailable"></span>
                 <span class="legend-text"><?php _e( 'Unavailable', 'smart-rentals-wc' ); ?></span>
             </div>
-            <?php 
-            $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
-            if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) : ?>
-            <div class="legend-item">
-                <span class="legend-color disabled-weekday"></span>
-                <span class="legend-text"><?php _e( 'Disabled Weekday', 'smart-rentals-wc' ); ?></span>
-            </div>
-            <?php endif; ?>
-            <?php 
-            $disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
-            if ( is_array( $disabled_start_dates ) && !empty( $disabled_start_dates ) ) : ?>
-            <div class="legend-item">
-                <span class="legend-color disabled-date"></span>
-                <span class="legend-text"><?php _e( 'Blocked Date', 'smart-rentals-wc' ); ?></span>
-            </div>
-            <?php endif; ?>
             <div class="legend-item">
                 <span class="legend-color today"></span>
                 <span class="legend-text"><?php _e( 'Today', 'smart-rentals-wc' ); ?></span>
