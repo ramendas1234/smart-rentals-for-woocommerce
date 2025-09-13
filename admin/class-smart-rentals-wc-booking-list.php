@@ -212,7 +212,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
             
             // Product filter
             if ( $product_id ) {
-                $where_conditions[] = $wpdb->prepare( "oi.product_id = %d", $product_id );
+                $where_conditions[] = $wpdb->prepare( "oim_product_id.meta_value = %d", $product_id );
             }
             
             // Order status filter
@@ -253,7 +253,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
                     oim_dropoff.meta_value as dropoff_date,
                     oim_quantity.meta_value as rental_quantity,
                     pm_order_total.meta_value as order_total,
-                    oi.product_id
+                    oim_product_id.meta_value as product_id
                 FROM {$wpdb->posts} p
                 INNER JOIN {$wpdb->prefix}woocommerce_order_items oi ON p.ID = oi.order_id
                 INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_is_rental 
@@ -269,6 +269,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
                 LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_quantity 
                     ON oi.order_item_id = oim_quantity.order_item_id 
                     AND oim_quantity.meta_key = '" . smart_rentals_wc_meta_key( 'rental_quantity' ) . "'
+                LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_product_id 
+                    ON oi.order_item_id = oim_product_id.order_item_id 
+                    AND oim_product_id.meta_key = '_product_id'
                 LEFT JOIN {$wpdb->postmeta} pm_billing_first_name 
                     ON p.ID = pm_billing_first_name.post_id 
                     AND pm_billing_first_name.meta_key = '_billing_first_name'
@@ -305,6 +308,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
                 LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_dropoff 
                     ON oi.order_item_id = oim_dropoff.order_item_id 
                     AND oim_dropoff.meta_key = '" . smart_rentals_wc_meta_key( 'dropoff_date' ) . "'
+                LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_product_id 
+                    ON oi.order_item_id = oim_product_id.order_item_id 
+                    AND oim_product_id.meta_key = '_product_id'
                 LEFT JOIN {$wpdb->postmeta} pm_billing_first_name 
                     ON p.ID = pm_billing_first_name.post_id 
                     AND pm_billing_first_name.meta_key = '_billing_first_name'
