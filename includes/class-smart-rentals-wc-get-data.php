@@ -270,19 +270,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 
 			$booked_quantity = 0;
 
-			foreach ( $booked_dates as $booking ) {
-				$booking_pickup = strtotime( $booking->pickup_date );
-				$booking_dropoff = strtotime( $booking->dropoff_date );
+		foreach ( $booked_dates as $booking ) {
+			$booking_pickup = strtotime( $booking->pickup_date );
+			$booking_dropoff = strtotime( $booking->dropoff_date );
 
-				// Check if dates overlap
-				if ( $pickup_timestamp < $booking_dropoff && $dropoff_timestamp > $booking_pickup ) {
-					$booked_quantity += intval( $booking->quantity );
+			// Enhanced overlap logic with time consideration for real-world rental business
+			// A booking conflicts if the periods overlap in any way
+			if ( $pickup_timestamp < $booking_dropoff && $dropoff_timestamp > $booking_pickup ) {
+				$booked_quantity += intval( $booking->quantity );
+				
+				// Debug logging for rental time logic
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( "Booking overlap detected in check_availability: Booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
 				}
 			}
+		}
 
-			$available_quantity = $rental_stock - $booked_quantity;
+		$available_quantity = $rental_stock - $booked_quantity;
 
-			return $available_quantity >= $quantity;
+		return $available_quantity >= $quantity;
 		}
 
 		/**

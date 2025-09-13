@@ -53,6 +53,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			add_action( 'woocommerce_order_status_processing', [ $this, 'update_booking_status' ] );
 			add_action( 'woocommerce_order_status_cancelled', [ $this, 'cancel_booking' ] );
 			add_action( 'woocommerce_order_status_refunded', [ $this, 'cancel_booking' ] );
+			
+			// Handle order deletion
+			add_action( 'before_delete_post', [ $this, 'handle_order_deletion' ] );
+			add_action( 'wp_trash_post', [ $this, 'handle_order_deletion' ] );
 		}
 
 		/**
@@ -736,6 +740,23 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				[ '%s' ],
 				[ '%d' ]
 			);
+			
+			smart_rentals_wc_log( "Booking cancelled for order: $order_id" );
+		}
+
+		/**
+		 * Handle order deletion (trash or permanent delete)
+		 */
+		public function handle_order_deletion( $post_id ) {
+			// Check if this is a WooCommerce order
+			if ( get_post_type( $post_id ) !== 'shop_order' ) {
+				return;
+			}
+
+			// Cancel the booking when order is deleted/trashed
+			$this->cancel_booking( $post_id );
+			
+			smart_rentals_wc_log( "Order deleted/trashed, booking cancelled: $post_id" );
 		}
 
 		/**

@@ -21,7 +21,13 @@ $pickup_date = smart_rentals_wc_get_meta_data( 'pickup_date', $_GET );
 $dropoff_date = smart_rentals_wc_get_meta_data( 'dropoff_date', $_GET );
 
 // Check if we need time picker
-$has_timepicker = in_array( $rental_type, [ 'hour', 'mixed', 'appointment' ] );
+// Always show datetime for proper rental business logic
+$has_timepicker = true; // Always true for proper rental time management
+
+// Get global default times
+$settings = smart_rentals_wc_get_option( 'settings', [] );
+$default_pickup_time = smart_rentals_wc_get_meta_data( 'default_pickup_time', $settings, '10:00' );
+$default_dropoff_time = smart_rentals_wc_get_meta_data( 'default_dropoff_time', $settings, '09:30' );
 
 ?>
 
@@ -275,6 +281,10 @@ jQuery(document).ready(function($) {
             };
         }
         
+        // Set default times
+        dateRangeConfig.startDate = moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>);
+        dateRangeConfig.endDate = moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>);
+        
         // Initialize daterangepicker on a single input that controls both fields
         $('#pickup_date').daterangepicker(dateRangeConfig);
         
@@ -298,18 +308,14 @@ jQuery(document).ready(function($) {
                 return;
             }
             
-            // Format dates for individual fields with proper timezone handling
-            var pickupFormatted, dropoffFormatted;
+            // Always use datetime format for proper rental business logic
+            var pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
+            var dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
             
-            if (hasTimepicker) {
-                // For hourly rentals, include time
-                pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
-                dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
-            } else {
-                // For daily rentals, date only
-                pickupFormatted = startDate.format('YYYY-MM-DD');
-                dropoffFormatted = endDate.format('YYYY-MM-DD');
-            }
+            // Check if this is a one-day rental
+            var isOneDayRental = startDate.format('YYYY-MM-DD') === endDate.format('YYYY-MM-DD');
+            var isNextDayReturn = startDate.format('YYYY-MM-DD') !== endDate.format('YYYY-MM-DD') && 
+                                  endDate.diff(startDate, 'days') === 1;
             
             console.log('Formatted dates - Pickup:', pickupFormatted, 'Dropoff:', dropoffFormatted);
             
@@ -322,6 +328,20 @@ jQuery(document).ready(function($) {
             setTimeout(function() {
                 $('#pickup_date, #dropoff_date').removeClass('date-selected');
             }, 1000);
+            
+            // Show special notice for one-day or next-day rentals
+            $('.one-day-rental-notice').remove();
+            if (isOneDayRental || isNextDayReturn) {
+                var noticeText = isOneDayRental ? 
+                    '<?php _e( 'Same-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted :
+                    '<?php _e( 'One-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+                
+                var notice = '<div class="one-day-rental-notice" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 10px 0; border-radius: 4px; color: #856404; font-size: 13px;">' +
+                    '<strong>📅 ' + noticeText + '</strong>' +
+                    '</div>';
+                
+                $('.date-fields-container').after(notice);
+            }
             
             // Show duration
             showRangeDuration(startDate, endDate);

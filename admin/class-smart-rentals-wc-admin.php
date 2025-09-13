@@ -222,6 +222,24 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						</tr>
 						<tr>
 							<th scope="row">
+								<label for="default_pickup_time"><?php _e( 'Default Pickup Time', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="time" name="default_pickup_time" id="default_pickup_time" value="<?php echo esc_attr( smart_rentals_wc_get_meta_data( 'default_pickup_time', $settings, '10:00' ) ); ?>" />
+								<p class="description"><?php _e( 'Default time when customers pick up rental products. This affects availability calculations.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="default_dropoff_time"><?php _e( 'Default Dropoff Time', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="time" name="default_dropoff_time" id="default_dropoff_time" value="<?php echo esc_attr( smart_rentals_wc_get_meta_data( 'default_dropoff_time', $settings, '09:30' ) ); ?>" />
+								<p class="description"><?php _e( 'Default time when customers must return rental products. For one-day rentals, this is the return time next day.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
 								<label for="enable_calendar"><?php _e( 'Enable Calendar', 'smart-rentals-wc' ); ?></label>
 							</th>
 							<td>
@@ -252,6 +270,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			$settings = [
 				'date_format' => sanitize_text_field( $_POST['date_format'] ?? 'Y-m-d' ),
 				'time_format' => sanitize_text_field( $_POST['time_format'] ?? 'H:i' ),
+				'default_pickup_time' => sanitize_text_field( $_POST['default_pickup_time'] ?? '10:00' ),
+				'default_dropoff_time' => sanitize_text_field( $_POST['default_dropoff_time'] ?? '09:30' ),
 				'enable_calendar' => isset( $_POST['enable_calendar'] ) ? 'yes' : 'no',
 				'enable_deposits' => isset( $_POST['enable_deposits'] ) ? 'yes' : 'no',
 			];
