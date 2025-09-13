@@ -1003,6 +1003,34 @@
     }
 }
 
+/* Return time notice */
+.return-time-notice {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin: 15px 0;
+    color: #856404;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+}
+
+.return-time-notice .notice-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.return-time-notice .notice-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.return-time-notice .notice-text {
+    font-weight: 500;
+    line-height: 1.4;
+}
+
 /* Loading states */
 .smart-rentals-loading {
     opacity: 0.6;
