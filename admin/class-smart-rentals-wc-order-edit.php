@@ -14,17 +14,212 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
          * Constructor
          */
         public function __construct() {
-            // Admin order item headers
-            add_action( 'woocommerce_admin_order_item_headers', [ $this, 'admin_order_item_headers' ] );
-
-            // Admin order item values
-            add_action( 'woocommerce_admin_order_item_values', [ $this, 'admin_order_item_values' ], 10, 3 );
-
-            // Save order items
-            add_action( 'woocommerce_saved_order_items', [ $this, 'saved_order_items' ], 10, 2 );
-
+            // Add custom meta box to order edit screen
+            add_action( 'add_meta_boxes', [ $this, 'add_rental_edit_meta_box' ] );
+            
+            // Save rental data
+            add_action( 'save_post', [ $this, 'save_rental_data' ] );
+            
             // Enqueue admin scripts
             add_action( 'admin_enqueue_scripts', [ $this, 'admin_scripts' ] );
+            
+            // AJAX handlers
+            add_action( 'wp_ajax_smart_rentals_update_rental_item', [ $this, 'ajax_update_rental_item' ] );
+        }
+
+        /**
+         * Add rental edit meta box
+         */
+        public function add_rental_edit_meta_box() {
+            global $post;
+            
+            if ( !$post || $post->post_type !== 'shop_order' ) {
+                return;
+            }
+            
+            $order = wc_get_order( $post->ID );
+            if ( !$order ) {
+                return;
+            }
+            
+            // Check if order has rental items
+            $has_rental_items = false;
+            foreach ( $order->get_items() as $item ) {
+                if ( $this->is_rental_item( $item ) ) {
+                    $has_rental_items = true;
+                    break;
+                }
+            }
+            
+            if ( $has_rental_items ) {
+                add_meta_box(
+                    'smart-rentals-edit-box',
+                    __( 'Edit Rental Details', 'smart-rentals-wc' ),
+                    [ $this, 'rental_edit_meta_box_content' ],
+                    'shop_order',
+                    'normal',
+                    'high'
+                );
+            }
+        }
+
+        /**
+         * Check if item is a rental item (robust detection)
+         */
+        private function is_rental_item( $item ) {
+            $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+            $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+            $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+            $rental_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) );
+            
+            return ( $is_rental === 'yes' || ( $pickup_date && $dropoff_date ) || $rental_quantity );
+        }
+
+        /**
+         * Rental edit meta box content
+         */
+        public function rental_edit_meta_box_content( $post ) {
+            $order = wc_get_order( $post->ID );
+            if ( !$order ) {
+                return;
+            }
+            
+            wp_nonce_field( 'smart_rentals_edit_rental_data', 'smart_rentals_edit_nonce' );
+            
+            ?>
+            <div class="smart-rentals-edit-container">
+                <h4><?php _e( 'Rental Items in this Order', 'smart-rentals-wc' ); ?></h4>
+                
+                <?php foreach ( $order->get_items() as $item_id => $item ) : ?>
+                    <?php if ( $this->is_rental_item( $item ) ) : ?>
+                        <?php
+                        $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+                        $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+                        $rental_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: 1;
+                        $product_id = $item->get_product_id();
+                        ?>
+                        
+                        <div class="rental-item-edit" style="border: 1px solid #ddd; padding: 20px; margin: 10px 0; background: #f9f9f9;">
+                            <h5><?php echo esc_html( $item->get_name() ); ?> (Item #<?php echo $item_id; ?>)</h5>
+                            
+                            <table class="form-table">
+                                <tr>
+                                    <th><label for="pickup_date_<?php echo $item_id; ?>"><?php _e( 'Pickup Date & Time', 'smart-rentals-wc' ); ?></label></th>
+                                    <td>
+                                        <input type="datetime-local" 
+                                               id="pickup_date_<?php echo $item_id; ?>"
+                                               name="rental_data[<?php echo $item_id; ?>][pickup_date]" 
+                                               value="<?php echo esc_attr( $pickup_date ? date( 'Y-m-d\TH:i', strtotime( $pickup_date ) ) : '' ); ?>" 
+                                               style="width: 250px;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><label for="dropoff_date_<?php echo $item_id; ?>"><?php _e( 'Dropoff Date & Time', 'smart-rentals-wc' ); ?></label></th>
+                                    <td>
+                                        <input type="datetime-local" 
+                                               id="dropoff_date_<?php echo $item_id; ?>"
+                                               name="rental_data[<?php echo $item_id; ?>][dropoff_date]" 
+                                               value="<?php echo esc_attr( $dropoff_date ? date( 'Y-m-d\TH:i', strtotime( $dropoff_date ) ) : '' ); ?>" 
+                                               style="width: 250px;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><label for="rental_quantity_<?php echo $item_id; ?>"><?php _e( 'Rental Quantity', 'smart-rentals-wc' ); ?></label></th>
+                                    <td>
+                                        <input type="number" 
+                                               id="rental_quantity_<?php echo $item_id; ?>"
+                                               name="rental_data[<?php echo $item_id; ?>][quantity]" 
+                                               value="<?php echo esc_attr( $rental_quantity ); ?>" 
+                                               min="1" 
+                                               style="width: 100px;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <button type="button" 
+                                                class="button button-primary rental-check-availability" 
+                                                data-item-id="<?php echo $item_id; ?>" 
+                                                data-product-id="<?php echo $product_id; ?>">
+                                            <?php _e( 'Check Availability & Update Price', 'smart-rentals-wc' ); ?>
+                                        </button>
+                                        <div id="availability_result_<?php echo $item_id; ?>" class="rental-availability-result" style="margin-top: 10px;"></div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <input type="hidden" name="rental_data[<?php echo $item_id; ?>][product_id]" value="<?php echo $product_id; ?>" />
+                            <input type="hidden" name="rental_data[<?php echo $item_id; ?>][item_id]" value="<?php echo $item_id; ?>" />
+                        </div>
+                        
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                
+                <p class="description">
+                    <?php _e( 'Modify rental dates, times, and quantities for customer service requests. The system will validate availability and update pricing automatically.', 'smart-rentals-wc' ); ?>
+                </p>
+            </div>
+            
+            <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                console.log('Smart Rentals Meta Box Script Loaded');
+                
+                $('.rental-check-availability').on('click', function(e) {
+                    e.preventDefault();
+                    console.log('Check availability clicked from meta box');
+                    
+                    var itemId = $(this).data('item-id');
+                    var productId = $(this).data('product-id');
+                    var $button = $(this);
+                    var $result = $('#availability_result_' + itemId);
+                    
+                    var pickupDate = $('#pickup_date_' + itemId).val();
+                    var dropoffDate = $('#dropoff_date_' + itemId).val();
+                    var quantity = $('#rental_quantity_' + itemId).val() || 1;
+                    
+                    console.log('Data:', {itemId, productId, pickupDate, dropoffDate, quantity});
+                    
+                    if (!pickupDate || !dropoffDate) {
+                        $result.html('<div style="color: red; font-weight: bold;">Please select both pickup and dropoff dates.</div>');
+                        return;
+                    }
+                    
+                    $button.prop('disabled', true).text('Checking...');
+                    $result.html('<div style="color: blue;">Checking availability...</div>');
+                    
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'smart_rentals_check_order_edit_availability',
+                            nonce: '<?php echo wp_create_nonce( 'smart-rentals-order-edit' ); ?>',
+                            product_id: productId,
+                            pickup_date: pickupDate,
+                            dropoff_date: dropoffDate,
+                            quantity: quantity,
+                            exclude_order_id: <?php echo $post->ID; ?>
+                        },
+                        success: function(response) {
+                            $button.prop('disabled', false).text('Check Availability & Update Price');
+                            
+                            if (response.success) {
+                                var html = '<div style="color: green; font-weight: bold;">✅ Available</div>';
+                                html += '<div>Available quantity: ' + response.data.available_quantity + '</div>';
+                                html += '<div>New price: ' + response.data.formatted_price + '</div>';
+                                html += '<div>Duration: ' + response.data.duration_text + '</div>';
+                                $result.html(html);
+                            } else {
+                                $result.html('<div style="color: red; font-weight: bold;">❌ ' + response.data.message + '</div>');
+                            }
+                        },
+                        error: function() {
+                            $button.prop('disabled', false).text('Check Availability & Update Price');
+                            $result.html('<div style="color: red; font-weight: bold;">Error checking availability</div>');
+                        }
+                    });
+                });
+            });
+            </script>
+            <?php
         }
 
         /**
@@ -185,6 +380,158 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 </div>
             </td>
             <?php
+        }
+
+        /**
+         * Save rental data from meta box
+         */
+        public function save_rental_data( $post_id ) {
+            // Check if this is an order
+            if ( get_post_type( $post_id ) !== 'shop_order' ) {
+                return;
+            }
+            
+            // Verify nonce
+            if ( !isset( $_POST['smart_rentals_edit_nonce'] ) || !wp_verify_nonce( $_POST['smart_rentals_edit_nonce'], 'smart_rentals_edit_rental_data' ) ) {
+                return;
+            }
+            
+            // Check permissions
+            if ( !current_user_can( 'edit_shop_orders' ) ) {
+                return;
+            }
+            
+            // Check if rental data was submitted
+            if ( !isset( $_POST['rental_data'] ) || !is_array( $_POST['rental_data'] ) ) {
+                return;
+            }
+            
+            $order = wc_get_order( $post_id );
+            if ( !$order ) {
+                return;
+            }
+            
+            $changes_made = false;
+            
+            foreach ( $_POST['rental_data'] as $item_id => $rental_data ) {
+                $item = $order->get_item( $item_id );
+                if ( !$item || !$this->is_rental_item( $item ) ) {
+                    continue;
+                }
+                
+                $new_pickup = sanitize_text_field( $rental_data['pickup_date'] ?? '' );
+                $new_dropoff = sanitize_text_field( $rental_data['dropoff_date'] ?? '' );
+                $new_quantity = intval( $rental_data['quantity'] ?? 1 );
+                
+                if ( !$new_pickup || !$new_dropoff ) {
+                    continue;
+                }
+                
+                $pickup_timestamp = strtotime( $new_pickup );
+                $dropoff_timestamp = strtotime( $new_dropoff );
+                
+                if ( !$pickup_timestamp || !$dropoff_timestamp || $pickup_timestamp >= $dropoff_timestamp ) {
+                    $order->add_order_note( sprintf( 
+                        __( 'Failed to update rental details for %s: Invalid date range', 'smart-rentals-wc' ),
+                        $item->get_name()
+                    ) );
+                    continue;
+                }
+                
+                $product_id = $item->get_product_id();
+                
+                // Check availability
+                $available = $this->check_availability_excluding_order( $product_id, $pickup_timestamp, $dropoff_timestamp, $new_quantity, $post_id );
+                
+                if ( $available ) {
+                    // Get old values for comparison
+                    $old_pickup = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+                    $old_dropoff = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+                    $old_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: 1;
+                    
+                    // Update rental data
+                    $item->update_meta_data( smart_rentals_wc_meta_key( 'pickup_date' ), date( 'Y-m-d H:i:s', $pickup_timestamp ) );
+                    $item->update_meta_data( smart_rentals_wc_meta_key( 'dropoff_date' ), date( 'Y-m-d H:i:s', $dropoff_timestamp ) );
+                    $item->update_meta_data( smart_rentals_wc_meta_key( 'rental_quantity' ), $new_quantity );
+                    
+                    // Add is_rental flag if missing (for old orders)
+                    if ( !$item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ) ) {
+                        $item->update_meta_data( smart_rentals_wc_meta_key( 'is_rental' ), 'yes' );
+                    }
+                    
+                    // Update duration text
+                    $duration_text = Smart_Rentals_WC()->options->get_rental_duration_text( $pickup_timestamp, $dropoff_timestamp );
+                    $item->update_meta_data( smart_rentals_wc_meta_key( 'duration_text' ), $duration_text );
+                    
+                    // Update item quantity
+                    $item->set_quantity( $new_quantity );
+                    
+                    // Recalculate price
+                    $new_price = Smart_Rentals_WC()->options->calculate_rental_price( 
+                        $product_id, 
+                        $pickup_timestamp, 
+                        $dropoff_timestamp, 
+                        $new_quantity 
+                    );
+                    
+                    // Add security deposit
+                    $security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
+                    $total_with_deposit = $new_price + ( $security_deposit * $new_quantity );
+                    
+                    if ( $total_with_deposit > 0 ) {
+                        $item->set_subtotal( $total_with_deposit );
+                        $item->set_total( $total_with_deposit );
+                    }
+                    
+                    $item->save();
+                    
+                    // Update custom booking table
+                    $this->update_custom_booking_table( $post_id, $item_id, $pickup_timestamp, $dropoff_timestamp, $new_quantity );
+                    
+                    // Create order note
+                    $changes = [];
+                    if ( $old_pickup !== date( 'Y-m-d H:i:s', $pickup_timestamp ) ) {
+                        $changes[] = sprintf( 'Pickup: %s → %s', 
+                            $old_pickup ? date( 'Y-m-d H:i', strtotime( $old_pickup ) ) : 'Not set',
+                            date( 'Y-m-d H:i', $pickup_timestamp )
+                        );
+                    }
+                    if ( $old_dropoff !== date( 'Y-m-d H:i:s', $dropoff_timestamp ) ) {
+                        $changes[] = sprintf( 'Dropoff: %s → %s', 
+                            $old_dropoff ? date( 'Y-m-d H:i', strtotime( $old_dropoff ) ) : 'Not set',
+                            date( 'Y-m-d H:i', $dropoff_timestamp )
+                        );
+                    }
+                    if ( intval( $old_quantity ) !== $new_quantity ) {
+                        $changes[] = sprintf( 'Quantity: %d → %d', intval( $old_quantity ), $new_quantity );
+                    }
+                    
+                    if ( !empty( $changes ) ) {
+                        $order->add_order_note( sprintf( 
+                            __( 'Rental details updated for %s: %s. New price: %s', 'smart-rentals-wc' ),
+                            $item->get_name(),
+                            implode( ', ', $changes ),
+                            smart_rentals_wc_price( $total_with_deposit )
+                        ) );
+                        
+                        $changes_made = true;
+                    }
+                    
+                } else {
+                    $order->add_order_note( sprintf( 
+                        __( 'Failed to update rental details for %s: Product not available for selected dates/quantity', 'smart-rentals-wc' ),
+                        $item->get_name()
+                    ) );
+                }
+            }
+            
+            // Recalculate order totals if changes were made
+            if ( $changes_made ) {
+                $order->calculate_totals();
+                $order->save();
+                
+                $order->add_order_note( __( 'Order totals recalculated after rental details update', 'smart-rentals-wc' ) );
+            }
         }
 
         /**
