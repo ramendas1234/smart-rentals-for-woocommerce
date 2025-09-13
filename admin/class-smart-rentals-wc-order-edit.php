@@ -38,11 +38,17 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 smart_rentals_wc_log( 'admin_order_item_headers called for order #' . $order->get_id() );
             }
 
-            // Check if order has rental items
+            // Check if order has rental items (support both old and new orders)
             $has_rental_items = false;
             foreach ( $order->get_items() as $item ) {
+                // Check multiple ways to detect rental items
                 $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
-                if ( $is_rental === 'yes' ) {
+                $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+                $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+                $rental_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) );
+                
+                // Item is rental if it has the rental flag OR has rental dates
+                if ( $is_rental === 'yes' || ( $pickup_date && $dropoff_date ) || $rental_quantity ) {
                     $has_rental_items = true;
                     break;
                 }
@@ -68,14 +74,28 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 smart_rentals_wc_log( 'admin_order_item_values called for item #' . $item_id );
             }
 
-            // Check if this is a rental item
+            // Check if this is a rental item (support both old and new orders)
             $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+            $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+            $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+            $rental_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) );
+            
+            // Item is rental if it has the rental flag OR has rental dates
+            $is_rental_item = ( $is_rental === 'yes' || ( $pickup_date && $dropoff_date ) || $rental_quantity );
             
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                smart_rentals_wc_log( 'Item #' . $item_id . ' is_rental: ' . $is_rental );
+                smart_rentals_wc_log( sprintf( 
+                    'Item #%d rental detection: is_rental=%s, pickup_date=%s, dropoff_date=%s, rental_quantity=%s, result=%s',
+                    $item_id, 
+                    $is_rental ?: 'empty',
+                    $pickup_date ?: 'empty',
+                    $dropoff_date ?: 'empty',
+                    $rental_quantity ?: 'empty',
+                    $is_rental_item ? 'yes' : 'no'
+                ) );
             }
 
-            if ( $is_rental !== 'yes' ) {
+            if ( !$is_rental_item ) {
                 echo '<td class="item-rental-dates"></td>'; // Empty cell for non-rental items
                 return;
             }
@@ -193,9 +213,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                     continue;
                 }
 
-                // Check if this item has rental data to update
+                // Check if this item has rental data to update (support old and new orders)
                 $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
-                if ( $is_rental !== 'yes' ) {
+                $existing_pickup = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+                $existing_dropoff = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+                $existing_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) );
+                
+                // Item is rental if it has the rental flag OR has rental dates
+                $is_rental_item = ( $is_rental === 'yes' || ( $existing_pickup && $existing_dropoff ) || $existing_quantity );
+                
+                if ( !$is_rental_item ) {
                     continue;
                 }
 
