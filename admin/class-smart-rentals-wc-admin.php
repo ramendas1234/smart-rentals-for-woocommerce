@@ -314,7 +314,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 			.filter-field input.datepicker {
 				cursor: pointer;
-				background: #fff;
+				background: #f0f8ff;
+				border: 1px solid #0073aa;
+				padding: 6px 10px;
+				border-radius: 3px;
+			}
+			.filter-field input.datepicker:focus {
+				background: #e6f3ff;
+				border-color: #005177;
+				outline: none;
+				box-shadow: 0 0 0 1px #005177;
 			}
 			.order-status {
 				display: inline-block;
@@ -336,21 +345,84 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			
 			/* WordPress Datepicker Styling */
 			.ui-datepicker {
-				font-size: 12px;
+				font-size: 13px;
 				width: auto;
+				border: 2px solid #0073aa;
+				border-radius: 6px;
+				box-shadow: 0 4px 12px rgba(0, 115, 170, 0.15);
+				background: #ffffff;
 			}
 			.ui-datepicker-header {
-				background: #0073aa;
+				background: linear-gradient(135deg, #0073aa 0%, #005177 100%);
 				color: #fff;
 				border: none;
+				border-radius: 4px 4px 0 0;
+				padding: 10px;
 			}
 			.ui-datepicker-title {
 				color: #fff;
+				font-weight: 600;
+				text-align: center;
 			}
 			.ui-datepicker-prev,
 			.ui-datepicker-next {
-				background: none;
+				background: rgba(255, 255, 255, 0.2);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				border-radius: 3px;
+				color: #fff;
+				cursor: pointer;
+			}
+			.ui-datepicker-prev:hover,
+			.ui-datepicker-next:hover {
+				background: rgba(255, 255, 255, 0.3);
+			}
+			.ui-datepicker table {
+				background: #fff;
+			}
+			.ui-datepicker td {
 				border: none;
+				padding: 1px;
+			}
+			.ui-datepicker td a {
+				padding: 8px;
+				text-align: center;
+				border-radius: 4px;
+				color: #333;
+				text-decoration: none;
+				display: block;
+			}
+			.ui-datepicker td a:hover {
+				background: #e6f3ff;
+				color: #0073aa;
+			}
+			.ui-datepicker td .ui-state-active {
+				background: #0073aa;
+				color: #fff;
+			}
+			.ui-datepicker .ui-datepicker-today a {
+				background: #f0f8ff;
+				border: 2px solid #0073aa;
+				color: #0073aa;
+				font-weight: bold;
+			}
+			.ui-datepicker .ui-datepicker-buttonpane {
+				background: #f8f9fa;
+				border-top: 1px solid #e1e5e9;
+				padding: 8px;
+				text-align: center;
+			}
+			.ui-datepicker .ui-datepicker-buttonpane button {
+				margin: 0 5px;
+				padding: 6px 12px;
+				border-radius: 3px;
+				border: 1px solid #0073aa;
+				background: #0073aa;
+				color: #fff;
+				cursor: pointer;
+			}
+			.ui-datepicker .ui-datepicker-buttonpane button:hover {
+				background: #005177;
+				border-color: #005177;
 			}
 			</style>
 			
@@ -363,7 +435,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					changeYear: true,
 					showButtonPanel: true,
 					currentText: '<?php _e( 'Today', 'smart-rentals-wc' ); ?>',
-					closeText: '<?php _e( 'Clear', 'smart-rentals-wc' ); ?>',
+					closeText: '<?php _e( 'Close', 'smart-rentals-wc' ); ?>',
 					monthNames: [
 						'<?php _e( 'January', 'smart-rentals-wc' ); ?>',
 						'<?php _e( 'February', 'smart-rentals-wc' ); ?>',
@@ -411,22 +483,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						'<?php _e( 'Sa', 'smart-rentals-wc' ); ?>'
 					],
 					beforeShow: function(input, inst) {
-						// Add custom button functionality
+						// Add clear button functionality
 						setTimeout(function() {
 							var buttonPane = $(input).datepicker('widget').find('.ui-datepicker-buttonpane');
-							var btn = $('<button class="ui-datepicker-clear ui-state-default ui-priority-primary ui-corner-all" type="button"><?php _e( 'Clear', 'smart-rentals-wc' ); ?></button>');
-							btn.unbind('click').bind('click', function() {
-								$.datepicker._clearDate(input);
+							var clearBtn = $('<button class="ui-datepicker-clear" type="button"><?php _e( 'Clear', 'smart-rentals-wc' ); ?></button>');
+							clearBtn.click(function() {
+								$(input).val('');
+								$(input).datepicker('hide');
 							});
 							buttonPane.find('.ui-datepicker-clear').remove();
-							buttonPane.prepend(btn);
+							buttonPane.prepend(clearBtn);
 						}, 1);
 					}
-				});
-				
-				// Clear button functionality
-				$('.ui-datepicker-clear').live('click', function() {
-					$(this).closest('.ui-datepicker').prev('input').val('');
 				});
 			});
 			</script>
