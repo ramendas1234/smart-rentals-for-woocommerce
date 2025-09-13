@@ -18,6 +18,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 			
 			// Enqueue frontend styles
 			add_action( 'wp_enqueue_scripts', [ $this, 'frontend_styles' ] );
+			
+			// Enqueue admin scripts
+			add_action( 'admin_enqueue_scripts', [ $this, 'admin_scripts' ] );
 		}
 
 		/**
@@ -126,6 +129,43 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 			// You can add custom CSS generation based on settings here
 			
 			return apply_filters( 'smart_rentals_wc_custom_css', $css );
+		}
+
+		/**
+		 * Admin scripts
+		 */
+		public function admin_scripts( $hook_suffix ) {
+			// Only load on product edit pages
+			if ( 'post.php' === $hook_suffix || 'post-new.php' === $hook_suffix ) {
+				global $post;
+				if ( $post && 'product' === $post->post_type ) {
+					// Load Moment.js (required for daterangepicker.com)
+					wp_enqueue_script(
+						'moment',
+						'https://cdn.jsdelivr.net/momentjs/latest/moment.min.js',
+						[ 'jquery' ],
+						'2.29.4',
+						true
+					);
+
+					// Load daterangepicker.com
+					wp_enqueue_script(
+						'daterangepicker',
+						'https://cdn.jsdelivr.net/gh/dangrossman/daterangepicker@master/daterangepicker.min.js',
+						[ 'jquery', 'moment' ],
+						'3.14.1',
+						true
+					);
+
+					// Load daterangepicker CSS
+					wp_enqueue_style(
+						'daterangepicker',
+						'https://cdn.jsdelivr.net/gh/dangrossman/daterangepicker@master/daterangepicker.css',
+						[],
+						'3.14.1'
+					);
+				}
+			}
 		}
 	}
 

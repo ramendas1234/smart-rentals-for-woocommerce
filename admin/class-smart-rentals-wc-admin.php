@@ -528,7 +528,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		}
 
 		/**
-		 * Render disabled dates field with calendar UI
+		 * Render disabled dates field with daterangepicker UI
 		 */
 		private function render_disabled_dates_field( $post_id ) {
 			$disabled_start_dates = smart_rentals_wc_get_post_meta( $post_id, 'disabled_start_dates' );
@@ -540,37 +540,34 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			?>
 			<div class="smart-rentals-disabled-dates">
 				<h4><?php _e( 'Disabled Dates', 'smart-rentals-wc' ); ?>
-					<span class="woocommerce-help-tip" data-tip="<?php esc_attr_e( 'Block specific date ranges for bookings. These dates will be unavailable for all customers.', 'smart-rentals-wc' ); ?>"></span>
+					<span class="woocommerce-help-tip" data-tip="<?php esc_attr_e( 'Block specific date ranges for bookings. Use the date range picker to select periods that should be unavailable for all customers.', 'smart-rentals-wc' ); ?>"></span>
 				</h4>
 				<div class="disabled-dates-container">
 					<table class="widefat disabled-dates-table">
 						<thead>
 							<tr>
-								<th class="start-date-header"><?php _e( 'Start Date', 'smart-rentals-wc' ); ?></th>
-								<th class="end-date-header"><?php _e( 'End Date', 'smart-rentals-wc' ); ?></th>
+								<th class="date-range-header"><?php _e( 'Disabled Date Range', 'smart-rentals-wc' ); ?></th>
 								<th class="actions-header"><?php _e( 'Actions', 'smart-rentals-wc' ); ?></th>
 							</tr>
 						</thead>
 						<tbody class="disabled-dates-rows">
 							<?php if ( !empty( $disabled_start_dates ) ) : ?>
 								<?php foreach ( $disabled_start_dates as $index => $start_date ) : ?>
-									<?php $end_date = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : ''; ?>
+									<?php 
+									$end_date = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $start_date;
+									$range_display = $start_date === $end_date ? $start_date : $start_date . ' - ' . $end_date;
+									?>
 									<tr class="disabled-date-row">
 										<td>
 											<input 
-												type="date" 
-												name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" 
-												value="<?php echo esc_attr( $start_date ); ?>"
-												class="disabled-start-date"
-												required />
-										</td>
-										<td>
-											<input 
-												type="date" 
-												name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" 
-												value="<?php echo esc_attr( $end_date ); ?>"
-												class="disabled-end-date"
-												required />
+												type="text" 
+												name="disabled_date_range_<?php echo $index; ?>" 
+												value="<?php echo esc_attr( $range_display ); ?>"
+												class="disabled-date-range-picker"
+												placeholder="<?php esc_attr_e( 'Click to select date range', 'smart-rentals-wc' ); ?>"
+												readonly />
+											<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" value="<?php echo esc_attr( $start_date ); ?>" class="hidden-start-date" />
+											<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="<?php echo esc_attr( $end_date ); ?>" class="hidden-end-date" />
 										</td>
 										<td>
 											<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
@@ -583,19 +580,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<tr class="disabled-date-row">
 									<td>
 										<input 
-											type="date" 
-											name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" 
+											type="text" 
+											name="disabled_date_range_0" 
 											value=""
-											class="disabled-start-date"
-											required />
-									</td>
-									<td>
-										<input 
-											type="date" 
-											name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" 
-											value=""
-											class="disabled-end-date"
-											required />
+											class="disabled-date-range-picker"
+											placeholder="<?php esc_attr_e( 'Click to select date range', 'smart-rentals-wc' ); ?>"
+											readonly />
+										<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" value="" class="hidden-start-date" />
+										<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="hidden-end-date" />
 									</td>
 									<td>
 										<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
@@ -607,7 +599,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						</tbody>
 						<tfoot>
 							<tr>
-								<td colspan="3">
+								<td colspan="2">
 									<button type="button" class="button add-disabled-date">
 										<span class="dashicons dashicons-plus-alt"></span>
 										<?php _e( 'Add Disabled Date Range', 'smart-rentals-wc' ); ?>
@@ -621,15 +613,74 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
+				var rowCounter = <?php echo count( $disabled_start_dates ); ?>;
+				
+				// Initialize daterangepicker for existing fields
+				initDateRangePickers();
+				
+				function initDateRangePickers() {
+					$('.disabled-date-range-picker').each(function() {
+						if (!$(this).data('daterangepicker')) {
+							$(this).daterangepicker({
+								autoApply: false,
+								autoUpdateInput: false,
+								showDropdowns: true,
+								linkedCalendars: false,
+								alwaysShowCalendars: true,
+								opens: 'center',
+								locale: {
+									format: 'YYYY-MM-DD',
+									separator: ' - ',
+									applyLabel: '<?php _e( 'Apply', 'smart-rentals-wc' ); ?>',
+									cancelLabel: '<?php _e( 'Cancel', 'smart-rentals-wc' ); ?>',
+									fromLabel: '<?php _e( 'From', 'smart-rentals-wc' ); ?>',
+									toLabel: '<?php _e( 'To', 'smart-rentals-wc' ); ?>',
+								},
+								minDate: moment(),
+								maxDate: moment().add(2, 'years')
+							});
+							
+							// Handle Apply button
+							$(this).on('apply.daterangepicker', function(ev, picker) {
+								var startDate = picker.startDate.format('YYYY-MM-DD');
+								var endDate = picker.endDate.format('YYYY-MM-DD');
+								var displayText = startDate === endDate ? startDate : startDate + ' - ' + endDate;
+								
+								$(this).val(displayText);
+								$(this).siblings('.hidden-start-date').val(startDate);
+								$(this).siblings('.hidden-end-date').val(endDate);
+							});
+							
+							// Handle Cancel button
+							$(this).on('cancel.daterangepicker', function(ev, picker) {
+								// Don't change the value on cancel
+							});
+						}
+					});
+				}
+				
 				// Add new disabled date row
 				$('.add-disabled-date').on('click', function() {
+					rowCounter++;
 					var newRow = '<tr class="disabled-date-row">' +
-						'<td><input type="date" name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" value="" class="disabled-start-date" required /></td>' +
-						'<td><input type="date" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="disabled-end-date" required /></td>' +
-						'<td><button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>"><span class="dashicons dashicons-trash"></span></button></td>' +
+						'<td>' +
+							'<input type="text" name="disabled_date_range_' + rowCounter + '" value="" class="disabled-date-range-picker" placeholder="<?php esc_attr_e( 'Click to select date range', 'smart-rentals-wc' ); ?>" readonly />' +
+							'<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" value="" class="hidden-start-date" />' +
+							'<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="hidden-end-date" />' +
+						'</td>' +
+						'<td>' +
+							'<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">' +
+								'<span class="dashicons dashicons-trash"></span>' +
+							'</button>' +
+						'</td>' +
 						'</tr>';
 					
 					$('.disabled-dates-rows').append(newRow);
+					
+					// Initialize daterangepicker for new row
+					setTimeout(function() {
+						initDateRangePickers();
+					}, 100);
 				});
 				
 				// Remove disabled date row
@@ -638,19 +689,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						$(this).closest('tr').remove();
 					} else {
 						// Clear the last row instead of removing it
-						$(this).closest('tr').find('input').val('');
-					}
-				});
-				
-				// Validate date ranges
-				$(document).on('change', '.disabled-start-date, .disabled-end-date', function() {
-					var row = $(this).closest('tr');
-					var startDate = row.find('.disabled-start-date').val();
-					var endDate = row.find('.disabled-end-date').val();
-					
-					if (startDate && endDate && startDate > endDate) {
-						alert('<?php _e( 'End date must be after start date.', 'smart-rentals-wc' ); ?>');
-						$(this).val('');
+						var row = $(this).closest('tr');
+						row.find('.disabled-date-range-picker').val('');
+						row.find('.hidden-start-date, .hidden-end-date').val('');
 					}
 				});
 			});
@@ -677,11 +718,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				text-align: left;
 			}
 			
-			.disabled-dates-table input[type="date"] {
+			.disabled-date-range-picker {
 				width: 100%;
-				padding: 6px;
+				padding: 8px;
 				border: 1px solid #ddd;
 				border-radius: 3px;
+				background: #fff;
+				cursor: pointer;
+				font-family: inherit;
+			}
+			
+			.disabled-date-range-picker:focus {
+				border-color: #007cba;
+				box-shadow: 0 0 0 1px #007cba;
+				outline: none;
 			}
 			
 			.remove-disabled-date {
@@ -701,6 +751,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			
 			.add-disabled-date .dashicons {
 				margin-right: 5px;
+			}
+			
+			.date-range-header {
+				width: 80%;
+			}
+			
+			.actions-header {
+				width: 20%;
+				text-align: center;
 			}
 			</style>
 			<?php
