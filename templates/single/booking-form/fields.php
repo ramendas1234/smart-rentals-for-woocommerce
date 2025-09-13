@@ -240,24 +240,29 @@ jQuery(document).ready(function($) {
             };
         }
         
-        // Set default start and end times
+        // Set default start and end times (fix octal literal issue)
         console.log('Setting default times - Pickup: <?php echo $default_pickup_time; ?>, Dropoff: <?php echo $default_dropoff_time; ?>');
-        dateRangeConfig.startDate = moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>);
-        dateRangeConfig.endDate = moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>);
+        var pickupHour = parseInt('<?php echo date('H', strtotime($default_pickup_time)); ?>', 10);
+        var pickupMinute = parseInt('<?php echo date('i', strtotime($default_pickup_time)); ?>', 10);
+        var dropoffHour = parseInt('<?php echo date('H', strtotime($default_dropoff_time)); ?>', 10);
+        var dropoffMinute = parseInt('<?php echo date('i', strtotime($default_dropoff_time)); ?>', 10);
         
-        // Add simple ranges to avoid configuration issues
+        dateRangeConfig.startDate = moment().hour(pickupHour).minute(pickupMinute);
+        dateRangeConfig.endDate = moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute);
+        
+        // Add simple ranges using the parsed time values
         dateRangeConfig.ranges = {
             '<?php _e( 'One Day', 'smart-rentals-wc' ); ?>': [
-                moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>),
-                moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)
+                moment().hour(pickupHour).minute(pickupMinute),
+                moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute)
             ],
             '<?php _e( 'Two Days', 'smart-rentals-wc' ); ?>': [
-                moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>),
-                moment().add(2, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)
+                moment().hour(pickupHour).minute(pickupMinute),
+                moment().add(2, 'days').hour(dropoffHour).minute(dropoffMinute)
             ],
             '<?php _e( 'One Week', 'smart-rentals-wc' ); ?>': [
-                moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>),
-                moment().add(7, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)
+                moment().hour(pickupHour).minute(pickupMinute),
+                moment().add(7, 'days').hour(dropoffHour).minute(dropoffMinute)
             ]
         };
         
@@ -385,9 +390,14 @@ jQuery(document).ready(function($) {
         var minDateTime = now.toISOString().slice(0, 16);
         $('#pickup_date').attr('min', minDateTime);
         
-        // Set default times from global settings
-        var defaultPickupDateTime = moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>).format('YYYY-MM-DDTHH:mm');
-        var defaultDropoffDateTime = moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>).format('YYYY-MM-DDTHH:mm');
+        // Set default times from global settings (fix octal literal issue)
+        var pickupHour = parseInt('<?php echo date('H', strtotime($default_pickup_time)); ?>', 10);
+        var pickupMinute = parseInt('<?php echo date('i', strtotime($default_pickup_time)); ?>', 10);
+        var dropoffHour = parseInt('<?php echo date('H', strtotime($default_dropoff_time)); ?>', 10);
+        var dropoffMinute = parseInt('<?php echo date('i', strtotime($default_dropoff_time)); ?>', 10);
+        
+        var defaultPickupDateTime = moment().hour(pickupHour).minute(pickupMinute).format('YYYY-MM-DDTHH:mm');
+        var defaultDropoffDateTime = moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute).format('YYYY-MM-DDTHH:mm');
         
         if (!$('#pickup_date').val()) {
             $('#pickup_date').val(defaultPickupDateTime);
