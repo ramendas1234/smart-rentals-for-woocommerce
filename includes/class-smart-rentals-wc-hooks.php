@@ -40,8 +40,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Ensure rental products have proper WooCommerce meta when viewed
 			add_action( 'woocommerce_single_product_summary', [ $this, 'ensure_rental_product_meta' ], 1 );
 
-			// Remove default WooCommerce quantity field and add to cart button from product page
-			add_filter( 'woocommerce_is_sold_individually', [ $this, 'rental_product_sold_individually' ], 10, 2 );
+			// Note: NOT using sold_individually filter to preserve quantity functionality
 			
 			// Handle cart quantity display for rental products
 			add_filter( 'woocommerce_cart_item_quantity', [ $this, 'rental_cart_item_quantity' ], 10, 3 );

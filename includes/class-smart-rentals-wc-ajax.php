@@ -330,13 +330,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 
 				// Add to cart with rental data
 				try {
-					// Temporarily remove sold individually filter to allow quantity
-					remove_filter( 'woocommerce_is_sold_individually', [ Smart_Rentals_WC()->hooks, 'rental_product_sold_individually' ], 10 );
-					
 					$cart_item_key = WC()->cart->add_to_cart( $product_id, $quantity, 0, [], $cart_item );
-					
-					// Restore the filter
-					add_filter( 'woocommerce_is_sold_individually', [ Smart_Rentals_WC()->hooks, 'rental_product_sold_individually' ], 10, 2 );
 					
 					if ( false !== $cart_item_key ) {
 						// Success - redirect to cart
