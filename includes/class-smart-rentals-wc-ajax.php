@@ -207,6 +207,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			$pickup_date = sanitize_text_field( smart_rentals_wc_get_meta_data( 'pickup_date', $_POST ) );
 			$dropoff_date = sanitize_text_field( smart_rentals_wc_get_meta_data( 'dropoff_date', $_POST ) );
 			$quantity = intval( smart_rentals_wc_get_meta_data( 'quantity', $_POST, 1 ) );
+			
+			// Debug log for quantity
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( 'AJAX add_to_cart - Product: ' . $product_id . ', Quantity: ' . $quantity );
+			}
 
 			if ( !$product_id || !$pickup_date || !$dropoff_date ) {
 				wp_send_json_error( [ 'message' => __( 'Missing required parameters', 'smart-rentals-wc' ) ] );
@@ -290,6 +295,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			if ( smart_rentals_wc_array_exists( $cart_item ) ) {
 				// Get quantity from cart item
 				$quantity = intval( smart_rentals_wc_get_meta_data( 'quantity', $cart_item, 1 ) );
+				
+				// Debug log for quantity
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( 'Add to cart - Quantity from cart_item: ' . $quantity );
+					smart_rentals_wc_log( 'Add to cart - Cart item data: ' . print_r( $cart_item, true ) );
+				}
 
 				// Validate rental data
 				$rental_data = smart_rentals_wc_get_meta_data( 'rental_data', $cart_item );

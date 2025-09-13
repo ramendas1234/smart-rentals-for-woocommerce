@@ -40,8 +40,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Ensure rental products have proper WooCommerce meta when viewed
 			add_action( 'woocommerce_single_product_summary', [ $this, 'ensure_rental_product_meta' ], 1 );
 
-			// Remove quantity field for rental products by making them sold individually
-			add_filter( 'woocommerce_is_sold_individually', [ $this, 'rental_product_sold_individually' ], 10, 2 );
+			// Note: Removed sold_individually filter to allow quantity selection for rentals
 			
 			// Handle cart quantity display for rental products
 			add_filter( 'woocommerce_cart_item_quantity', [ $this, 'rental_cart_item_quantity' ], 10, 3 );
@@ -238,12 +237,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		}
 
 		/**
-		 * Make rental products sold individually (removes quantity field)
+		 * Make rental products sold individually (DEPRECATED - now allowing quantity selection)
 		 */
 		public function rental_product_sold_individually( $sold_individually, $product ) {
-			if ( $product && smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
-				return true; // This removes the quantity field from product page
-			}
+			// Deprecated: We now allow quantity selection for rental products
 			return $sold_individually;
 		}
 
@@ -255,21 +252,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			$product_id = isset( $cart_item['product_id'] ) ? $cart_item['product_id'] : 0;
 			
 			if ( $product_id && smart_rentals_wc_is_rental_product( $product_id ) ) {
-				// For rental products, show static quantity without input field
-				$quantity = isset( $cart_item['quantity'] ) ? $cart_item['quantity'] : 1;
-				
-				// Check if we have rental-specific quantity data
+				// For rental products, allow normal quantity field but add rental duration info
 				if ( isset( $cart_item['rental_data'] ) ) {
 					$rental_data = $cart_item['rental_data'];
 					
-					// Show rental duration instead of quantity for better UX
+					// Add rental duration info below the quantity field
 					if ( isset( $rental_data['duration_text'] ) && $rental_data['duration_text'] ) {
-						return '<span class="rental-duration">' . esc_html( $rental_data['duration_text'] ) . '</span>';
+						$product_quantity .= '<br><small class="rental-duration">' . esc_html( $rental_data['duration_text'] ) . '</small>';
 					}
 				}
-				
-				// Fallback: show static quantity
-				return '<span class="rental-quantity">' . sprintf( __( 'Qty: %d', 'smart-rentals-wc' ), $quantity ) . '</span>';
 			}
 			
 			return $product_quantity;
@@ -283,21 +274,23 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			$product_id = isset( $cart_item['product_id'] ) ? $cart_item['product_id'] : 0;
 			
 			if ( $product_id && smart_rentals_wc_is_rental_product( $product_id ) ) {
-				// For rental products on checkout, show static quantity without input field
+				// For rental products on checkout, show quantity with rental duration info
 				$quantity = isset( $cart_item['quantity'] ) ? $cart_item['quantity'] : 1;
 				
-				// Check if we have rental-specific quantity data
+				// Start with standard quantity display
+				$quantity_display = sprintf( __( '&times; %d', 'smart-rentals-wc' ), $quantity );
+				
+				// Check if we have rental-specific duration data
 				if ( isset( $cart_item['rental_data'] ) ) {
 					$rental_data = $cart_item['rental_data'];
 					
-					// Show rental duration instead of quantity for better UX
+					// Add rental duration info below quantity
 					if ( isset( $rental_data['duration_text'] ) && $rental_data['duration_text'] ) {
-						return '<span class="rental-duration">' . esc_html( $rental_data['duration_text'] ) . '</span>';
+						$quantity_display .= '<br><small class="rental-duration">' . esc_html( $rental_data['duration_text'] ) . '</small>';
 					}
 				}
 				
-				// Fallback: show static quantity with x prefix like WooCommerce does
-				return '<span class="rental-quantity">' . sprintf( __( '&times; %d', 'smart-rentals-wc' ), $quantity ) . '</span>';
+				return $quantity_display;
 			}
 			
 			return $product_quantity;
