@@ -611,6 +611,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<p class="description"><?php _e( 'Set the default order status for rental product bookings. If empty, WooCommerce default order status will be used. This applies to all rental types.', 'smart-rentals-wc' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row">
+								<label for="default_turnaround_time"><?php _e( 'Default Turnaround Time (Hours)', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="number" name="default_turnaround_time" id="default_turnaround_time" value="<?php echo esc_attr( smart_rentals_wc_get_meta_data( 'default_turnaround_time', $settings, '2' ) ); ?>" min="0" step="0.5" class="regular-text" />
+								<p class="description"><?php _e( 'Time needed to prepare rental items after return (cleaning, maintenance, inspection). Items become available again after this time. Individual products can override this setting.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
 					</table>
 					<?php submit_button(); ?>
 				</form>
@@ -631,6 +640,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'enable_deposits' => isset( $_POST['enable_deposits'] ) ? 'yes' : 'no',
 				'global_security_deposit' => floatval( $_POST['global_security_deposit'] ?? 0 ),
 				'rental_order_status' => sanitize_text_field( $_POST['rental_order_status'] ?? '' ),
+				'default_turnaround_time' => floatval( $_POST['default_turnaround_time'] ?? 2 ),
 			];
 
 			smart_rentals_wc_update_option( 'settings', $settings );
@@ -866,6 +876,31 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				],
 				'desc_tip' => true,
 				'description' => $deposit_description,
+			]);
+
+			echo '</div>';
+			echo '<div class="options_group">';
+
+			// Turnaround Time
+			$global_turnaround = smart_rentals_wc_get_meta_data( 'default_turnaround_time', smart_rentals_wc_get_option( 'settings', [] ), 2 );
+			$turnaround_description = __( 'Time needed to prepare this item after return (cleaning, maintenance, inspection).', 'smart-rentals-wc' );
+			if ( $global_turnaround > 0 ) {
+				$turnaround_description .= ' ' . sprintf( __( 'Leave empty to use global default (%s hours).', 'smart-rentals-wc' ), $global_turnaround );
+			} else {
+				$turnaround_description .= ' ' . __( 'Set a global default in Smart Rentals Settings.', 'smart-rentals-wc' );
+			}
+			
+			woocommerce_wp_text_input([
+				'id' => smart_rentals_wc_meta_key( 'turnaround_time' ),
+				'label' => __( 'Turnaround Time (Hours)', 'smart-rentals-wc' ),
+				'placeholder' => $global_turnaround > 0 ? number_format( $global_turnaround, 1, '.', '' ) : '2.0',
+				'type' => 'number',
+				'custom_attributes' => [
+					'step' => '0.5',
+					'min' => '0',
+				],
+				'desc_tip' => true,
+				'description' => $turnaround_description,
 			]);
 
 			echo '</div>';
@@ -1368,6 +1403,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'max_rental_period' => 'number',
 					'rental_stock' => 'number',
 					'security_deposit' => 'price',
+					'turnaround_time' => 'number',
 					'disabled_weekdays' => 'array',
 					'disabled_start_dates' => 'array',
 					'disabled_end_dates' => 'array',

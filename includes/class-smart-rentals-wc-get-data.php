@@ -502,13 +502,21 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					$booking_pickup = strtotime( $booking->pickup_date );
 					$booking_dropoff = strtotime( $booking->dropoff_date );
 					
+					// Get turnaround time for this product
+					$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+					$turnaround_seconds = $turnaround_hours * 3600; // Convert hours to seconds
+					
+					// Add turnaround time to dropoff for availability calculation
+					$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
+					
 					// Check overlap: booking affects this day if it overlaps with any part of the day
-					if ( $booking_pickup <= $day_end && $booking_dropoff >= $day_start ) {
+					// OR if we're still in the turnaround period after dropoff
+					if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
 						$booked_quantity += intval( $booking->quantity );
 						
 						// Debug logging
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							smart_rentals_wc_log( "Calendar: Date $date_string conflicts with booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+							smart_rentals_wc_log( "Calendar: Date $date_string conflicts with booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking->quantity}" );
 						}
 					}
 				}
@@ -556,13 +564,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 						$booking_pickup = strtotime( $booking->pickup_date );
 						$booking_dropoff = strtotime( $booking->dropoff_date );
 						
-						// Check overlap
-						if ( $booking_pickup <= $day_end && $booking_dropoff >= $day_start ) {
+						// Get turnaround time for this product
+						$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+						$turnaround_seconds = $turnaround_hours * 3600; // Convert hours to seconds
+						
+						// Add turnaround time to dropoff for availability calculation
+						$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
+						
+						// Check overlap including turnaround time
+						if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
 							$booked_quantity += intval( $booking->quantity );
 							
 							// Debug logging
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								smart_rentals_wc_log( "Calendar: Date $date_string conflicts with order booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+								smart_rentals_wc_log( "Calendar: Date $date_string conflicts with order booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking->quantity}" );
 							}
 						}
 					}
