@@ -592,14 +592,17 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<select name="rental_order_status" id="rental_order_status">
 									<option value=""><?php _e( '-- Use WooCommerce Default --', 'smart-rentals-wc' ); ?></option>
 									<?php
-									$order_statuses = array();
-									if ( function_exists( 'wc_get_order_statuses' ) ) {
-										$order_statuses = wc_get_order_statuses();
-									}
+									// Only show specific order statuses for rentals
+									$allowed_statuses = array(
+										'wc-processing' => __( 'Processing', 'smart-rentals-wc' ),
+										'wc-completed' => __( 'Completed', 'smart-rentals-wc' ),
+										'wc-on-hold' => __( 'On Hold', 'smart-rentals-wc' ),
+										'wc-pending' => __( 'Pending Payment', 'smart-rentals-wc' ),
+									);
 									
 									$selected_status = smart_rentals_wc_get_meta_data( 'rental_order_status', $settings, '' );
 									
-									foreach ( $order_statuses as $status_key => $status_name ) : ?>
+									foreach ( $allowed_statuses as $status_key => $status_name ) : ?>
 										<option value="<?php echo esc_attr( $status_key ); ?>" <?php selected( $selected_status, $status_key ); ?>>
 											<?php echo esc_html( $status_name ); ?>
 										</option>

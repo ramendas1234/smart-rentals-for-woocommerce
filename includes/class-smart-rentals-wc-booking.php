@@ -37,7 +37,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			add_action( 'woocommerce_checkout_create_order_line_item', [ $this, 'checkout_create_order_line_item' ], 11, 4 );
 			
 			// Set rental order status after order creation
-			add_action( 'woocommerce_checkout_order_created', [ $this, 'set_rental_order_status' ], 10, 1 );
+			add_action( 'woocommerce_checkout_order_created', [ $this, 'set_rental_order_status' ], 20, 1 );
+			
+			// Also try after order is processed (for different payment methods)
+			add_action( 'woocommerce_order_status_changed', [ $this, 'maybe_set_rental_order_status' ], 10, 4 );
 
 			// Order item display meta key
 			add_filter( 'woocommerce_order_item_display_meta_key', [ $this, 'order_item_display_meta_key' ], 11, 3 );
@@ -873,6 +876,78 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 		 * Set rental order status after order creation
 		 */
 		public function set_rental_order_status( $order ) {
+			// Debug log
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( 'set_rental_order_status called for order #' . $order->get_id() );
+			}
+			
+			// Check if order has rental items
+			$has_rental_items = false;
+			foreach ( $order->get_items() as $item ) {
+				$is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+				if ( $is_rental === 'yes' ) {
+					$has_rental_items = true;
+					break;
+				}
+			}
+			
+			// Debug log
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( 'Order #' . $order->get_id() . ' has rental items: ' . ( $has_rental_items ? 'yes' : 'no' ) );
+			}
+			
+			// If no rental items, return
+			if ( !$has_rental_items ) {
+				return;
+			}
+			
+			// Get rental order status setting
+			$settings = smart_rentals_wc_get_option( 'settings', [] );
+			$rental_order_status = smart_rentals_wc_get_meta_data( 'rental_order_status', $settings, '' );
+			
+			// Debug log
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( 'Rental order status setting: ' . $rental_order_status );
+			}
+			
+			// If rental order status is set, update the order
+			if ( !empty( $rental_order_status ) ) {
+				// Remove 'wc-' prefix if present for the update
+				$status_without_prefix = str_replace( 'wc-', '', $rental_order_status );
+				
+				// Mark that we've set this status to avoid conflicts
+				$order->add_meta_data( '_smart_rentals_status_set', 'yes', true );
+				$order->save();
+				
+				// Update order status
+				$order->update_status( $status_without_prefix, __( 'Order status set by Smart Rentals plugin based on global setting.', 'smart-rentals-wc' ) );
+				
+				// Log the status change
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( sprintf( 
+						'Rental order #%d status changed to %s based on global setting', 
+						$order->get_id(), 
+						$rental_order_status 
+					) );
+				}
+			}
+		}
+
+		/**
+		 * Maybe set rental order status when order status changes
+		 */
+		public function maybe_set_rental_order_status( $order_id, $from_status, $to_status, $order ) {
+			// Don't interfere if we already set the status
+			$already_set = $order->get_meta( '_smart_rentals_status_set' );
+			if ( $already_set === 'yes' ) {
+				return;
+			}
+			
+			// Only act on new orders (from pending to something else)
+			if ( $from_status !== 'pending' ) {
+				return;
+			}
+			
 			// Check if order has rental items
 			$has_rental_items = false;
 			foreach ( $order->get_items() as $item ) {
@@ -892,21 +967,27 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			$settings = smart_rentals_wc_get_option( 'settings', [] );
 			$rental_order_status = smart_rentals_wc_get_meta_data( 'rental_order_status', $settings, '' );
 			
-			// If rental order status is set, update the order
+			// If rental order status is set and different from current status
 			if ( !empty( $rental_order_status ) ) {
-				// Remove 'wc-' prefix if present for the update
-				$status_without_prefix = str_replace( 'wc-', '', $rental_order_status );
+				$desired_status = str_replace( 'wc-', '', $rental_order_status );
 				
-				// Update order status
-				$order->update_status( $status_without_prefix, __( 'Order status set by Smart Rentals plugin based on global setting.', 'smart-rentals-wc' ) );
-				
-				// Log the status change
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					smart_rentals_wc_log( sprintf( 
-						'Rental order #%d status changed to %s based on global setting', 
-						$order->get_id(), 
-						$rental_order_status 
-					) );
+				if ( $to_status !== $desired_status ) {
+					// Mark that we've set this status
+					$order->add_meta_data( '_smart_rentals_status_set', 'yes', true );
+					$order->save();
+					
+					// Update to desired status
+					$order->update_status( $desired_status, __( 'Order status corrected by Smart Rentals plugin based on global setting.', 'smart-rentals-wc' ) );
+					
+					// Log the status change
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						smart_rentals_wc_log( sprintf( 
+							'Rental order #%d status corrected from %s to %s based on global setting', 
+							$order_id, 
+							$to_status,
+							$desired_status
+						) );
+					}
 				}
 			}
 		}
