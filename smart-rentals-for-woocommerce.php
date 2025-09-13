@@ -144,9 +144,7 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-deposit.php';
 			new Smart_Rentals_WC_Deposit();
 
-			// CPT
-			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-cpt.php';
-			new Smart_Rentals_WC_CPT();
+			// Note: Removed CPT class - not needed for our checkbox-based approach
 
 			// Shortcodes
 			require_once SMART_RENTALS_WC_PLUGIN_INC. 'class-smart-rentals-wc-shortcodes.php';
@@ -171,9 +169,7 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			// Install
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-install.php' );
 
-			// Debug
-			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-debug.php' );
-			new Smart_Rentals_WC_Debug();
+			// Note: Removed debug class - not needed for production
 
 			// Elementor
 			if ( defined( 'ELEMENTOR_VERSION' ) ) {
