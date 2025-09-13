@@ -35,6 +35,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			// Checkout create order line item
 			add_action( 'woocommerce_checkout_create_order_line_item', [ $this, 'checkout_create_order_line_item' ], 11, 4 );
+			
+			// Set rental order status after order creation
+			add_action( 'woocommerce_checkout_order_created', [ $this, 'set_rental_order_status' ], 10, 1 );
 
 			// Order item display meta key
 			add_filter( 'woocommerce_order_item_display_meta_key', [ $this, 'order_item_display_meta_key' ], 11, 3 );
@@ -864,6 +867,48 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			smart_rentals_wc_log( 'Failed to parse datetime in booking: ' . $datetime_string );
 			return false;
+		}
+
+		/**
+		 * Set rental order status after order creation
+		 */
+		public function set_rental_order_status( $order ) {
+			// Check if order has rental items
+			$has_rental_items = false;
+			foreach ( $order->get_items() as $item ) {
+				$is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+				if ( $is_rental === 'yes' ) {
+					$has_rental_items = true;
+					break;
+				}
+			}
+			
+			// If no rental items, return
+			if ( !$has_rental_items ) {
+				return;
+			}
+			
+			// Get rental order status setting
+			$settings = smart_rentals_wc_get_option( 'settings', [] );
+			$rental_order_status = smart_rentals_wc_get_meta_data( 'rental_order_status', $settings, '' );
+			
+			// If rental order status is set, update the order
+			if ( !empty( $rental_order_status ) ) {
+				// Remove 'wc-' prefix if present for the update
+				$status_without_prefix = str_replace( 'wc-', '', $rental_order_status );
+				
+				// Update order status
+				$order->update_status( $status_without_prefix, __( 'Order status set by Smart Rentals plugin based on global setting.', 'smart-rentals-wc' ) );
+				
+				// Log the status change
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( sprintf( 
+						'Rental order #%d status changed to %s based on global setting', 
+						$order->get_id(), 
+						$rental_order_status 
+					) );
+				}
+			}
 		}
 
 		/**

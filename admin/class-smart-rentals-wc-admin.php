@@ -584,6 +584,30 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<p class="description"><?php _e( 'Default security deposit amount for all rental products. Leave empty for no global deposit. Individual products can override this amount.', 'smart-rentals-wc' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row">
+								<label for="rental_order_status"><?php _e( 'Set order status after booking rental product', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<select name="rental_order_status" id="rental_order_status">
+									<option value=""><?php _e( '-- Use WooCommerce Default --', 'smart-rentals-wc' ); ?></option>
+									<?php
+									$order_statuses = array();
+									if ( function_exists( 'wc_get_order_statuses' ) ) {
+										$order_statuses = wc_get_order_statuses();
+									}
+									
+									$selected_status = smart_rentals_wc_get_meta_data( 'rental_order_status', $settings, '' );
+									
+									foreach ( $order_statuses as $status_key => $status_name ) : ?>
+										<option value="<?php echo esc_attr( $status_key ); ?>" <?php selected( $selected_status, $status_key ); ?>>
+											<?php echo esc_html( $status_name ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description"><?php _e( 'Set the default order status for rental product bookings. If empty, WooCommerce default order status will be used. This applies to all rental types.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
 					</table>
 					<?php submit_button(); ?>
 				</form>
@@ -603,6 +627,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'enable_calendar' => isset( $_POST['enable_calendar'] ) ? 'yes' : 'no',
 				'enable_deposits' => isset( $_POST['enable_deposits'] ) ? 'yes' : 'no',
 				'global_security_deposit' => floatval( $_POST['global_security_deposit'] ?? 0 ),
+				'rental_order_status' => sanitize_text_field( $_POST['rental_order_status'] ?? '' ),
 			];
 
 			smart_rentals_wc_update_option( 'settings', $settings );
