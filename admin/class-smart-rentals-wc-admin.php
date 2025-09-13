@@ -340,7 +340,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'enable_rental' ),
 				'wrapper_class' => 'show_if_simple',
-				'label' => __( 'Rental', 'smart-rentals-wc' ),
+				'label' => __( 'Enable Rental Product', 'smart-rentals-wc' ),
 				'description' => __( 'Enable rental/booking functionality for this product', 'smart-rentals-wc' ),
 				'desc_tip' => true,
 			]);

@@ -16,8 +16,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Remove default WooCommerce actions for rental products
 			add_action( 'init', [ $this, 'rental_product_remove_actions' ] );
 
-			// Product hooks
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_badge' ], 5 );
+			// Product hooks (rental badge removed - using checkbox instead)
 			
 			// Shop loop hooks
 			add_action( 'woocommerce_after_shop_loop_item_title', [ $this, 'add_rental_badge_to_loop' ], 15 );
@@ -63,16 +62,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		}
 
 		/**
-		 * Add rental badge to admin
+		 * Add rental badge to admin (REMOVED - using checkbox instead)
 		 */
 		public function add_rental_badge() {
-			global $post;
-			
-			if ( smart_rentals_wc_is_rental_product( $post->ID ) ) {
-				echo '<div class="smart-rentals-admin-badge">';
-				echo '<span class="rental-badge">' . __( 'Rental Product', 'smart-rentals-wc' ) . '</span>';
-				echo '</div>';
-			}
+			// This method is no longer used - rental status is shown via checkbox
+			// Keeping for backward compatibility
+			return;
 		}
 
 		/**
