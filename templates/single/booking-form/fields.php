@@ -381,15 +381,8 @@ jQuery(document).ready(function($) {
             var noticeText = noticeArea.find('.notice-text');
             
             if (useFixedTimes) {
-                // For daily rentals (hotel logic)
-                var message;
-                if (isOneDayRental) {
-                    message = '<?php _e( '1 night booking: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
-                } else if (nightsBooked > 0) {
-                    message = nightsBooked + ' <?php _e( 'nights booking: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
-                } else {
-                    message = '<?php _e( 'Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
-                }
+                // For daily rentals (hotel logic) - clean message without nights text
+                var message = '<?php _e( 'Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
                 
                 noticeText.html('<strong>' + message + '</strong>');
                 noticeArea.fadeIn();
