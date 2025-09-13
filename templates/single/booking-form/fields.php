@@ -244,31 +244,41 @@ jQuery(document).ready(function($) {
             };
         }
         
-        // Set default start and end times (fix octal literal issue)
+        // Set default start and end times based on rental type
         console.log('Setting default times - Pickup: <?php echo $default_pickup_time; ?>, Dropoff: <?php echo $default_dropoff_time; ?>');
         var pickupHour = parseInt('<?php echo date('H', strtotime($default_pickup_time)); ?>', 10);
         var pickupMinute = parseInt('<?php echo date('i', strtotime($default_pickup_time)); ?>', 10);
         var dropoffHour = parseInt('<?php echo date('H', strtotime($default_dropoff_time)); ?>', 10);
         var dropoffMinute = parseInt('<?php echo date('i', strtotime($default_dropoff_time)); ?>', 10);
         
-        dateRangeConfig.startDate = moment().hour(pickupHour).minute(pickupMinute);
-        dateRangeConfig.endDate = moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute);
+        if (useFixedTimes) {
+            // For daily rentals: Default to 1 night (today to tomorrow in calendar)
+            dateRangeConfig.startDate = moment();
+            dateRangeConfig.endDate = moment().add(1, 'day');
+        } else {
+            // For hourly/mixed: Default to same day with times
+            dateRangeConfig.startDate = moment().hour(pickupHour).minute(pickupMinute);
+            dateRangeConfig.endDate = moment().hour(dropoffHour).minute(dropoffMinute);
+        }
         
-        // Add simple ranges using the parsed time values
-        dateRangeConfig.ranges = {
-            '<?php _e( 'One Day', 'smart-rentals-wc' ); ?>': [
-                moment().hour(pickupHour).minute(pickupMinute),
-                moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute)
-            ],
-            '<?php _e( 'Two Days', 'smart-rentals-wc' ); ?>': [
-                moment().hour(pickupHour).minute(pickupMinute),
-                moment().add(2, 'days').hour(dropoffHour).minute(dropoffMinute)
-            ],
-            '<?php _e( 'One Week', 'smart-rentals-wc' ); ?>': [
-                moment().hour(pickupHour).minute(pickupMinute),
-                moment().add(7, 'days').hour(dropoffHour).minute(dropoffMinute)
-            ]
-        };
+        // Add ranges based on rental type
+        if (useFixedTimes) {
+            // For daily rentals (hotel logic): ranges represent nights
+            dateRangeConfig.ranges = {
+                '<?php _e( '1 Night', 'smart-rentals-wc' ); ?>': [moment(), moment().add(1, 'day')],
+                '<?php _e( '2 Nights', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'days')],
+                '<?php _e( '3 Nights', 'smart-rentals-wc' ); ?>': [moment(), moment().add(3, 'days')],
+                '<?php _e( '1 Week', 'smart-rentals-wc' ); ?>': [moment(), moment().add(7, 'days')]
+            };
+        } else {
+            // For hourly/mixed rentals: ranges with times
+            dateRangeConfig.ranges = {
+                '<?php _e( '2 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'hours')],
+                '<?php _e( '4 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(4, 'hours')],
+                '<?php _e( '8 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(8, 'hours')],
+                '<?php _e( '1 Day', 'smart-rentals-wc' ); ?>': [moment(), moment().add(1, 'day')]
+            };
+        }
         
         // Initialize daterangepicker on a single input that controls both fields
         console.log('Daterangepicker config:', dateRangeConfig);
@@ -320,22 +330,39 @@ jQuery(document).ready(function($) {
             var pickupFormatted, dropoffFormatted;
             
             if (useFixedTimes) {
-                // For daily rentals, use fixed global times
+                // For daily rentals (hotel-style booking logic)
                 var pickupDate = startDate.format('YYYY-MM-DD');
-                var dropoffDate = endDate.format('YYYY-MM-DD');
+                var checkoutDate = endDate.format('YYYY-MM-DD');
+                
+                // Hotel logic: Return is +1 day from calendar selection at dropoff time
+                var actualReturnDate = moment(checkoutDate).add(1, 'day').format('YYYY-MM-DD');
                 
                 pickupFormatted = pickupDate + ' ' + '<?php echo $default_pickup_time; ?>';
-                dropoffFormatted = dropoffDate + ' ' + '<?php echo $default_dropoff_time; ?>';
+                dropoffFormatted = actualReturnDate + ' ' + '<?php echo $default_dropoff_time; ?>';
+                
+                console.log('Daily rental hotel logic - Calendar selection:', pickupDate, 'to', checkoutDate);
+                console.log('Actual booking period:', pickupFormatted, 'to', dropoffFormatted);
             } else {
                 // For hourly/mixed rentals, use selected times
                 pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
                 dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
             }
             
-            // Check if this is a one-day rental
-            var isOneDayRental = startDate.format('YYYY-MM-DD') === endDate.format('YYYY-MM-DD');
-            var isNextDayReturn = startDate.format('YYYY-MM-DD') !== endDate.format('YYYY-MM-DD') && 
-                                  endDate.diff(startDate, 'days') === 1;
+            // Check rental duration based on type
+            var isOneDayRental, isNextDayReturn, nightsBooked;
+            
+            if (useFixedTimes) {
+                // For daily rentals (hotel logic): calendar selection represents nights
+                nightsBooked = endDate.diff(startDate, 'days');
+                isOneDayRental = (nightsBooked === 0); // Same date selected twice
+                isNextDayReturn = (nightsBooked === 1); // One night (Sept 25-26)
+                
+                console.log('Hotel booking logic - Nights booked:', nightsBooked);
+            } else {
+                // For hourly/mixed rentals: actual datetime logic
+                isOneDayRental = startDate.format('YYYY-MM-DD') === endDate.format('YYYY-MM-DD');
+                isNextDayReturn = endDate.diff(startDate, 'days') === 1;
+            }
             
             console.log('Formatted dates - Pickup:', pickupFormatted, 'Dropoff:', dropoffFormatted);
             
@@ -349,19 +376,35 @@ jQuery(document).ready(function($) {
                 $('#pickup_date, #dropoff_date').removeClass('date-selected');
             }, 1000);
             
-            // Show special notice for one-day or next-day rentals
+            // Show special notice based on rental type and duration
             var noticeArea = $('#return-time-notice');
             var noticeText = noticeArea.find('.notice-text');
             
-            if (isOneDayRental || isNextDayReturn) {
-                var message = isOneDayRental ? 
-                    '<?php _e( 'Same-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted :
-                    '<?php _e( 'One-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+            if (useFixedTimes) {
+                // For daily rentals (hotel logic)
+                var message;
+                if (isOneDayRental) {
+                    message = '<?php _e( '1 night booking: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+                } else if (nightsBooked > 0) {
+                    message = nightsBooked + ' <?php _e( 'nights booking: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+                } else {
+                    message = '<?php _e( 'Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+                }
                 
                 noticeText.html('<strong>' + message + '</strong>');
                 noticeArea.fadeIn();
             } else {
-                noticeArea.fadeOut();
+                // For hourly/mixed rentals, show if needed
+                if (isOneDayRental || isNextDayReturn) {
+                    var message = isOneDayRental ? 
+                        '<?php _e( 'Same-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted :
+                        '<?php _e( 'One-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffFormatted;
+                    
+                    noticeText.html('<strong>' + message + '</strong>');
+                    noticeArea.fadeIn();
+                } else {
+                    noticeArea.fadeOut();
+                }
             }
             
             // Show duration
@@ -470,18 +513,22 @@ jQuery(document).ready(function($) {
             if (pickupVal && dropoffVal) {
                 console.log('Fallback calculation with dates:', pickupVal, dropoffVal);
                 
-                // For daily rentals with fixed times, append the global times
+                // For daily rentals with fixed times, apply hotel booking logic
                 var finalPickupVal = pickupVal;
                 var finalDropoffVal = dropoffVal;
                 
                 if (useFixedTimes) {
-                    // Ensure we have the global times appended for daily rentals
+                    // Hotel logic: Add +1 day to checkout date for actual return
                     if (pickupVal.indexOf(':') === -1) {
                         finalPickupVal = pickupVal + ' ' + '<?php echo $default_pickup_time; ?>';
                     }
                     if (dropoffVal.indexOf(':') === -1) {
-                        finalDropoffVal = dropoffVal + ' ' + '<?php echo $default_dropoff_time; ?>';
+                        // Add +1 day to dropoff date for hotel logic
+                        var dropoffMoment = moment(dropoffVal).add(1, 'day');
+                        finalDropoffVal = dropoffMoment.format('YYYY-MM-DD') + ' ' + '<?php echo $default_dropoff_time; ?>';
                     }
+                    
+                    console.log('Hotel logic applied - Original dropoff:', dropoffVal, 'Actual return:', finalDropoffVal);
                 }
                 
                 // Show return time notice for fallback inputs too
