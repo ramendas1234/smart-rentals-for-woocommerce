@@ -353,7 +353,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			$tabs['smart_rentals'] = [
 				'label'    => __( 'Rental Options', 'smart-rentals-wc' ),
 				'target'   => 'smart_rentals_product_data',
-				'class'    => [ 'show_if_rental', 'hide_if_grouped', 'hide_if_external', 'smart_rentals_options' ],
+				'class'    => [ 'hide_if_grouped', 'hide_if_external', 'smart_rentals_options' ],
 				'priority' => 25,
 			];
 			return $tabs;

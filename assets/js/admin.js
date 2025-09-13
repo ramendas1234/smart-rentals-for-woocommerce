@@ -3,34 +3,55 @@ jQuery(document).ready(function($) {
     
     // Handle rental checkbox toggle for new tab system
     var rentalCheckbox = $('input[name="smart_rentals_enable_rental"]');
-    var rentalTab = $('li.smart_rentals_options a');
-    var rentalTabLink = $('.smart_rentals_tab');
     
     // Function to toggle rental tab visibility
     function toggleRentalTab() {
+        // Target all possible rental tab selectors
+        var rentalTab = $('.wc-tabs li').filter(function() {
+            return $(this).find('a[href="#smart_rentals_product_data"]').length > 0 ||
+                   $(this).hasClass('smart_rentals_options') ||
+                   $(this).hasClass('smart_rentals_tab') ||
+                   $(this).attr('data-tab') === 'smart_rentals';
+        });
+        
+        var rentalPanel = $('#smart_rentals_product_data');
+        
+        console.log('Found rental tabs:', rentalTab.length);
+        console.log('Rental checkbox checked:', rentalCheckbox.is(':checked'));
+        
         if (rentalCheckbox.is(':checked')) {
             // Show rental tab
-            $('li.smart_rentals_options').show();
+            rentalTab.show();
             $('body').addClass('rental-product-enabled');
-            
-            // Add show_if_rental class to product
-            $('#product-type').trigger('change');
+            console.log('Rental enabled - showing tab');
         } else {
             // Hide rental tab and switch to General tab if currently on Rental tab
-            if ($('#smart_rentals_product_data').is(':visible')) {
-                $('.general_tab a').trigger('click');
+            if (rentalPanel.is(':visible')) {
+                $('.general_tab a, .general_options a').trigger('click');
             }
-            $('li.smart_rentals_options').hide();
+            rentalTab.hide();
             $('body').removeClass('rental-product-enabled');
+            console.log('Rental disabled - hiding tab');
         }
     }
     
-    // Initial state
-    toggleRentalTab();
+    // Initial state with delay to ensure DOM is ready
+    setTimeout(function() {
+        toggleRentalTab();
+    }, 100);
     
     // Toggle rental tab when checkbox changes
     rentalCheckbox.on('change', function() {
-        toggleRentalTab();
+        setTimeout(function() {
+            toggleRentalTab();
+        }, 50);
+    });
+    
+    // Also check when page loads and when product type changes
+    $(window).on('load', function() {
+        setTimeout(function() {
+            toggleRentalTab();
+        }, 200);
     });
     
     // Handle product type changes to show/hide rental elements
@@ -42,8 +63,12 @@ jQuery(document).ready(function($) {
         } else {
             rentalCheckbox.closest('p').hide();
             rentalCheckbox.prop('checked', false);
-            toggleRentalTab();
         }
+        
+        // Always check tab visibility after product type change
+        setTimeout(function() {
+            toggleRentalTab();
+        }, 100);
     });
     
     // Rental type specific field toggles
@@ -157,12 +182,19 @@ jQuery(document).ready(function($) {
     // Add custom CSS for rental tab
     if (!$('#smart-rentals-admin-css').length) {
         $('head').append('<style id="smart-rentals-admin-css">' +
-            '/* Rental tab styling */' +
-            'li.smart_rentals_options { display: none; }' +
-            'body.rental-product-enabled li.smart_rentals_options { display: block; }' +
-            'li.smart_rentals_options a::before { content: "\\f508"; font-family: dashicons; margin-right: 5px; }' +
-            '.show_if_rental { display: none; }' +
-            'body.rental-product-enabled .show_if_rental { display: block; }' +
+            '/* Rental tab visibility - HIDDEN BY DEFAULT */' +
+            '.wc-tabs li.smart_rentals_options, ' +
+            '.wc-tabs li.smart_rentals_tab, ' +
+            '.wc-tabs li[data-tab="smart_rentals"] { display: none !important; }' +
+            '/* Show only when rental is enabled */' +
+            'body.rental-product-enabled .wc-tabs li.smart_rentals_options, ' +
+            'body.rental-product-enabled .wc-tabs li.smart_rentals_tab, ' +
+            'body.rental-product-enabled .wc-tabs li[data-tab="smart_rentals"] { display: block !important; }' +
+            '/* Tab icon */' +
+            '.wc-tabs li.smart_rentals_options a::before, ' +
+            '.wc-tabs li.smart_rentals_tab a::before, ' +
+            '.wc-tabs li[data-tab="smart_rentals"] a::before { content: "\\f508"; font-family: dashicons; margin-right: 5px; }' +
+            '/* Panel styling */' +
             '#smart_rentals_product_data .options_group { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }' +
             '#smart_rentals_product_data .options_group:last-child { border-bottom: none; margin-bottom: 0; }' +
             '/* Rental checkbox inline styling */' +
