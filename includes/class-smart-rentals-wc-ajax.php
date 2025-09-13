@@ -27,6 +27,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				'get_calendar_data',
 				'load_calendar',
 				'admin_calendar_events',
+				'check_order_edit_availability',
 			];
 
 			foreach ( $ajax_actions as $action ) {
@@ -648,6 +649,81 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			];
 			
 			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
+		}
+
+		/**
+		 * Check availability for order edit
+		 */
+		public function smart_rentals_check_order_edit_availability() {
+			// Verify nonce
+			if ( !wp_verify_nonce( $_POST['nonce'], 'smart-rentals-order-edit' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Security check failed', 'smart-rentals-wc' ) ] );
+			}
+
+			// Check permissions
+			if ( !current_user_can( 'edit_shop_orders' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Insufficient permissions', 'smart-rentals-wc' ) ] );
+			}
+
+			$product_id = intval( $_POST['product_id'] );
+			$pickup_date = sanitize_text_field( $_POST['pickup_date'] );
+			$dropoff_date = sanitize_text_field( $_POST['dropoff_date'] );
+			$quantity = intval( $_POST['quantity'] );
+			$exclude_order_id = intval( $_POST['exclude_order_id'] );
+
+			if ( !$product_id || !$pickup_date || !$dropoff_date ) {
+				wp_send_json_error( [ 'message' => __( 'Missing required parameters', 'smart-rentals-wc' ) ] );
+			}
+
+			$pickup_timestamp = strtotime( $pickup_date );
+			$dropoff_timestamp = strtotime( $dropoff_date );
+
+			if ( !$pickup_timestamp || !$dropoff_timestamp || $pickup_timestamp >= $dropoff_timestamp ) {
+				wp_send_json_error( [ 'message' => __( 'Invalid date range', 'smart-rentals-wc' ) ] );
+			}
+
+			// Check availability excluding the current order
+			require_once SMART_RENTALS_WC_PLUGIN_PATH . 'admin/class-smart-rentals-wc-order-edit.php';
+			$order_edit = new Smart_Rentals_WC_Order_Edit();
+			$available = $order_edit->check_availability_excluding_order( 
+				$product_id, 
+				$pickup_timestamp, 
+				$dropoff_timestamp, 
+				$quantity, 
+				$exclude_order_id 
+			);
+
+			if ( $available ) {
+				// Calculate new price
+				$new_price = Smart_Rentals_WC()->options->calculate_rental_price( 
+					$product_id, 
+					$pickup_timestamp, 
+					$dropoff_timestamp, 
+					$quantity 
+				);
+
+				// Get duration text
+				$duration_text = Smart_Rentals_WC()->options->get_rental_duration_text( 
+					$pickup_timestamp, 
+					$dropoff_timestamp 
+				);
+
+				// Get available quantity
+				$available_quantity = Smart_Rentals_WC()->options->get_available_quantity( 
+					$product_id, 
+					$pickup_timestamp, 
+					$dropoff_timestamp 
+				);
+
+				wp_send_json_success( [
+					'available_quantity' => $available_quantity,
+					'new_price' => $new_price,
+					'formatted_price' => smart_rentals_wc_price( $new_price ),
+					'duration_text' => $duration_text,
+				] );
+			} else {
+				wp_send_json_error( [ 'message' => __( 'Product not available for selected dates and quantity', 'smart-rentals-wc' ) ] );
+			}
 		}
 	}
 }

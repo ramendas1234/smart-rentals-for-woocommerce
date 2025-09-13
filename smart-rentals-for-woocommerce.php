@@ -191,6 +191,8 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 		 */
 		public function init_admin() {
 			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
+			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-order-edit.php';
+			new Smart_Rentals_WC_Order_Edit();
 		}
 
 		/**
