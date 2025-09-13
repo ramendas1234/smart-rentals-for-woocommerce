@@ -891,7 +891,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 		}
 
 		/**
-		 * Maybe set rental order status when order status changes
+		 * Maybe set rental order status when order status changes (only for new frontend bookings)
 		 */
 		public function maybe_set_rental_order_status( $order_id, $from_status, $to_status, $order ) {
 			// Debug log
@@ -902,6 +902,43 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					$from_status, 
 					$to_status 
 				) );
+			}
+			
+			// Only apply to NEW orders from frontend, not manual admin changes
+			// Check if this is a manual admin change
+			if ( is_admin() && !wp_doing_ajax() ) {
+				// This is likely a manual admin change, don't interfere
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( 'Skipping order status change - manual admin change detected for order #' . $order_id );
+				}
+				return;
+			}
+			
+			// Check if we've already processed this order
+			$already_processed = $order->get_meta( '_smart_rentals_status_processed' );
+			if ( $already_processed === 'yes' ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( 'Skipping order status change - already processed for order #' . $order_id );
+				}
+				return;
+			}
+			
+			// Only act on specific status transitions that indicate new orders
+			$valid_transitions = [
+				'pending' => ['processing', 'completed', 'on-hold'],
+				'auto-draft' => ['pending', 'processing', 'completed', 'on-hold'],
+			];
+			
+			$is_valid_transition = false;
+			if ( isset( $valid_transitions[$from_status] ) && in_array( $to_status, $valid_transitions[$from_status] ) ) {
+				$is_valid_transition = true;
+			}
+			
+			if ( !$is_valid_transition ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( 'Skipping order status change - invalid transition from ' . $from_status . ' to ' . $to_status . ' for order #' . $order_id );
+				}
+				return;
 			}
 			
 			$this->apply_rental_order_status( $order, 'status_changed' );
@@ -1002,6 +1039,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 						// Increment attempt counter
 						$order->update_meta_data( '_smart_rentals_status_attempts', $attempt_count + 1 );
 						$order->update_meta_data( '_smart_rentals_desired_status', $desired_status );
+						
+						// Mark as processed to prevent future interference
+						$order->update_meta_data( '_smart_rentals_status_processed', 'yes' );
 						$order->save();
 						
 						// Update order status
@@ -1018,7 +1058,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 						// Log the status change
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 							smart_rentals_wc_log( sprintf( 
-								'Order #%d status changed from %s to %s (context: %s, attempt: %d)', 
+								'Order #%d status changed from %s to %s (context: %s, attempt: %d) - marked as processed', 
 								$order->get_id(),
 								$current_status,
 								$desired_status,
