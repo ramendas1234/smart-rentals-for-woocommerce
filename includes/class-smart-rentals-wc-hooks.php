@@ -52,11 +52,55 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		 * Remove default WooCommerce actions for rental products
 		 */
 		public function rental_product_remove_actions() {
-			// Remove default add to cart for rental products
+			// Remove default add to cart for rental products on single product pages
+			add_action( 'wp', [ $this, 'maybe_remove_add_to_cart' ] );
+			add_action( 'woocommerce_single_product_summary', [ $this, 'maybe_remove_add_to_cart' ], 1 );
+			
+			// Also add CSS to hide any remaining add to cart elements
+			add_action( 'wp_head', [ $this, 'hide_rental_add_to_cart_css' ] );
+		}
+
+		/**
+		 * Maybe remove add to cart button for rental products
+		 */
+		public function maybe_remove_add_to_cart() {
+			global $product;
+			
+			if ( $product && smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
+				// Remove all WooCommerce add to cart related actions
+				remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
+				remove_action( 'woocommerce_simple_add_to_cart', 'woocommerce_simple_add_to_cart', 30 );
+				remove_action( 'woocommerce_grouped_add_to_cart', 'woocommerce_grouped_add_to_cart', 30 );
+				remove_action( 'woocommerce_variable_add_to_cart', 'woocommerce_variable_add_to_cart', 30 );
+				remove_action( 'woocommerce_external_add_to_cart', 'woocommerce_external_add_to_cart', 30 );
+				
+				// Debug log
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( 'Removed WooCommerce add to cart actions for rental product: ' . $product->get_id() );
+				}
+			}
+		}
+
+		/**
+		 * Hide add to cart elements with CSS for rental products
+		 */
+		public function hide_rental_add_to_cart_css() {
 			if ( is_product() ) {
-				global $post;
-				if ( $post && smart_rentals_wc_is_rental_product( $post->ID ) ) {
-					remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
+				global $product;
+				if ( $product && smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
+					?>
+					<style type="text/css">
+					/* Hide WooCommerce add to cart elements for rental products */
+					.single-product .product .cart,
+					.single-product .product .single_add_to_cart_button,
+					.single-product .product .quantity,
+					.single-product .product form.cart,
+					.single-product .product .variations_form,
+					.single-product .product .woocommerce-variation-add-to-cart {
+						display: none !important;
+					}
+					</style>
+					<?php
 				}
 			}
 		}
