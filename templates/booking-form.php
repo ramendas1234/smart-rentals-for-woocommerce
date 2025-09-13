@@ -234,7 +234,7 @@ jQuery(document).ready(function($) {
     function calculateClientSidePrice(pickupDate, dropoffDate, quantity) {
         var dailyPrice = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'daily_price' ) ); ?>;
         var hourlyPrice = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'hourly_price' ) ); ?>;
-        var securityDeposit = <?php echo floatval( smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' ) ); ?>;
+        var securityDeposit = <?php echo floatval( smart_rentals_wc_get_security_deposit( $product_id ) ); ?>;
         var currencySymbol = '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? esc_js( get_woocommerce_currency_symbol() ) : '$'; ?>';
         
         var pickup = new Date(pickupDate);

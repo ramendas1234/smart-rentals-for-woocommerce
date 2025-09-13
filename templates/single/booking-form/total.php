@@ -6,7 +6,7 @@
 if ( !defined( 'ABSPATH' ) ) exit();
 
 $product_id = $args['product_id'];
-$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+$security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
 
 ?>
 
