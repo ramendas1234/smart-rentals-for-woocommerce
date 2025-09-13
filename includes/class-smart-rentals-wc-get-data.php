@@ -376,7 +376,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				case 'day':
 				case 'hotel':
 					if ( $daily_price > 0 ) {
-						$days = max( 1, ceil( $duration_days ) );
+						$days = max( 1, intval( ceil( $duration_days ) ) );
 						$total_price = $daily_price * $days * $quantity;
 					}
 					break;
@@ -384,7 +384,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				case 'hour':
 				case 'appointment':
 					if ( $hourly_price > 0 ) {
-						$hours = max( 1, ceil( $duration_hours ) );
+						$hours = max( 1, intval( ceil( $duration_hours ) ) );
 						$total_price = $hourly_price * $hours * $quantity;
 					}
 					break;
@@ -392,10 +392,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				case 'mixed':
 					// Use daily pricing if rental is 24+ hours, otherwise hourly
 					if ( $duration_hours >= 24 && $daily_price > 0 ) {
-						$days = max( 1, ceil( $duration_days ) );
+						$days = max( 1, intval( ceil( $duration_days ) ) );
 						$total_price = $daily_price * $days * $quantity;
 					} elseif ( $hourly_price > 0 ) {
-						$hours = max( 1, ceil( $duration_hours ) );
+						$hours = max( 1, intval( ceil( $duration_hours ) ) );
 						$total_price = $hourly_price * $hours * $quantity;
 					}
 					break;
@@ -403,7 +403,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				case 'period_time':
 					// Package-based pricing - use daily as base
 					if ( $daily_price > 0 ) {
-						$days = max( 1, ceil( $duration_days ) );
+						$days = max( 1, intval( ceil( $duration_days ) ) );
 						$total_price = $daily_price * $days * $quantity;
 					}
 					break;
@@ -418,7 +418,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				case 'taxi':
 					// Distance-based pricing - use hourly as base for time
 					if ( $hourly_price > 0 ) {
-						$hours = max( 1, ceil( $duration_hours ) );
+						$hours = max( 1, intval( ceil( $duration_hours ) ) );
 						$total_price = $hourly_price * $hours * $quantity;
 					}
 					break;
@@ -426,7 +426,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				default:
 					// For other types, use daily pricing as fallback
 					if ( $daily_price > 0 ) {
-						$days = max( 1, ceil( $duration_days ) );
+						$days = max( 1, intval( ceil( $duration_days ) ) );
 						$total_price = $daily_price * $days * $quantity;
 					}
 					break;
@@ -595,20 +595,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 
 			// More precise duration calculation
 			if ( $duration_days >= 1 ) {
-				$days = ceil( $duration_days );
-				if ( $duration_hours > 24 && ( $duration_hours % 24 ) > 0 ) {
-					// Show days and hours for mixed durations
-					$extra_hours = ceil( $duration_hours % 24 );
+				$days = intval( ceil( $duration_days ) );
+				if ( $duration_hours > 24 && ( fmod( $duration_hours, 24 ) > 0 ) ) {
+					// Show days and hours for mixed durations (use fmod for float modulo)
+					$extra_hours = intval( ceil( fmod( $duration_hours, 24 ) ) );
 					return sprintf( 
 						__( '%d days, %d hours', 'smart-rentals-wc' ), 
-						floor( $duration_days ), 
+						intval( floor( $duration_days ) ), 
 						$extra_hours 
 					);
 				} else {
 					return sprintf( _n( '%d day', '%d days', $days, 'smart-rentals-wc' ), $days );
 				}
 			} else {
-				$hours = ceil( $duration_hours );
+				$hours = intval( ceil( $duration_hours ) );
 				return sprintf( _n( '%d hour', '%d hours', $hours, 'smart-rentals-wc' ), $hours );
 			}
 		}
