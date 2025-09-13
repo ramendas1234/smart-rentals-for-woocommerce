@@ -181,7 +181,10 @@ jQuery(document).ready(function($) {
                             dropoff_date: dropoffDate,
                             product_id: productId,
                             rental_quantity: quantity,
-                            duration_text: data.duration_text
+                            duration_text: data.duration_text,
+                            security_deposit: securityDeposit,
+                            rental_price: data.total_price,
+                            total_with_deposit: totalAmount
                         }
                     };
                     

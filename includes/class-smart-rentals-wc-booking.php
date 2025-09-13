@@ -272,6 +272,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					$dropoff_date 
 				);
 				
+				// Get security deposit
+				$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+				$security_deposit = floatval( $security_deposit );
+				
 				$cart_item_data['rental_data'] = [
 					'pickup_date' => $pickup_date,
 					'dropoff_date' => $dropoff_date,
@@ -281,7 +285,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					'rental_quantity' => $quantity,
 					'pickup_location' => isset( $_POST['pickup_location'] ) ? sanitize_text_field( $_POST['pickup_location'] ) : '',
 					'dropoff_location' => isset( $_POST['dropoff_location'] ) ? sanitize_text_field( $_POST['dropoff_location'] ) : '',
-					'duration_text' => $duration_text
+					'duration_text' => $duration_text,
+					'security_deposit' => $security_deposit
 				];
 
 				// Make each rental booking unique
@@ -351,6 +356,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				}
 			}
 
+			// Security deposit
+			if ( isset( $rental_data['security_deposit'] ) && $rental_data['security_deposit'] > 0 ) {
+				$item_data[] = [
+					'key' => __( 'Security Deposit', 'smart-rentals-wc' ),
+					'value' => smart_rentals_wc_price( $rental_data['security_deposit'] ),
+					'display' => '',
+				];
+			}
+
 			return $item_data;
 		}
 
@@ -409,9 +423,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					$rental_data['rental_quantity']
 				);
 
-				if ( $total_price > 0 ) {
-					$unit_price = $total_price / $rental_data['rental_quantity'];
+				// Add security deposit to the total price
+				$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+				$security_deposit = floatval( $security_deposit );
+				
+				$total_with_deposit = $total_price + $security_deposit;
+
+				if ( $total_with_deposit > 0 ) {
+					$unit_price = $total_with_deposit / $rental_data['rental_quantity'];
 					$cart_item['data']->set_price( $unit_price );
+					
+					// Store security deposit info for display
+					if ( !isset( $cart_item['rental_data']['security_deposit'] ) ) {
+						$cart->cart_contents[$cart_item_key]['rental_data']['security_deposit'] = $security_deposit;
+					}
 				}
 			}
 		}
@@ -439,6 +464,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			}
 
 			$item->add_meta_data( smart_rentals_wc_meta_key( 'rental_quantity' ), $rental_data['rental_quantity'], true );
+			
+			// Add security deposit if present
+			if ( isset( $rental_data['security_deposit'] ) && $rental_data['security_deposit'] > 0 ) {
+				$item->add_meta_data( smart_rentals_wc_meta_key( 'security_deposit' ), smart_rentals_wc_price( $rental_data['security_deposit'] ), true );
+			}
 			
 			// Mark this item as a rental (crucial for admin calendar)
 			$item->add_meta_data( smart_rentals_wc_meta_key( 'is_rental' ), 'yes', true );
