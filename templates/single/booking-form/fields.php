@@ -165,6 +165,12 @@ jQuery(document).ready(function($) {
     
     // Initialize daterangepicker.com with Apply button
     function initDateRangePicker() {
+        console.log('Initializing daterangepicker...');
+        console.log('hasTimepicker:', hasTimepicker);
+        console.log('rentalType:', rentalType);
+        console.log('jQuery daterangepicker available:', typeof $.fn.daterangepicker !== 'undefined');
+        console.log('Moment available:', typeof moment !== 'undefined');
+        
         if (typeof $.fn.daterangepicker === 'undefined' || typeof moment === 'undefined') {
             console.error('Daterangepicker.com library not loaded, falling back to basic date inputs');
             initBasicDatePickers();
@@ -260,17 +266,8 @@ jQuery(document).ready(function($) {
             }
         };
         
-        // Add ranges only for non-time picker modes (daily rentals)
-        if (!hasTimepicker) {
-            dateRangeConfig.ranges = {
-                '<?php _e( 'Today', 'smart-rentals-wc' ); ?>': [moment(), moment()],
-                '<?php _e( 'Tomorrow', 'smart-rentals-wc' ); ?>': [moment().add(1, 'day'), moment().add(1, 'day')],
-                '<?php _e( 'Next 3 Days', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'days')],
-                '<?php _e( 'Next Week', 'smart-rentals-wc' ); ?>': [moment(), moment().add(6, 'days')],
-                '<?php _e( 'Next 2 Weeks', 'smart-rentals-wc' ); ?>': [moment(), moment().add(13, 'days')],
-                '<?php _e( 'Next Month', 'smart-rentals-wc' ); ?>': [moment(), moment().add(29, 'days')]
-            };
-        } else {
+        // Add appropriate ranges based on rental type (even though we always use datetime)
+        if (rentalType === 'hour') {
             // For hourly rentals, provide time-based ranges
             dateRangeConfig.ranges = {
                 '<?php _e( 'Next 2 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(2, 'hours')],
@@ -279,14 +276,37 @@ jQuery(document).ready(function($) {
                 '<?php _e( 'Next 12 Hours', 'smart-rentals-wc' ); ?>': [moment(), moment().add(12, 'hours')],
                 '<?php _e( 'Next Day', 'smart-rentals-wc' ); ?>': [moment(), moment().add(1, 'day')]
             };
+        } else {
+            // For daily and mixed rentals, provide day-based ranges with proper times
+            var pickupTime = moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>);
+            var dropoffTimeNextDay = moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>);
+            
+            dateRangeConfig.ranges = {
+                '<?php _e( 'One Day', 'smart-rentals-wc' ); ?>': [pickupTime, dropoffTimeNextDay],
+                '<?php _e( 'Two Days', 'smart-rentals-wc' ); ?>': [pickupTime, moment().add(2, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)],
+                '<?php _e( 'Three Days', 'smart-rentals-wc' ); ?>': [pickupTime, moment().add(3, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)],
+                '<?php _e( 'One Week', 'smart-rentals-wc' ); ?>': [pickupTime, moment().add(7, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)],
+                '<?php _e( 'Two Weeks', 'smart-rentals-wc' ); ?>': [pickupTime, moment().add(14, 'days').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>)]
+            };
         }
         
         // Set default times
+        console.log('Setting default times - Pickup: <?php echo $default_pickup_time; ?>, Dropoff: <?php echo $default_dropoff_time; ?>');
         dateRangeConfig.startDate = moment().hour(<?php echo date('H', strtotime($default_pickup_time)); ?>).minute(<?php echo date('i', strtotime($default_pickup_time)); ?>);
         dateRangeConfig.endDate = moment().add(1, 'day').hour(<?php echo date('H', strtotime($default_dropoff_time)); ?>).minute(<?php echo date('i', strtotime($default_dropoff_time)); ?>);
         
         // Initialize daterangepicker on a single input that controls both fields
-        $('#pickup_date').daterangepicker(dateRangeConfig);
+        console.log('Daterangepicker config:', dateRangeConfig);
+        console.log('Pickup date element found:', $('#pickup_date').length);
+        
+        try {
+            $('#pickup_date').daterangepicker(dateRangeConfig);
+            console.log('Daterangepicker initialized successfully');
+        } catch (error) {
+            console.error('Error initializing daterangepicker:', error);
+            initBasicDatePickers();
+            return;
+        }
         
         // Handle Apply button click - THIS IS KEY!
         $('#pickup_date').on('apply.daterangepicker', function(ev, picker) {
@@ -467,14 +487,26 @@ jQuery(document).ready(function($) {
     });
     
     // Initialize date pickers based on library availability
+    console.log('Starting daterangepicker initialization check...');
     setTimeout(function() {
+        console.log('Timeout reached, checking libraries...');
+        console.log('Moment available:', typeof moment !== 'undefined');
+        console.log('Daterangepicker available:', typeof $.fn.daterangepicker !== 'undefined');
+        console.log('Pickup date element exists:', $('#pickup_date').length > 0);
+        
         if (typeof moment !== 'undefined' && typeof $.fn.daterangepicker !== 'undefined') {
+            console.log('Libraries available, calling initDateRangePicker...');
             initDateRangePicker();
         } else {
             console.warn('Daterangepicker.com or Moment.js not available, using fallback');
+            console.log('Available libraries:', {
+                moment: typeof moment,
+                daterangepicker: typeof $.fn.daterangepicker,
+                jquery: typeof $
+            });
             initBasicDatePickers();
         }
-    }, 200); // Increased timeout to ensure libraries are loaded
+    }, 500); // Increased timeout to ensure libraries are loaded
     
     console.log('Smart Rentals Form Fields with daterangepicker.com (Apply button) initialized');
 });
