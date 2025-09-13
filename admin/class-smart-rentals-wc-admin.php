@@ -486,6 +486,32 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			echo '</div>';
 			echo '<div class="options_group">';
 
+			// Disabled Weekdays
+			$disabled_weekdays = smart_rentals_wc_get_post_meta( $post->ID, 'disabled_weekdays' );
+			$disabled_weekdays = is_array( $disabled_weekdays ) ? $disabled_weekdays : [];
+			
+			?>
+			<p class="form-field">
+				<label for="<?php echo smart_rentals_wc_meta_key( 'disabled_weekdays' ); ?>"><?php _e( 'Disabled Weekdays', 'smart-rentals-wc' ); ?></label>
+				<select 
+					id="<?php echo smart_rentals_wc_meta_key( 'disabled_weekdays' ); ?>" 
+					name="<?php echo smart_rentals_wc_meta_key( 'disabled_weekdays' ); ?>[]" 
+					class="wc-enhanced-select" 
+					multiple="multiple" 
+					data-placeholder="<?php esc_attr_e( 'Select weekdays to disable...', 'smart-rentals-wc' ); ?>"
+					style="width: 100%;">
+					<option value="0" <?php selected( in_array( '0', $disabled_weekdays ), true ); ?>><?php _e( 'Sunday', 'smart-rentals-wc' ); ?></option>
+					<option value="1" <?php selected( in_array( '1', $disabled_weekdays ), true ); ?>><?php _e( 'Monday', 'smart-rentals-wc' ); ?></option>
+					<option value="2" <?php selected( in_array( '2', $disabled_weekdays ), true ); ?>><?php _e( 'Tuesday', 'smart-rentals-wc' ); ?></option>
+					<option value="3" <?php selected( in_array( '3', $disabled_weekdays ), true ); ?>><?php _e( 'Wednesday', 'smart-rentals-wc' ); ?></option>
+					<option value="4" <?php selected( in_array( '4', $disabled_weekdays ), true ); ?>><?php _e( 'Thursday', 'smart-rentals-wc' ); ?></option>
+					<option value="5" <?php selected( in_array( '5', $disabled_weekdays ), true ); ?>><?php _e( 'Friday', 'smart-rentals-wc' ); ?></option>
+					<option value="6" <?php selected( in_array( '6', $disabled_weekdays ), true ); ?>><?php _e( 'Saturday', 'smart-rentals-wc' ); ?></option>
+				</select>
+				<span class="woocommerce-help-tip" data-tip="<?php esc_attr_e( 'Select weekdays that should be blocked for bookings. Selected days will be unavailable every week.', 'smart-rentals-wc' ); ?>"></span>
+			</p>
+			<?php
+
 			// Show Availability Calendar option
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'show_calendar' ),
@@ -537,6 +563,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'max_rental_period' => 'number',
 					'rental_stock' => 'number',
 					'security_deposit' => 'price',
+					'disabled_weekdays' => 'array',
 					'show_calendar' => 'checkbox',
 				];
 
@@ -568,6 +595,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 									$value = smart_rentals_wc_format_number( $value );
 								}
 								break;
+							case 'array':
+								// Handle array fields like disabled_weekdays
+								if ( is_array( $value ) ) {
+									$value = array_map( 'sanitize_text_field', $value );
+								} else {
+									$value = [];
+								}
+								break;
 							case 'checkbox':
 								$value = 'yes';
 								break;
@@ -579,6 +614,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						smart_rentals_wc_update_post_meta( $post_id, $field, $value );
 					} elseif ( 'checkbox' === $type ) {
 						smart_rentals_wc_update_post_meta( $post_id, $field, 'no' );
+					} elseif ( 'array' === $type ) {
+						// Save empty array for array fields when not set
+						smart_rentals_wc_update_post_meta( $post_id, $field, [] );
 					}
 				}
 

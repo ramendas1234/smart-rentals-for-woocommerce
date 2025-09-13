@@ -231,6 +231,37 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				return false;
 			}
 
+			// Check disabled weekdays
+			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
+				$pickup_timestamp = is_numeric( $pickup_date ) ? $pickup_date : strtotime( $pickup_date );
+				$dropoff_timestamp = is_numeric( $dropoff_date ) ? $dropoff_date : strtotime( $dropoff_date );
+				
+				// Check if pickup or dropoff dates fall on disabled weekdays
+				$pickup_weekday = date( 'w', $pickup_timestamp );
+				$dropoff_weekday = date( 'w', $dropoff_timestamp );
+				
+				if ( in_array( intval( $pickup_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+					return false;
+				}
+				
+				if ( in_array( intval( $dropoff_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+					return false;
+				}
+				
+				// For multi-day rentals, check if any day in the range is disabled
+				if ( $pickup_timestamp !== $dropoff_timestamp ) {
+					$current_date = $pickup_timestamp;
+					while ( $current_date <= $dropoff_timestamp ) {
+						$current_weekday = date( 'w', $current_date );
+						if ( in_array( intval( $current_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+							return false;
+						}
+						$current_date += 86400; // Add one day
+					}
+				}
+			}
+
 			// Get booked dates
 			$booked_dates = $this->get_booked_dates( $product_id );
 			
@@ -380,6 +411,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 		public function get_calendar_day_availability( $product_id, $date_string ) {
 			if ( !$product_id || !$date_string ) {
 				return 0;
+			}
+
+			// Check if this weekday is disabled
+			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
+				$timestamp = strtotime( $date_string );
+				$weekday = date( 'w', $timestamp );
+				if ( in_array( intval( $weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+					return 0; // Disabled weekday = 0 availability
+				}
 			}
 
 			// Get product stock

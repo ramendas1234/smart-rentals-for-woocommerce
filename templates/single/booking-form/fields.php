@@ -134,6 +134,10 @@ jQuery(document).ready(function($) {
     var minRentalPeriod = <?php echo intval( $min_rental_period ); ?>;
     var maxRentalPeriod = <?php echo intval( $max_rental_period ); ?>;
     var rentalType = '<?php echo esc_js( $rental_type ); ?>';
+    var disabledWeekdays = <?php 
+        $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+        echo json_encode( is_array( $disabled_weekdays ) ? array_map( 'intval', $disabled_weekdays ) : [] );
+    ?>;
     
     // Initialize daterangepicker.com with Apply button
     function initDateRangePicker() {
@@ -204,7 +208,16 @@ jQuery(document).ready(function($) {
             
             // Date constraints
             minDate: moment(),
-            maxDate: moment().add(1, 'year')
+            maxDate: moment().add(1, 'year'),
+            
+            // Disable specific weekdays
+            isInvalidDate: function(date) {
+                if (disabledWeekdays && disabledWeekdays.length > 0) {
+                    var dayOfWeek = date.day(); // 0 = Sunday, 1 = Monday, etc.
+                    return disabledWeekdays.indexOf(dayOfWeek) !== -1;
+                }
+                return false;
+            }
         };
         
         // Add ranges only for non-time picker modes (daily rentals)

@@ -1304,6 +1304,12 @@
     border-left: 4px solid #dc3545;
 }
 
+.calendar-day.disabled-weekday {
+    background: #e2e3e5;
+    border-left: 4px solid #6c757d;
+    opacity: 0.7;
+}
+
 .day-number {
     font-size: 16px;
     font-weight: 600;
@@ -1326,6 +1332,11 @@
 
 .unavailable-text {
     background: #dc3545;
+    color: white;
+}
+
+.disabled-weekday-text {
+    background: #6c757d;
     color: white;
 }
 
@@ -1395,6 +1406,10 @@
 
 .legend-color.unavailable {
     background: #dc3545;
+}
+
+.legend-color.disabled-weekday {
+    background: #6c757d;
 }
 
 .legend-color.today {

@@ -96,6 +96,40 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			smart_rentals_wc_log( 'Valid date range for cart - Pickup: ' . $pickup_date . ', Dropoff: ' . $dropoff_date );
 
+			// Check disabled weekdays
+			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
+				$pickup_weekday = date( 'w', $pickup_timestamp );
+				$dropoff_weekday = date( 'w', $dropoff_timestamp );
+				
+				if ( in_array( $pickup_weekday, $disabled_weekdays ) ) {
+					$weekday_name = $this->get_weekday_name( $pickup_weekday );
+					wc_add_notice( sprintf( __( 'Pickup date falls on %s which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name ), 'error' );
+					return false;
+				}
+				
+				if ( in_array( $dropoff_weekday, $disabled_weekdays ) ) {
+					$weekday_name = $this->get_weekday_name( $dropoff_weekday );
+					wc_add_notice( sprintf( __( 'Drop-off date falls on %s which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name ), 'error' );
+					return false;
+				}
+				
+				// For multi-day rentals, check if any day in the range is disabled
+				if ( $pickup_timestamp !== $dropoff_timestamp ) {
+					$current_date = $pickup_timestamp;
+					while ( $current_date <= $dropoff_timestamp ) {
+						$current_weekday = date( 'w', $current_date );
+						if ( in_array( $current_weekday, $disabled_weekdays ) ) {
+							$weekday_name = $this->get_weekday_name( $current_weekday );
+							$date_formatted = date( 'Y-m-d', $current_date );
+							wc_add_notice( sprintf( __( 'Your rental period includes %s (%s) which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name, $date_formatted ), 'error' );
+							return false;
+						}
+						$current_date += 86400; // Add one day
+					}
+				}
+			}
+
 			// Check minimum rental period
 			$min_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'min_rental_period' );
 			if ( $min_rental_period ) {
@@ -674,6 +708,23 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				[ '%s' ],
 				[ '%d' ]
 			);
+		}
+
+		/**
+		 * Get weekday name from number
+		 */
+		private function get_weekday_name( $weekday_number ) {
+			$weekdays = [
+				0 => __( 'Sunday', 'smart-rentals-wc' ),
+				1 => __( 'Monday', 'smart-rentals-wc' ),
+				2 => __( 'Tuesday', 'smart-rentals-wc' ),
+				3 => __( 'Wednesday', 'smart-rentals-wc' ),
+				4 => __( 'Thursday', 'smart-rentals-wc' ),
+				5 => __( 'Friday', 'smart-rentals-wc' ),
+				6 => __( 'Saturday', 'smart-rentals-wc' ),
+			];
+			
+			return isset( $weekdays[ $weekday_number ] ) ? $weekdays[ $weekday_number ] : __( 'Unknown', 'smart-rentals-wc' );
 		}
 
 		/**

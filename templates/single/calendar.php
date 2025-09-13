@@ -102,9 +102,15 @@ if ( $next_month > 12 ) {
                     $is_today = ( $date === date( 'Y-m-d' ) );
                     $is_past = ( $timestamp < strtotime( 'today' ) );
                     
+                    // Check if this weekday is disabled
+                    $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+                    $disabled_weekdays = is_array( $disabled_weekdays ) ? array_map( 'intval', $disabled_weekdays ) : [];
+                    $weekday = date( 'w', $timestamp ); // 0 = Sunday
+                    $is_disabled_weekday = in_array( intval( $weekday ), $disabled_weekdays );
+                    
                     // Use the robust calendar-specific availability method
                     $available_quantity = Smart_Rentals_WC()->options->get_calendar_day_availability( $product_id, $date );
-                    $is_available = ( $available_quantity > 0 );
+                    $is_available = ( $available_quantity > 0 && !$is_disabled_weekday );
                     
                     // Get price for this day
                     $price_display = '';
@@ -118,14 +124,17 @@ if ( $next_month > 12 ) {
                     $classes = [ 'calendar-day' ];
                     if ( $is_today ) $classes[] = 'today';
                     if ( $is_past ) $classes[] = 'past';
-                    if ( !$is_available || $is_past ) $classes[] = 'unavailable';
+                    if ( $is_disabled_weekday ) $classes[] = 'disabled-weekday';
+                    if ( !$is_available || $is_past || $is_disabled_weekday ) $classes[] = 'unavailable';
                     else $classes[] = 'available';
                     
                     echo '<div class="' . implode( ' ', $classes ) . '" data-date="' . $date . '">';
                     echo '<span class="day-number">' . $day . '</span>';
                     
                     if ( !$is_past ) {
-                        if ( $is_available ) {
+                        if ( $is_disabled_weekday ) {
+                            echo '<span class="availability-indicator disabled-weekday-text">' . __( 'Disabled Day', 'smart-rentals-wc' ) . '</span>';
+                        } elseif ( $is_available ) {
                             echo '<span class="availability-indicator available-count">' . $available_quantity . ' ' . __( 'available', 'smart-rentals-wc' ) . '</span>';
                             if ( $price_display ) {
                                 echo '<span class="day-price">' . $price_display . '</span>';
@@ -151,6 +160,14 @@ if ( $next_month > 12 ) {
                 <span class="legend-color unavailable"></span>
                 <span class="legend-text"><?php _e( 'Unavailable', 'smart-rentals-wc' ); ?></span>
             </div>
+            <?php 
+            $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+            if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) : ?>
+            <div class="legend-item">
+                <span class="legend-color disabled-weekday"></span>
+                <span class="legend-text"><?php _e( 'Disabled Weekday', 'smart-rentals-wc' ); ?></span>
+            </div>
+            <?php endif; ?>
             <div class="legend-item">
                 <span class="legend-color today"></span>
                 <span class="legend-text"><?php _e( 'Today', 'smart-rentals-wc' ); ?></span>
