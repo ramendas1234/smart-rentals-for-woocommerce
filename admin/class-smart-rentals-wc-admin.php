@@ -21,11 +21,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Admin menu
 			add_action( 'admin_menu', [ $this, 'admin_menu' ] );
 
-			// Add rental checkbox to product general tab
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_checkbox' ] );
+			// Add rental checkbox to product general tab (beside Virtual/Downloadable)
+			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_checkbox' ], 15 );
 
-			// Add rental fields after checkbox
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_fields' ] );
+			// Add Rental Options tab
+			add_filter( 'woocommerce_product_data_tabs', [ $this, 'add_rental_options_tab' ] );
+			
+			// Add rental fields to Rental Options tab
+			add_action( 'woocommerce_product_data_panels', [ $this, 'add_rental_options_panel' ] );
 
 			// Save rental meta
 			add_action( 'woocommerce_process_product_meta', [ $this, 'save_rental_meta' ], 11, 2 );
@@ -75,6 +78,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'manage_woocommerce',
 				'smart-rentals-wc-bookings',
 				[ $this, 'bookings_page' ]
+			);
+
+			add_submenu_page(
+				'smart-rentals-wc',
+				__( 'Booking Calendar', 'smart-rentals-wc' ),
+				__( 'Booking Calendar', 'smart-rentals-wc' ),
+				'manage_woocommerce',
+				'smart-rentals-wc-booking-calendar',
+				[ $this, 'booking_calendar_page' ]
 			);
 		}
 
@@ -314,7 +326,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		}
 
 		/**
-		 * Add rental checkbox to product general tab
+		 * Add rental checkbox beside Virtual/Downloadable checkboxes
 		 */
 		public function add_rental_checkbox() {
 			global $post;
@@ -324,44 +336,65 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				return;
 			}
 
+			// Add rental checkbox inline with Virtual/Downloadable
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'enable_rental' ),
-				'label' => __( 'Rental Product', 'smart-rentals-wc' ),
+				'wrapper_class' => 'show_if_simple',
+				'label' => __( 'Enable Rental Product', 'smart-rentals-wc' ),
 				'description' => __( 'Enable rental/booking functionality for this product', 'smart-rentals-wc' ),
 				'desc_tip' => true,
 			]);
 		}
 
 		/**
-		 * Add rental fields after checkbox
+		 * Add Rental Options tab to product data tabs
 		 */
-		public function add_rental_fields() {
+		public function add_rental_options_tab( $tabs ) {
+			$tabs['smart_rentals'] = [
+				'label'    => __( 'Rental Options', 'smart-rentals-wc' ),
+				'target'   => 'smart_rentals_product_data',
+				'class'    => [ 'hide_if_grouped', 'hide_if_external', 'smart_rentals_options' ],
+				'priority' => 25,
+			];
+			return $tabs;
+		}
+
+		/**
+		 * Add Rental Options tab panel content
+		 */
+		public function add_rental_options_panel() {
 			global $post;
 
-			// Only show fields if WooCommerce functions are available
+			// Only show panel if WooCommerce functions are available
 			if ( !function_exists( 'woocommerce_wp_select' ) || !function_exists( 'woocommerce_wp_text_input' ) ) {
 				return;
 			}
 
-			echo '<div id="smart-rentals-fields" style="display: none;">';
+			echo '<div id="smart_rentals_product_data" class="panel woocommerce_options_panel hidden">';
+			echo '<div class="options_group">';
 			
 			// Rental type
 			woocommerce_wp_select([
 				'id' => smart_rentals_wc_meta_key( 'rental_type' ),
 				'label' => __( 'Rental Type', 'smart-rentals-wc' ),
 				'options' => [
+					'' => __( 'Select rental type', 'smart-rentals-wc' ),
 					'day' => __( 'Daily', 'smart-rentals-wc' ),
 					'hour' => __( 'Hourly', 'smart-rentals-wc' ),
 					'mixed' => __( 'Mixed (Daily/Hourly)', 'smart-rentals-wc' ),
-					'period_time' => __( 'Package/Period', 'smart-rentals-wc' ),
-					'transportation' => __( 'Transportation', 'smart-rentals-wc' ),
-					'hotel' => __( 'Hotel/Accommodation', 'smart-rentals-wc' ),
-					'appointment' => __( 'Appointment', 'smart-rentals-wc' ),
-					'taxi' => __( 'Taxi/Distance', 'smart-rentals-wc' ),
+					// Disabled options (kept for future use)
+					'period_time' => __( 'Package/Period', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'transportation' => __( 'Transportation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'hotel' => __( 'Hotel/Accommodation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'appointment' => __( 'Appointment', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
+					'taxi' => __( 'Taxi/Distance', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 				],
 				'desc_tip' => true,
-				'description' => __( 'Select the rental pricing type', 'smart-rentals-wc' ),
+				'description' => __( 'Select the rental pricing type. Currently only Daily, Hourly, and Mixed types are fully supported.', 'smart-rentals-wc' ),
 			]);
+
+			echo '</div>';
+			echo '<div class="options_group">';
 
 			// Daily price
 			woocommerce_wp_text_input([
@@ -373,6 +406,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'step' => '0.01',
 					'min' => '0',
 				],
+				'desc_tip' => true,
+				'description' => __( 'Daily rental price', 'smart-rentals-wc' ),
 			]);
 
 			// Hourly price
@@ -385,33 +420,41 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'step' => '0.01',
 					'min' => '0',
 				],
+				'desc_tip' => true,
+				'description' => __( 'Hourly rental price', 'smart-rentals-wc' ),
 			]);
 
-			// Minimum rental period
+			echo '</div>';
+			echo '<div class="options_group">';
+
+			// Minimum rental period (optional)
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'min_rental_period' ),
-				'label' => __( 'Minimum Rental Period', 'smart-rentals-wc' ),
-				'placeholder' => '1',
+				'label' => __( 'Min Rental Period', 'smart-rentals-wc' ) . ' (' . __( 'Optional', 'smart-rentals-wc' ) . ')',
+				'placeholder' => __( 'Leave blank for no minimum', 'smart-rentals-wc' ),
 				'type' => 'number',
 				'custom_attributes' => [
-					'min' => '1',
+					'min' => '0',
 				],
 				'desc_tip' => true,
-				'description' => __( 'Minimum number of days/hours for rental', 'smart-rentals-wc' ),
+				'description' => __( 'Minimum rental duration in days/hours. Leave blank to allow any duration.', 'smart-rentals-wc' ),
 			]);
 
-			// Maximum rental period
+			// Maximum rental period (optional)
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'max_rental_period' ),
-				'label' => __( 'Maximum Rental Period', 'smart-rentals-wc' ),
-				'placeholder' => '365',
+				'label' => __( 'Max Rental Period', 'smart-rentals-wc' ) . ' (' . __( 'Optional', 'smart-rentals-wc' ) . ')',
+				'placeholder' => __( 'Leave blank for no maximum', 'smart-rentals-wc' ),
 				'type' => 'number',
 				'custom_attributes' => [
-					'min' => '1',
+					'min' => '0',
 				],
 				'desc_tip' => true,
-				'description' => __( 'Maximum number of days/hours for rental', 'smart-rentals-wc' ),
+				'description' => __( 'Maximum rental duration in days/hours. Leave blank to allow unlimited duration.', 'smart-rentals-wc' ),
 			]);
+
+			echo '</div>';
+			echo '<div class="options_group">';
 
 			// Inventory/Stock
 			woocommerce_wp_text_input([
@@ -440,14 +483,28 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'description' => __( 'Security deposit amount', 'smart-rentals-wc' ),
 			]);
 
-			// Enable calendar
+			echo '</div>';
+			echo '<div class="options_group">';
+
+			// Show Availability Calendar option
 			woocommerce_wp_checkbox([
-				'id' => smart_rentals_wc_meta_key( 'enable_calendar' ),
-				'label' => __( 'Show Calendar', 'smart-rentals-wc' ),
-				'description' => __( 'Display calendar for date selection', 'smart-rentals-wc' ),
+				'id' => smart_rentals_wc_meta_key( 'show_calendar' ),
+				'label' => __( 'Show Availability Calendar', 'smart-rentals-wc' ),
+				'desc_tip' => true,
+				'description' => __( 'Display a monthly calendar showing availability and daily pricing below the product image. This is for informational purposes only and does not affect the booking form.', 'smart-rentals-wc' ),
 			]);
 
 			echo '</div>';
+			echo '</div>';
+		}
+
+		/**
+		 * Add rental fields after checkbox (DEPRECATED - moved to Rental Options tab)
+		 */
+		public function add_rental_fields() {
+			// This method is deprecated - all rental fields are now in the Rental Options tab
+			// Keeping for backward compatibility, but it does nothing
+			return;
 		}
 
 		/**
@@ -460,6 +517,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 
 			// Only save other fields if rental is enabled
 			if ( 'yes' === $enable_rental ) {
+				// Validate rental type (only allow active types)
+				$rental_type = isset( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) ? sanitize_text_field( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) : '';
+				$allowed_types = [ 'day', 'hour', 'mixed' ];
+				
+				if ( $rental_type && !in_array( $rental_type, $allowed_types ) ) {
+					// Reset to empty if invalid type selected
+					$rental_type = '';
+					add_action( 'admin_notices', function() {
+						echo '<div class="notice notice-error"><p>' . __( 'Invalid rental type selected. Please choose Daily, Hourly, or Mixed.', 'smart-rentals-wc' ) . '</p></div>';
+					});
+				}
+				
 				$fields = [
 					'rental_type' => 'text',
 					'daily_price' => 'price',
@@ -468,10 +537,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'max_rental_period' => 'number',
 					'rental_stock' => 'number',
 					'security_deposit' => 'price',
-					'enable_calendar' => 'checkbox',
+					'show_calendar' => 'checkbox',
 				];
 
 				foreach ( $fields as $field => $type ) {
+					// Special handling for rental_type validation
+					if ( $field === 'rental_type' && isset( $_POST[smart_rentals_wc_meta_key( $field )] ) ) {
+						$submitted_type = sanitize_text_field( $_POST[smart_rentals_wc_meta_key( $field )] );
+						$allowed_types = [ 'day', 'hour', 'mixed' ];
+						
+						if ( !in_array( $submitted_type, $allowed_types ) ) {
+							// Don't save invalid rental type
+							continue;
+						}
+					}
 					$meta_key = smart_rentals_wc_meta_key( $field );
 					
 					if ( isset( $_POST[$meta_key] ) ) {
@@ -482,7 +561,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								$value = smart_rentals_wc_format_price( $value );
 								break;
 							case 'number':
-								$value = smart_rentals_wc_format_number( $value );
+								// Allow empty values for optional period fields
+								if ( in_array( $field, [ 'min_rental_period', 'max_rental_period' ] ) && empty( $value ) ) {
+									$value = '';
+								} else {
+									$value = smart_rentals_wc_format_number( $value );
+								}
 								break;
 							case 'checkbox':
 								$value = 'yes';
@@ -674,6 +758,165 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 			
 			return $price;
+		}
+
+		/**
+		 * Booking calendar page
+		 */
+		public function booking_calendar_page() {
+			// Enqueue required assets
+			wp_enqueue_script( 'jquery' );
+			
+			// Get rental product IDs
+			$product_ids = Smart_Rentals_WC()->options->get_rental_product_ids();
+			
+			// Get events for calendar
+			$events = $this->get_calendar_events();
+			
+			// Include the calendar template
+			include SMART_RENTALS_WC_PLUGIN_PATH . 'admin/views/booking-calendar.php';
+		}
+
+		/**
+		 * Get calendar events for admin booking calendar
+		 */
+		private function get_calendar_events() {
+			global $wpdb;
+			
+			$events = [];
+			
+			// First, try to get from custom bookings table
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			$custom_bookings = [];
+			
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$custom_bookings = $wpdb->get_results("
+					SELECT 
+						b.*, 
+						p.post_title as product_name
+					FROM $table_name b
+					LEFT JOIN {$wpdb->posts} p ON b.product_id = p.ID
+					WHERE b.status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
+					ORDER BY b.pickup_date ASC
+				");
+
+				foreach ( $custom_bookings as $booking ) {
+					$events[] = [
+						'id' => 'custom_' . $booking->id,
+						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
+						'start' => $booking->pickup_date,
+						'end' => $booking->dropoff_date,
+						'backgroundColor' => $this->get_booking_color( $booking->status ),
+						'borderColor' => $this->get_booking_color( $booking->status ),
+						'textColor' => '#ffffff',
+						'extendedProps' => [
+							'booking_id' => $booking->id,
+							'product_id' => $booking->product_id,
+							'quantity' => $booking->quantity,
+							'status' => $booking->status,
+							'total_price' => $booking->total_price,
+							'security_deposit' => $booking->security_deposit,
+							'source' => 'custom_table'
+						]
+					];
+				}
+			}
+			
+			// Also get bookings from WooCommerce orders (like external plugin)
+			$order_status = Smart_Rentals_WC()->options->get_booking_order_status();
+			$status_placeholders = implode( "','", array_map( 'esc_sql', $order_status ) );
+			
+			$order_bookings = $wpdb->get_results( $wpdb->prepare("
+				SELECT 
+					orders.ID as order_id,
+					orders.post_date as order_date,
+					items.order_item_name as product_name,
+					pickup_date.meta_value as pickup_date,
+					dropoff_date.meta_value as dropoff_date,
+					quantity.meta_value as quantity,
+					product_meta.meta_value as product_id,
+					orders.post_status as order_status
+				FROM {$wpdb->prefix}woocommerce_order_items AS items
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS pickup_date 
+					ON items.order_item_id = pickup_date.order_item_id 
+					AND pickup_date.meta_key = %s
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS dropoff_date 
+					ON items.order_item_id = dropoff_date.order_item_id 
+					AND dropoff_date.meta_key = %s
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS quantity 
+					ON items.order_item_id = quantity.order_item_id 
+					AND quantity.meta_key = %s
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS product_meta 
+					ON items.order_item_id = product_meta.order_item_id 
+					AND product_meta.meta_key = '_product_id'
+				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS rental_check 
+					ON items.order_item_id = rental_check.order_item_id 
+					AND rental_check.meta_key = %s
+				LEFT JOIN {$wpdb->posts} AS orders 
+					ON items.order_id = orders.ID
+				WHERE 
+					rental_check.meta_value = 'yes'
+					AND orders.post_status IN ('{$status_placeholders}')
+					AND pickup_date.meta_value IS NOT NULL
+					AND dropoff_date.meta_value IS NOT NULL
+					AND product_meta.meta_value IS NOT NULL
+				ORDER BY pickup_date.meta_value ASC
+			",
+				smart_rentals_wc_meta_key( 'pickup_date' ),
+				smart_rentals_wc_meta_key( 'dropoff_date' ),
+				smart_rentals_wc_meta_key( 'rental_quantity' ),
+				smart_rentals_wc_meta_key( 'is_rental' )
+			));
+
+			foreach ( $order_bookings as $booking ) {
+				if ( $booking->pickup_date && $booking->dropoff_date && $booking->product_id ) {
+					// Convert order status to booking status
+					$booking_status = 'pending';
+					if ( $booking->order_status === 'wc-processing' ) {
+						$booking_status = 'confirmed';
+					} elseif ( $booking->order_status === 'wc-completed' ) {
+						$booking_status = 'active';
+					} elseif ( $booking->order_status === 'wc-on-hold' ) {
+						$booking_status = 'pending';
+					}
+					
+					$events[] = [
+						'id' => 'order_' . $booking->order_id,
+						'title' => $booking->product_name . ' (' . ($booking->quantity ?: 1) . ')',
+						'start' => $booking->pickup_date,
+						'end' => $booking->dropoff_date,
+						'backgroundColor' => $this->get_booking_color( $booking_status ),
+						'borderColor' => $this->get_booking_color( $booking_status ),
+						'textColor' => '#ffffff',
+						'extendedProps' => [
+							'booking_id' => $booking->order_id,
+							'product_id' => $booking->product_id,
+							'quantity' => $booking->quantity ?: 1,
+							'status' => $booking_status,
+							'order_status' => $booking->order_status,
+							'source' => 'woocommerce_order'
+						]
+					];
+				}
+			}
+			
+			return $events;
+		}
+
+		/**
+		 * Get booking color based on status
+		 */
+		private function get_booking_color( $status ) {
+			$colors = [
+				'pending' => '#ffc107',     // Yellow
+				'confirmed' => '#28a745',   // Green
+				'active' => '#17a2b8',      // Blue
+				'processing' => '#fd7e14',  // Orange
+				'completed' => '#6f42c1',   // Purple
+				'cancelled' => '#dc3545',   // Red
+			];
+			
+			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
 		}
 
 		/**

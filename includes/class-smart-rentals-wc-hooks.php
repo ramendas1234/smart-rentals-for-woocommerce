@@ -16,8 +16,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Remove default WooCommerce actions for rental products
 			add_action( 'init', [ $this, 'rental_product_remove_actions' ] );
 
-			// Product hooks
-			add_action( 'woocommerce_product_options_general_product_data', [ $this, 'add_rental_badge' ], 5 );
+			// Product hooks (rental badge removed - using checkbox instead)
 			
 			// Shop loop hooks
 			add_action( 'woocommerce_after_shop_loop_item_title', [ $this, 'add_rental_badge_to_loop' ], 15 );
@@ -25,6 +24,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Single product hooks - following external plugin pattern
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_price' ], 9 );
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_booking_form' ], 25 );
+			
+			// Calendar display after product gallery (below gallery, not beside)
+			add_action( 'woocommerce_after_single_product_summary', [ $this, 'rental_product_calendar' ], 5 );
 
 			// Rental booking form components (following external plugin)
 			add_action( 'smart_rentals_booking_form', [ $this, 'rental_booking_form_fields' ], 5 );
@@ -60,16 +62,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		}
 
 		/**
-		 * Add rental badge to admin
+		 * Add rental badge to admin (REMOVED - using checkbox instead)
 		 */
 		public function add_rental_badge() {
-			global $post;
-			
-			if ( smart_rentals_wc_is_rental_product( $post->ID ) ) {
-				echo '<div class="smart-rentals-admin-badge">';
-				echo '<span class="rental-badge">' . __( 'Rental Product', 'smart-rentals-wc' ) . '</span>';
-				echo '</div>';
-			}
+			// This method is no longer used - rental status is shown via checkbox
+			// Keeping for backward compatibility
+			return;
 		}
 
 		/**
@@ -303,6 +301,33 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			}
 			
 			return $product_quantity;
+		}
+
+		/**
+		 * Display rental product availability calendar
+		 */
+		public function rental_product_calendar() {
+			if ( !is_product() ) {
+				return;
+			}
+
+			global $post;
+			if ( !$post || !smart_rentals_wc_is_rental_product( $post->ID ) ) {
+				return;
+			}
+
+			// Check if calendar is enabled for this product
+			$show_calendar = smart_rentals_wc_get_post_meta( $post->ID, 'show_calendar' );
+			if ( 'yes' !== $show_calendar ) {
+				return;
+			}
+
+			// Include the calendar template
+			$template_path = SMART_RENTALS_WC_PLUGIN_TEMPLATES . 'single/calendar.php';
+			if ( file_exists( $template_path ) ) {
+				$product_id = $post->ID;
+				include $template_path;
+			}
 		}
 	}
 }

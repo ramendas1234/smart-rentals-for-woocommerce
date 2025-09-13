@@ -349,6 +349,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			}
 
 			$item->add_meta_data( smart_rentals_wc_meta_key( 'rental_quantity' ), $rental_data['rental_quantity'], true );
+			
+			// Mark this item as a rental (crucial for admin calendar)
 			$item->add_meta_data( smart_rentals_wc_meta_key( 'is_rental' ), 'yes', true );
 
 			// Calculate and save total price
