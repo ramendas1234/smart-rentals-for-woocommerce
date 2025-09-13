@@ -179,6 +179,13 @@ jQuery(document).ready(function($) {
         }
     });
     
+    // Initialize WooCommerce enhanced select (Select2)
+    if (typeof $.fn.selectWoo !== 'undefined') {
+        $('.wc-enhanced-select').selectWoo();
+    } else if (typeof $.fn.select2 !== 'undefined') {
+        $('.wc-enhanced-select').select2();
+    }
+    
     // Add custom CSS for rental tab
     if (!$('#smart-rentals-admin-css').length) {
         $('head').append('<style id="smart-rentals-admin-css">' +
