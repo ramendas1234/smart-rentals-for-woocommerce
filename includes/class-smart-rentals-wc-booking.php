@@ -130,6 +130,34 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				}
 			}
 
+			// Check disabled dates
+			$disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
+			$disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
+			
+			if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) && !empty( $disabled_start_dates ) ) {
+				foreach ( $disabled_start_dates as $index => $disabled_start ) {
+					$disabled_end = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $disabled_start;
+					
+					if ( !empty( $disabled_start ) ) {
+						$disabled_start_timestamp = strtotime( $disabled_start );
+						$disabled_end_timestamp = strtotime( $disabled_end );
+						
+						// Check if the booking period overlaps with any disabled date range
+						if ( $pickup_timestamp <= $disabled_end_timestamp && $dropoff_timestamp >= $disabled_start_timestamp ) {
+							$start_formatted = date( 'Y-m-d', $disabled_start_timestamp );
+							$end_formatted = date( 'Y-m-d', $disabled_end_timestamp );
+							
+							if ( $disabled_start === $disabled_end ) {
+								wc_add_notice( sprintf( __( 'The date %s is disabled for bookings.', 'smart-rentals-wc' ), $start_formatted ), 'error' );
+							} else {
+								wc_add_notice( sprintf( __( 'Your booking period overlaps with disabled dates (%s to %s).', 'smart-rentals-wc' ), $start_formatted, $end_formatted ), 'error' );
+							}
+							return false;
+						}
+					}
+				}
+			}
+
 			// Check minimum rental period
 			$min_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'min_rental_period' );
 			if ( $min_rental_period ) {

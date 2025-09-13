@@ -138,6 +138,24 @@ jQuery(document).ready(function($) {
         $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
         echo json_encode( is_array( $disabled_weekdays ) ? array_map( 'intval', $disabled_weekdays ) : [] );
     ?>;
+    var disabledDates = <?php 
+        $disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
+        $disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
+        $disabled_ranges = [];
+        
+        if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) ) {
+            foreach ( $disabled_start_dates as $index => $start_date ) {
+                $end_date = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $start_date;
+                if ( !empty( $start_date ) ) {
+                    $disabled_ranges[] = [
+                        'start' => $start_date,
+                        'end' => $end_date
+                    ];
+                }
+            }
+        }
+        echo json_encode( $disabled_ranges );
+    ?>;
     
     // Initialize daterangepicker.com with Apply button
     function initDateRangePicker() {
@@ -210,12 +228,28 @@ jQuery(document).ready(function($) {
             minDate: moment(),
             maxDate: moment().add(1, 'year'),
             
-            // Disable specific weekdays
+            // Disable specific weekdays and dates
             isInvalidDate: function(date) {
+                // Check disabled weekdays
                 if (disabledWeekdays && disabledWeekdays.length > 0) {
                     var dayOfWeek = date.day(); // 0 = Sunday, 1 = Monday, etc.
-                    return disabledWeekdays.indexOf(dayOfWeek) !== -1;
+                    if (disabledWeekdays.indexOf(dayOfWeek) !== -1) {
+                        return true;
+                    }
                 }
+                
+                // Check disabled date ranges
+                if (disabledDates && disabledDates.length > 0) {
+                    var currentDate = date.format('YYYY-MM-DD');
+                    
+                    for (var i = 0; i < disabledDates.length; i++) {
+                        var range = disabledDates[i];
+                        if (currentDate >= range.start && currentDate <= range.end) {
+                            return true;
+                        }
+                    }
+                }
+                
                 return false;
             }
         };

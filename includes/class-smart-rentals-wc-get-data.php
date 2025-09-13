@@ -423,6 +423,27 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				}
 			}
 
+			// Check if this specific date is disabled
+			$disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
+			$disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
+			
+			if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) && !empty( $disabled_start_dates ) ) {
+				$timestamp = strtotime( $date_string );
+				
+				foreach ( $disabled_start_dates as $index => $disabled_start ) {
+					$disabled_end = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $disabled_start;
+					
+					if ( !empty( $disabled_start ) ) {
+						$disabled_start_timestamp = strtotime( $disabled_start );
+						$disabled_end_timestamp = strtotime( $disabled_end );
+						
+						if ( $timestamp >= $disabled_start_timestamp && $timestamp <= $disabled_end_timestamp ) {
+							return 0; // Disabled date = 0 availability
+						}
+					}
+				}
+			}
+
 			// Get product stock
 			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
 			$total_stock = $rental_stock ? intval( $rental_stock ) : 1;

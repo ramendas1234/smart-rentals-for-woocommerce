@@ -512,6 +512,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			</p>
 			<?php
 
+			// Disabled Dates
+			$this->render_disabled_dates_field( $post->ID );
+
 			// Show Availability Calendar option
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'show_calendar' ),
@@ -522,6 +525,185 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 
 			echo '</div>';
 			echo '</div>';
+		}
+
+		/**
+		 * Render disabled dates field with calendar UI
+		 */
+		private function render_disabled_dates_field( $post_id ) {
+			$disabled_start_dates = smart_rentals_wc_get_post_meta( $post_id, 'disabled_start_dates' );
+			$disabled_end_dates = smart_rentals_wc_get_post_meta( $post_id, 'disabled_end_dates' );
+			
+			$disabled_start_dates = is_array( $disabled_start_dates ) ? $disabled_start_dates : [];
+			$disabled_end_dates = is_array( $disabled_end_dates ) ? $disabled_end_dates : [];
+			
+			?>
+			<div class="smart-rentals-disabled-dates">
+				<h4><?php _e( 'Disabled Dates', 'smart-rentals-wc' ); ?>
+					<span class="woocommerce-help-tip" data-tip="<?php esc_attr_e( 'Block specific date ranges for bookings. These dates will be unavailable for all customers.', 'smart-rentals-wc' ); ?>"></span>
+				</h4>
+				<div class="disabled-dates-container">
+					<table class="widefat disabled-dates-table">
+						<thead>
+							<tr>
+								<th class="start-date-header"><?php _e( 'Start Date', 'smart-rentals-wc' ); ?></th>
+								<th class="end-date-header"><?php _e( 'End Date', 'smart-rentals-wc' ); ?></th>
+								<th class="actions-header"><?php _e( 'Actions', 'smart-rentals-wc' ); ?></th>
+							</tr>
+						</thead>
+						<tbody class="disabled-dates-rows">
+							<?php if ( !empty( $disabled_start_dates ) ) : ?>
+								<?php foreach ( $disabled_start_dates as $index => $start_date ) : ?>
+									<?php $end_date = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : ''; ?>
+									<tr class="disabled-date-row">
+										<td>
+											<input 
+												type="date" 
+												name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" 
+												value="<?php echo esc_attr( $start_date ); ?>"
+												class="disabled-start-date"
+												required />
+										</td>
+										<td>
+											<input 
+												type="date" 
+												name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" 
+												value="<?php echo esc_attr( $end_date ); ?>"
+												class="disabled-end-date"
+												required />
+										</td>
+										<td>
+											<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
+												<span class="dashicons dashicons-trash"></span>
+											</button>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							<?php else : ?>
+								<tr class="disabled-date-row">
+									<td>
+										<input 
+											type="date" 
+											name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" 
+											value=""
+											class="disabled-start-date"
+											required />
+									</td>
+									<td>
+										<input 
+											type="date" 
+											name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" 
+											value=""
+											class="disabled-end-date"
+											required />
+									</td>
+									<td>
+										<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
+											<span class="dashicons dashicons-trash"></span>
+										</button>
+									</td>
+								</tr>
+							<?php endif; ?>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="3">
+									<button type="button" class="button add-disabled-date">
+										<span class="dashicons dashicons-plus-alt"></span>
+										<?php _e( 'Add Disabled Date Range', 'smart-rentals-wc' ); ?>
+									</button>
+								</td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+			
+			<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				// Add new disabled date row
+				$('.add-disabled-date').on('click', function() {
+					var newRow = '<tr class="disabled-date-row">' +
+						'<td><input type="date" name="<?php echo smart_rentals_wc_meta_key( 'disabled_start_dates' ); ?>[]" value="" class="disabled-start-date" required /></td>' +
+						'<td><input type="date" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="disabled-end-date" required /></td>' +
+						'<td><button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>"><span class="dashicons dashicons-trash"></span></button></td>' +
+						'</tr>';
+					
+					$('.disabled-dates-rows').append(newRow);
+				});
+				
+				// Remove disabled date row
+				$(document).on('click', '.remove-disabled-date', function() {
+					if ($('.disabled-date-row').length > 1) {
+						$(this).closest('tr').remove();
+					} else {
+						// Clear the last row instead of removing it
+						$(this).closest('tr').find('input').val('');
+					}
+				});
+				
+				// Validate date ranges
+				$(document).on('change', '.disabled-start-date, .disabled-end-date', function() {
+					var row = $(this).closest('tr');
+					var startDate = row.find('.disabled-start-date').val();
+					var endDate = row.find('.disabled-end-date').val();
+					
+					if (startDate && endDate && startDate > endDate) {
+						alert('<?php _e( 'End date must be after start date.', 'smart-rentals-wc' ); ?>');
+						$(this).val('');
+					}
+				});
+			});
+			</script>
+			
+			<style>
+			.smart-rentals-disabled-dates {
+				margin: 15px 0;
+			}
+			
+			.smart-rentals-disabled-dates h4 {
+				margin: 0 0 10px 0;
+				font-size: 14px;
+				font-weight: 600;
+			}
+			
+			.disabled-dates-table {
+				margin: 0;
+			}
+			
+			.disabled-dates-table th,
+			.disabled-dates-table td {
+				padding: 8px;
+				text-align: left;
+			}
+			
+			.disabled-dates-table input[type="date"] {
+				width: 100%;
+				padding: 6px;
+				border: 1px solid #ddd;
+				border-radius: 3px;
+			}
+			
+			.remove-disabled-date {
+				padding: 4px 8px;
+				line-height: 1;
+			}
+			
+			.remove-disabled-date .dashicons {
+				font-size: 16px;
+				width: 16px;
+				height: 16px;
+			}
+			
+			.add-disabled-date {
+				margin-top: 10px;
+			}
+			
+			.add-disabled-date .dashicons {
+				margin-right: 5px;
+			}
+			</style>
+			<?php
 		}
 
 		/**
@@ -564,6 +746,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'rental_stock' => 'number',
 					'security_deposit' => 'price',
 					'disabled_weekdays' => 'array',
+					'disabled_start_dates' => 'array',
+					'disabled_end_dates' => 'array',
 					'show_calendar' => 'checkbox',
 				];
 
@@ -596,9 +780,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								}
 								break;
 							case 'array':
-								// Handle array fields like disabled_weekdays
+								// Handle array fields like disabled_weekdays and disabled_dates
 								if ( is_array( $value ) ) {
 									$value = array_map( 'sanitize_text_field', $value );
+									// Remove empty values
+									$value = array_filter( $value, function( $item ) {
+										return !empty( trim( $item ) );
+									});
+									// Reset array keys
+									$value = array_values( $value );
 								} else {
 									$value = [];
 								}
