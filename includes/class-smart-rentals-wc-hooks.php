@@ -131,14 +131,23 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			if ( smart_rentals_wc_is_rental_product( $product_id ) ) {
 				?>
 				<style type="text/css">
-				/* Hide WooCommerce add to cart elements for rental products */
-				.single-product .product .cart,
-				.single-product .product .single_add_to_cart_button,
-				.single-product .product .quantity,
-				.single-product .product form.cart,
-				.single-product .product .variations_form,
-				.single-product .product .woocommerce-variation-add-to-cart {
+				/* Hide ONLY WooCommerce default add to cart elements (NOT our custom booking form) */
+				.single-product .product form.cart:not(.smart-rentals-form),
+				.single-product .product .single_add_to_cart_button:not(.smart-rentals-button),
+				.single-product .product .quantity:not(.smart-rentals-quantity):not(#smart_rentals_quantity),
+				.single-product .product .variations_form:not(.smart-rentals-form),
+				.single-product .product .woocommerce-variation-add-to-cart:not(.smart-rentals-variation) {
 					display: none !important;
+				}
+				
+				/* Ensure our custom booking form elements remain visible */
+				.smart-rentals-booking-form-container,
+				.smart-rentals-booking-form-container .rental_item,
+				.smart-rentals-booking-form-container #smart_rentals_quantity,
+				.smart-rentals-booking-form-container .quantity,
+				.smart-rentals-booking-form-container .form-control {
+					display: block !important;
+					visibility: visible !important;
 				}
 				</style>
 				<?php
