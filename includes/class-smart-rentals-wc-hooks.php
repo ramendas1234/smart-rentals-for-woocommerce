@@ -40,7 +40,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			// Ensure rental products have proper WooCommerce meta when viewed
 			add_action( 'woocommerce_single_product_summary', [ $this, 'ensure_rental_product_meta' ], 1 );
 
-			// Note: Removed sold_individually filter to allow quantity selection for rentals
+			// Remove default WooCommerce quantity field and add to cart button from product page
+			add_filter( 'woocommerce_is_sold_individually', [ $this, 'rental_product_sold_individually' ], 10, 2 );
 			
 			// Handle cart quantity display for rental products
 			add_filter( 'woocommerce_cart_item_quantity', [ $this, 'rental_cart_item_quantity' ], 10, 3 );
@@ -237,10 +238,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 		}
 
 		/**
-		 * Make rental products sold individually (DEPRECATED - now allowing quantity selection)
+		 * Make rental products sold individually (removes default WC quantity field and add to cart button)
 		 */
 		public function rental_product_sold_individually( $sold_individually, $product ) {
-			// Deprecated: We now allow quantity selection for rental products
+			if ( $product && smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
+				return true; // This removes default WC quantity field and add to cart button from product page
+			}
 			return $sold_individually;
 		}
 
@@ -252,15 +255,28 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			$product_id = isset( $cart_item['product_id'] ) ? $cart_item['product_id'] : 0;
 			
 			if ( $product_id && smart_rentals_wc_is_rental_product( $product_id ) ) {
-				// For rental products, allow normal quantity field but add rental duration info
+				// For rental products, show disabled quantity field (read-only)
+				$quantity = isset( $cart_item['quantity'] ) ? $cart_item['quantity'] : 1;
+				
+				// Create disabled quantity input that matches WooCommerce styling but is read-only
+				$quantity_html = sprintf(
+					'<div class="quantity">
+						<input type="number" class="input-text qty text rental-qty-disabled" value="%d" min="1" readonly disabled title="%s" />
+					</div>',
+					$quantity,
+					__( 'Quantity cannot be changed for rental products. Remove and re-book to change quantity.', 'smart-rentals-wc' )
+				);
+				
+				// Add rental duration info below the quantity field
 				if ( isset( $cart_item['rental_data'] ) ) {
 					$rental_data = $cart_item['rental_data'];
 					
-					// Add rental duration info below the quantity field
 					if ( isset( $rental_data['duration_text'] ) && $rental_data['duration_text'] ) {
-						$product_quantity .= '<br><small class="rental-duration">' . esc_html( $rental_data['duration_text'] ) . '</small>';
+						$quantity_html .= '<br><small class="rental-duration" style="color: #666; font-style: italic;">' . esc_html( $rental_data['duration_text'] ) . '</small>';
 					}
 				}
+				
+				return $quantity_html;
 			}
 			
 			return $product_quantity;

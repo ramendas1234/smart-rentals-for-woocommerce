@@ -1153,6 +1153,20 @@
     min-width: 80px;
 }
 
+/* Disabled quantity field styling for rental products in cart */
+.woocommerce-cart-form .cart_item .product-quantity .rental-qty-disabled {
+    background: #f9f9f9 !important;
+    cursor: not-allowed !important;
+    opacity: 0.8;
+    border-color: #ddd !important;
+    color: #666 !important;
+}
+
+.woocommerce-cart-form .cart_item .product-quantity .rental-qty-disabled:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
 /* Checkout page styling */
 .woocommerce-checkout .shop_table .cart_item .product-quantity .rental-duration,
 .woocommerce-checkout .shop_table .cart_item .product-quantity .rental-quantity {
