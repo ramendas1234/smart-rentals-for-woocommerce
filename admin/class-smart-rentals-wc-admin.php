@@ -186,6 +186,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 * Manage Bookings page
 		 */
 		public function manage_bookings_page() {
+			// Enqueue WordPress datepicker
+			wp_enqueue_script( 'jquery-ui-datepicker' );
+			wp_enqueue_style( 'wp-admin' );
+			
 			// Include the booking list class
 			require_once SMART_RENTALS_WC_PLUGIN_PATH . 'admin/class-smart-rentals-wc-booking-list.php';
 			
@@ -270,13 +274,13 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 							<!-- From Date -->
 							<div class="filter-field">
 								<label for="from_date"><?php _e( 'From Date', 'smart-rentals-wc' ); ?></label><br>
-								<input type="date" name="from_date" id="from_date" value="<?php echo esc_attr( $from_date ); ?>" />
+								<input type="text" name="from_date" id="from_date" value="<?php echo esc_attr( $from_date ); ?>" placeholder="<?php _e( 'Select date', 'smart-rentals-wc' ); ?>" class="datepicker" readonly />
 							</div>
 							
 							<!-- To Date -->
 							<div class="filter-field">
 								<label for="to_date"><?php _e( 'To Date', 'smart-rentals-wc' ); ?></label><br>
-								<input type="date" name="to_date" id="to_date" value="<?php echo esc_attr( $to_date ); ?>" />
+								<input type="text" name="to_date" id="to_date" value="<?php echo esc_attr( $to_date ); ?>" placeholder="<?php _e( 'Select date', 'smart-rentals-wc' ); ?>" class="datepicker" readonly />
 							</div>
 							
 							<!-- Filter Button -->
@@ -308,6 +312,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				width: 100%;
 				max-width: 200px;
 			}
+			.filter-field input.datepicker {
+				cursor: pointer;
+				background: #fff;
+			}
 			.order-status {
 				display: inline-block;
 				padding: 4px 8px;
@@ -325,7 +333,103 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			.order-status.status-cancelled { background: #eba3a3; color: #761919; }
 			.order-status.status-refunded { background: #eba3a3; color: #761919; }
 			.order-status.status-failed { background: #eba3a3; color: #761919; }
+			
+			/* WordPress Datepicker Styling */
+			.ui-datepicker {
+				font-size: 12px;
+				width: auto;
+			}
+			.ui-datepicker-header {
+				background: #0073aa;
+				color: #fff;
+				border: none;
+			}
+			.ui-datepicker-title {
+				color: #fff;
+			}
+			.ui-datepicker-prev,
+			.ui-datepicker-next {
+				background: none;
+				border: none;
+			}
 			</style>
+			
+			<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				// Initialize WordPress datepickers
+				$('.datepicker').datepicker({
+					dateFormat: 'yy-mm-dd',
+					changeMonth: true,
+					changeYear: true,
+					showButtonPanel: true,
+					currentText: '<?php _e( 'Today', 'smart-rentals-wc' ); ?>',
+					closeText: '<?php _e( 'Clear', 'smart-rentals-wc' ); ?>',
+					monthNames: [
+						'<?php _e( 'January', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'February', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'March', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'April', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'May', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'June', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'July', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'August', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'September', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'October', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'November', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'December', 'smart-rentals-wc' ); ?>'
+					],
+					monthNamesShort: [
+						'<?php _e( 'Jan', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Feb', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Mar', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Apr', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'May', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Jun', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Jul', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Aug', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Sep', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Oct', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Nov', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Dec', 'smart-rentals-wc' ); ?>'
+					],
+					dayNames: [
+						'<?php _e( 'Sunday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Monday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Tuesday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Wednesday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Thursday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Friday', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Saturday', 'smart-rentals-wc' ); ?>'
+					],
+					dayNamesMin: [
+						'<?php _e( 'Su', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Mo', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Tu', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'We', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Th', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Fr', 'smart-rentals-wc' ); ?>',
+						'<?php _e( 'Sa', 'smart-rentals-wc' ); ?>'
+					],
+					beforeShow: function(input, inst) {
+						// Add custom button functionality
+						setTimeout(function() {
+							var buttonPane = $(input).datepicker('widget').find('.ui-datepicker-buttonpane');
+							var btn = $('<button class="ui-datepicker-clear ui-state-default ui-priority-primary ui-corner-all" type="button"><?php _e( 'Clear', 'smart-rentals-wc' ); ?></button>');
+							btn.unbind('click').bind('click', function() {
+								$.datepicker._clearDate(input);
+							});
+							buttonPane.find('.ui-datepicker-clear').remove();
+							buttonPane.prepend(btn);
+						}, 1);
+					}
+				});
+				
+				// Clear button functionality
+				$('.ui-datepicker-clear').live('click', function() {
+					$(this).closest('.ui-datepicker').prev('input').val('');
+				});
+			});
+			</script>
 			<?php
 		}
 

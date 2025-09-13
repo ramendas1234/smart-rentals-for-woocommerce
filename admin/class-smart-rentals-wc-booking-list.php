@@ -286,6 +286,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
                     AND pm_order_total.meta_key = '_order_total'
                 WHERE {$where_clause}
                     AND p.post_type = 'shop_order'
+                    AND p.post_status != 'trash'
                     AND oi.order_item_type = 'line_item'
                 ORDER BY p.post_date DESC
                 LIMIT %d OFFSET %d
@@ -322,6 +323,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
                     AND pm_billing_email.meta_key = '_billing_email'
                 WHERE {$where_clause}
                     AND p.post_type = 'shop_order'
+                    AND p.post_status != 'trash'
                     AND oi.order_item_type = 'line_item'
             ";
 
