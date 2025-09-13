@@ -231,28 +231,39 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				return false;
 			}
 
-			// Check disabled weekdays
+			// Check disabled weekdays (only for usage period, not return date)
 			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
 			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
 				$pickup_timestamp = is_numeric( $pickup_date ) ? $pickup_date : strtotime( $pickup_date );
 				$dropoff_timestamp = is_numeric( $dropoff_date ) ? $dropoff_date : strtotime( $dropoff_date );
 				
-				// Check if pickup or dropoff dates fall on disabled weekdays
-				$pickup_weekday = date( 'w', $pickup_timestamp );
-				$dropoff_weekday = date( 'w', $dropoff_timestamp );
+				// Get rental type to determine validation logic
+				$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 				
+				// For daily rentals (hotel logic), exclude the return date from validation
+				$validation_end_timestamp = $dropoff_timestamp;
+				if ( $rental_type === 'day' ) {
+					$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+				}
+				
+				// Check if pickup date falls on disabled weekday
+				$pickup_weekday = date( 'w', $pickup_timestamp );
 				if ( in_array( intval( $pickup_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
 					return false;
 				}
 				
-				if ( in_array( intval( $dropoff_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
-					return false;
+				// For hourly/mixed rentals, also check dropoff date
+				if ( $rental_type !== 'day' ) {
+					$dropoff_weekday = date( 'w', $dropoff_timestamp );
+					if ( in_array( intval( $dropoff_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+						return false;
+					}
 				}
 				
-				// For multi-day rentals, check if any day in the range is disabled
-				if ( $pickup_timestamp !== $dropoff_timestamp ) {
+				// Check usage period only (excluding return date for daily rentals)
+				if ( $pickup_timestamp !== $validation_end_timestamp ) {
 					$current_date = $pickup_timestamp;
-					while ( $current_date <= $dropoff_timestamp ) {
+					while ( $current_date <= $validation_end_timestamp ) {
 						$current_weekday = date( 'w', $current_date );
 						if ( in_array( intval( $current_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
 							return false;
@@ -270,18 +281,32 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 
 			$booked_quantity = 0;
 
+		// Get rental type for proper overlap logic
+		$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
+		
+		// For daily rentals (hotel logic), exclude return date from overlap checking
+		$validation_end_timestamp = $dropoff_timestamp;
+		if ( $rental_type === 'day' ) {
+			$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+		}
+
 		foreach ( $booked_dates as $booking ) {
 			$booking_pickup = strtotime( $booking->pickup_date );
 			$booking_dropoff = strtotime( $booking->dropoff_date );
+			
+			// For daily rentals, exclude return dates from both bookings
+			$booking_validation_end = $booking_dropoff;
+			if ( $rental_type === 'day' ) {
+				$booking_validation_end = $booking_dropoff - 86400; // Exclude return day from existing booking
+			}
 
-			// Enhanced overlap logic with time consideration for real-world rental business
-			// A booking conflicts if the periods overlap in any way
-			if ( $pickup_timestamp < $booking_dropoff && $dropoff_timestamp > $booking_pickup ) {
+			// Enhanced overlap logic: Only check usage periods, not return dates
+			if ( $pickup_timestamp <= $booking_validation_end && $validation_end_timestamp >= $booking_pickup ) {
 				$booked_quantity += intval( $booking->quantity );
 				
 				// Debug logging for rental time logic
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					smart_rentals_wc_log( "Booking overlap detected in check_availability: Booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+					smart_rentals_wc_log( "Booking overlap detected in check_availability (usage period only): Booking {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
 				}
 			}
 		}

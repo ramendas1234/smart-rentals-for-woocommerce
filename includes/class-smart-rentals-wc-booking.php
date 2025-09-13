@@ -100,33 +100,47 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			smart_rentals_wc_log( 'Valid date range for cart - Pickup: ' . $pickup_date . ', Dropoff: ' . $dropoff_date );
 
-			// Check disabled weekdays
+			// Check disabled weekdays (only for usage period, not return date)
 			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
 			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
-				$pickup_weekday = date( 'w', $pickup_timestamp );
-				$dropoff_weekday = date( 'w', $dropoff_timestamp );
+				$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 				
+				// For daily rentals (hotel logic), exclude the return date from validation
+				$validation_end_timestamp = $dropoff_timestamp;
+				if ( $rental_type === 'day' ) {
+					// For daily rentals, only check usage period (exclude return date)
+					$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+					smart_rentals_wc_log( "Daily rental: Excluding return date from disabled weekday validation" );
+				}
+				
+				$pickup_weekday = date( 'w', $pickup_timestamp );
+				
+				// Always check pickup date
 				if ( in_array( $pickup_weekday, $disabled_weekdays ) ) {
 					$weekday_name = $this->get_weekday_name( $pickup_weekday );
 					wc_add_notice( sprintf( __( 'Pickup date falls on %s which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name ), 'error' );
 					return false;
 				}
 				
-				if ( in_array( $dropoff_weekday, $disabled_weekdays ) ) {
-					$weekday_name = $this->get_weekday_name( $dropoff_weekday );
-					wc_add_notice( sprintf( __( 'Drop-off date falls on %s which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name ), 'error' );
-					return false;
+				// For hourly/mixed rentals, also check dropoff date
+				if ( $rental_type !== 'day' ) {
+					$dropoff_weekday = date( 'w', $dropoff_timestamp );
+					if ( in_array( $dropoff_weekday, $disabled_weekdays ) ) {
+						$weekday_name = $this->get_weekday_name( $dropoff_weekday );
+						wc_add_notice( sprintf( __( 'Drop-off date falls on %s which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name ), 'error' );
+						return false;
+					}
 				}
 				
-				// For multi-day rentals, check if any day in the range is disabled
-				if ( $pickup_timestamp !== $dropoff_timestamp ) {
+				// Check usage period (excluding return date for daily rentals)
+				if ( $pickup_timestamp !== $validation_end_timestamp ) {
 					$current_date = $pickup_timestamp;
-					while ( $current_date <= $dropoff_timestamp ) {
+					while ( $current_date <= $validation_end_timestamp ) {
 						$current_weekday = date( 'w', $current_date );
 						if ( in_array( $current_weekday, $disabled_weekdays ) ) {
 							$weekday_name = $this->get_weekday_name( $current_weekday );
 							$date_formatted = date( 'Y-m-d', $current_date );
-							wc_add_notice( sprintf( __( 'Your rental period includes %s (%s) which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name, $date_formatted ), 'error' );
+							wc_add_notice( sprintf( __( 'Your rental usage period includes %s (%s) which is disabled for bookings.', 'smart-rentals-wc' ), $weekday_name, $date_formatted ), 'error' );
 							return false;
 						}
 						$current_date += 86400; // Add one day
@@ -134,11 +148,21 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				}
 			}
 
-			// Check disabled dates
+			// Check disabled dates (only for usage period, not return date)
 			$disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
 			$disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
 			
 			if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) && !empty( $disabled_start_dates ) ) {
+				$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
+				
+				// For daily rentals (hotel logic), exclude the return date from validation
+				$validation_end_timestamp = $dropoff_timestamp;
+				if ( $rental_type === 'day' ) {
+					// For daily rentals, only check usage period (exclude return date)
+					$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+					smart_rentals_wc_log( "Daily rental: Excluding return date from disabled dates validation" );
+				}
+				
 				foreach ( $disabled_start_dates as $index => $disabled_start ) {
 					$disabled_end = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $disabled_start;
 					
@@ -146,15 +170,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 						$disabled_start_timestamp = strtotime( $disabled_start );
 						$disabled_end_timestamp = strtotime( $disabled_end );
 						
-						// Check if the booking period overlaps with any disabled date range
-						if ( $pickup_timestamp <= $disabled_end_timestamp && $dropoff_timestamp >= $disabled_start_timestamp ) {
+						// Check if the USAGE period overlaps with any disabled date range (not return date)
+						if ( $pickup_timestamp <= $disabled_end_timestamp && $validation_end_timestamp >= $disabled_start_timestamp ) {
 							$start_formatted = date( 'Y-m-d', $disabled_start_timestamp );
 							$end_formatted = date( 'Y-m-d', $disabled_end_timestamp );
 							
 							if ( $disabled_start === $disabled_end ) {
 								wc_add_notice( sprintf( __( 'The date %s is disabled for bookings.', 'smart-rentals-wc' ), $start_formatted ), 'error' );
 							} else {
-								wc_add_notice( sprintf( __( 'Your booking period overlaps with disabled dates (%s to %s).', 'smart-rentals-wc' ), $start_formatted, $end_formatted ), 'error' );
+								wc_add_notice( sprintf( __( 'Your rental usage period overlaps with disabled dates (%s to %s).', 'smart-rentals-wc' ), $start_formatted, $end_formatted ), 'error' );
 							}
 							return false;
 						}
