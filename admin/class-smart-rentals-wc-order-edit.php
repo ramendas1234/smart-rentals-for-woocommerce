@@ -33,6 +33,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
         public function admin_order_item_headers( $order ) {
             if ( !$order ) return;
 
+            // Debug log
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                smart_rentals_wc_log( 'admin_order_item_headers called for order #' . $order->get_id() );
+            }
+
             // Check if order has rental items
             $has_rental_items = false;
             foreach ( $order->get_items() as $item ) {
@@ -43,8 +48,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 }
             }
 
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                smart_rentals_wc_log( 'Order #' . $order->get_id() . ' has rental items: ' . ($has_rental_items ? 'yes' : 'no') );
+            }
+
             if ( $has_rental_items ) {
                 echo '<th class="item-rental-dates">' . __( 'Rental Details', 'smart-rentals-wc' ) . '</th>';
+                // Add debug comment in HTML
+                echo '<!-- Smart Rentals: Rental Details column added -->';
             }
         }
 
@@ -52,12 +63,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
          * Admin order item values
          */
         public function admin_order_item_values( $product, $item, $item_id ) {
+            // Debug log
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                smart_rentals_wc_log( 'admin_order_item_values called for item #' . $item_id );
+            }
+
             // Check if this is a rental item
             $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                smart_rentals_wc_log( 'Item #' . $item_id . ' is_rental: ' . $is_rental );
+            }
+
             if ( $is_rental !== 'yes' ) {
                 echo '<td class="item-rental-dates"></td>'; // Empty cell for non-rental items
                 return;
             }
+
+            // Add debug comment
+            echo '<!-- Smart Rentals: Processing rental item #' . $item_id . ' -->';
 
             // Get rental data
             $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
@@ -134,7 +158,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                             <?php echo wp_kses_post( $security_deposit ); ?><br>
                         <?php endif; ?>
                         
-                        <button type="button" class="button button-small rental-edit-toggle" data-item-id="<?php echo $item_id; ?>">
+                        <button type="button" class="button button-small rental-edit-toggle" data-item-id="<?php echo $item_id; ?>" onclick="console.log('Button clicked directly'); alert('Button works!');">
                             <?php _e( 'Edit Rental Details', 'smart-rentals-wc' ); ?>
                         </button>
                     </div>
@@ -406,6 +430,46 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 [], 
                 SMART_RENTALS_WC_VERSION 
             );
+
+            // Add inline script for immediate testing
+            wp_add_inline_script( 'smart-rentals-order-edit', '
+                console.log("Smart Rentals: Inline script loaded");
+                jQuery(document).ready(function($) {
+                    console.log("Smart Rentals: Document ready");
+                    console.log("Smart Rentals: Looking for buttons...");
+                    
+                    // Test if buttons exist
+                    setTimeout(function() {
+                        var buttons = $(".rental-edit-toggle");
+                        console.log("Smart Rentals: Found buttons:", buttons.length);
+                        
+                        if (buttons.length > 0) {
+                            console.log("Smart Rentals: Buttons found, adding click handler");
+                            buttons.on("click", function(e) {
+                                e.preventDefault();
+                                console.log("Smart Rentals: Button clicked!");
+                                alert("Edit button is working!");
+                                
+                                var container = $(this).closest(".rental-edit-container");
+                                var fields = container.find(".rental-edit-fields");
+                                var display = container.find(".rental-display-info");
+                                
+                                if (fields.is(":visible")) {
+                                    fields.hide();
+                                    display.show();
+                                    $(this).text("Edit Rental Details");
+                                } else {
+                                    fields.show();
+                                    display.hide();
+                                    $(this).text("Cancel Edit");
+                                }
+                            });
+                        } else {
+                            console.log("Smart Rentals: No buttons found in DOM");
+                        }
+                    }, 1000);
+                });
+            ' );
         }
     }
 }
