@@ -20,9 +20,10 @@ $max_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'max_rental_pe
 $pickup_date = smart_rentals_wc_get_meta_data( 'pickup_date', $_GET );
 $dropoff_date = smart_rentals_wc_get_meta_data( 'dropoff_date', $_GET );
 
-// Check if we need time picker
-// Always show datetime for proper rental business logic
-$has_timepicker = true; // Always true for proper rental time management
+// Check if we need time picker based on rental type
+// Daily rentals use fixed global times, Hourly/Mixed allow time selection
+$has_timepicker = in_array( $rental_type, [ 'hour', 'mixed' ] ); // Only hourly and mixed allow time selection
+$use_fixed_times = ( $rental_type === 'day' ); // Daily rentals use fixed global times
 
 // Get global default times
 $settings = smart_rentals_wc_get_option( 'settings', [] );
@@ -145,6 +146,7 @@ jQuery(document).ready(function($) {
     'use strict';
     
     var hasTimepicker = <?php echo $has_timepicker ? 'true' : 'false'; ?>;
+    var useFixedTimes = <?php echo $use_fixed_times ? 'true' : 'false'; ?>;
     var minRentalPeriod = <?php echo intval( $min_rental_period ); ?>;
     var maxRentalPeriod = <?php echo intval( $max_rental_period ); ?>;
     var rentalType = '<?php echo esc_js( $rental_type ); ?>';
@@ -185,13 +187,15 @@ jQuery(document).ready(function($) {
             return;
         }
         
-        // Simplified daterangepicker configuration for reliability
+        // Configure daterangepicker based on rental type
+        console.log('Configuring daterangepicker - hasTimepicker:', hasTimepicker, 'useFixedTimes:', useFixedTimes);
+        
         var dateRangeConfig = {
             // Core settings
             autoApply: false,
             autoUpdateInput: false,
             showDropdowns: true,
-            timePicker: true,  // Always use time picker for business logic
+            timePicker: hasTimepicker,  // Only show time picker for hourly/mixed
             timePicker24Hour: true,
             timePickerIncrement: 30,
             timePickerSeconds: false,
@@ -200,9 +204,9 @@ jQuery(document).ready(function($) {
             opens: 'left',
             drops: 'down',
             
-            // Simplified locale
+            // Format based on rental type
             locale: {
-                format: 'YYYY-MM-DD HH:mm',
+                format: hasTimepicker ? 'YYYY-MM-DD HH:mm' : 'YYYY-MM-DD',
                 separator: ' - ',
                 applyLabel: 'Apply',
                 cancelLabel: 'Cancel',
@@ -312,9 +316,21 @@ jQuery(document).ready(function($) {
                 return;
             }
             
-            // Always use datetime format for proper rental business logic
-            var pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
-            var dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
+            // Format dates based on rental type
+            var pickupFormatted, dropoffFormatted;
+            
+            if (useFixedTimes) {
+                // For daily rentals, use fixed global times
+                var pickupDate = startDate.format('YYYY-MM-DD');
+                var dropoffDate = endDate.format('YYYY-MM-DD');
+                
+                pickupFormatted = pickupDate + ' ' + '<?php echo $default_pickup_time; ?>';
+                dropoffFormatted = dropoffDate + ' ' + '<?php echo $default_dropoff_time; ?>';
+            } else {
+                // For hourly/mixed rentals, use selected times
+                pickupFormatted = startDate.format('YYYY-MM-DD HH:mm');
+                dropoffFormatted = endDate.format('YYYY-MM-DD HH:mm');
+            }
             
             // Check if this is a one-day rental
             var isOneDayRental = startDate.format('YYYY-MM-DD') === endDate.format('YYYY-MM-DD');
@@ -379,31 +395,54 @@ jQuery(document).ready(function($) {
         console.log('Daterangepicker.com initialized with Apply button for rental type:', rentalType);
     }
     
-    // Fallback for basic date pickers - always use datetime for business logic
+    // Fallback for basic date pickers - respect rental type
     function initBasicDatePickers() {
         console.log('Initializing basic datetime pickers as fallback');
+        console.log('useFixedTimes:', useFixedTimes, 'hasTimepicker:', hasTimepicker);
         
-        // Always use datetime-local for proper rental business logic
-        $('#pickup_date, #dropoff_date').attr('type', 'datetime-local').removeAttr('readonly');
-        
-        var now = new Date();
-        var minDateTime = now.toISOString().slice(0, 16);
-        $('#pickup_date').attr('min', minDateTime);
-        
-        // Set default times from global settings (fix octal literal issue)
-        var pickupHour = parseInt('<?php echo date('H', strtotime($default_pickup_time)); ?>', 10);
-        var pickupMinute = parseInt('<?php echo date('i', strtotime($default_pickup_time)); ?>', 10);
-        var dropoffHour = parseInt('<?php echo date('H', strtotime($default_dropoff_time)); ?>', 10);
-        var dropoffMinute = parseInt('<?php echo date('i', strtotime($default_dropoff_time)); ?>', 10);
-        
-        var defaultPickupDateTime = moment().hour(pickupHour).minute(pickupMinute).format('YYYY-MM-DDTHH:mm');
-        var defaultDropoffDateTime = moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute).format('YYYY-MM-DDTHH:mm');
-        
-        if (!$('#pickup_date').val()) {
-            $('#pickup_date').val(defaultPickupDateTime);
+        if (useFixedTimes) {
+            // For daily rentals, use date inputs with fixed times
+            $('#pickup_date, #dropoff_date').attr('type', 'date').removeAttr('readonly');
+            
+            var today = new Date().toISOString().split('T')[0];
+            $('#pickup_date').attr('min', today);
+        } else {
+            // For hourly/mixed rentals, use datetime-local inputs
+            $('#pickup_date, #dropoff_date').attr('type', 'datetime-local').removeAttr('readonly');
+            
+            var now = new Date();
+            var minDateTime = now.toISOString().slice(0, 16);
+            $('#pickup_date').attr('min', minDateTime);
         }
-        if (!$('#dropoff_date').val()) {
-            $('#dropoff_date').val(defaultDropoffDateTime);
+        
+        // Set default values based on rental type
+        if (useFixedTimes) {
+            // For daily rentals, set date only (times are fixed)
+            var today = moment().format('YYYY-MM-DD');
+            var tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
+            
+            if (!$('#pickup_date').val()) {
+                $('#pickup_date').val(today);
+            }
+            if (!$('#dropoff_date').val()) {
+                $('#dropoff_date').val(tomorrow);
+            }
+        } else {
+            // For hourly/mixed rentals, set datetime
+            var pickupHour = parseInt('<?php echo date('H', strtotime($default_pickup_time)); ?>', 10);
+            var pickupMinute = parseInt('<?php echo date('i', strtotime($default_pickup_time)); ?>', 10);
+            var dropoffHour = parseInt('<?php echo date('H', strtotime($default_dropoff_time)); ?>', 10);
+            var dropoffMinute = parseInt('<?php echo date('i', strtotime($default_dropoff_time)); ?>', 10);
+            
+            var defaultPickupDateTime = moment().hour(pickupHour).minute(pickupMinute).format('YYYY-MM-DDTHH:mm');
+            var defaultDropoffDateTime = moment().add(1, 'day').hour(dropoffHour).minute(dropoffMinute).format('YYYY-MM-DDTHH:mm');
+            
+            if (!$('#pickup_date').val()) {
+                $('#pickup_date').val(defaultPickupDateTime);
+            }
+            if (!$('#dropoff_date').val()) {
+                $('#dropoff_date').val(defaultDropoffDateTime);
+            }
         }
         
         $('#pickup_date').on('change', function() {
@@ -431,9 +470,23 @@ jQuery(document).ready(function($) {
             if (pickupVal && dropoffVal) {
                 console.log('Fallback calculation with dates:', pickupVal, dropoffVal);
                 
+                // For daily rentals with fixed times, append the global times
+                var finalPickupVal = pickupVal;
+                var finalDropoffVal = dropoffVal;
+                
+                if (useFixedTimes) {
+                    // Ensure we have the global times appended for daily rentals
+                    if (pickupVal.indexOf(':') === -1) {
+                        finalPickupVal = pickupVal + ' ' + '<?php echo $default_pickup_time; ?>';
+                    }
+                    if (dropoffVal.indexOf(':') === -1) {
+                        finalDropoffVal = dropoffVal + ' ' + '<?php echo $default_dropoff_time; ?>';
+                    }
+                }
+                
                 // Show return time notice for fallback inputs too
-                var pickupMoment = moment(pickupVal);
-                var dropoffMoment = moment(dropoffVal);
+                var pickupMoment = moment(finalPickupVal);
+                var dropoffMoment = moment(finalDropoffVal);
                 var isOneDayRental = pickupMoment.format('YYYY-MM-DD') === dropoffMoment.format('YYYY-MM-DD');
                 var isNextDayReturn = dropoffMoment.diff(pickupMoment, 'days') === 1;
                 
@@ -442,8 +495,8 @@ jQuery(document).ready(function($) {
                 
                 if (isOneDayRental || isNextDayReturn) {
                     var message = isOneDayRental ? 
-                        '<?php _e( 'Same-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffVal :
-                        '<?php _e( 'One-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + dropoffVal;
+                        '<?php _e( 'Same-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + finalDropoffVal :
+                        '<?php _e( 'One-day rental: Product must be returned by', 'smart-rentals-wc' ); ?> ' + finalDropoffVal;
                     
                     noticeText.html('<strong>' + message + '</strong>');
                     noticeArea.fadeIn();
