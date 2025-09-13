@@ -325,7 +325,19 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 
 				// Final availability check
 				if ( !Smart_Rentals_WC()->options->check_availability( $product_id, $pickup_timestamp, $dropoff_timestamp, $quantity ) ) {
-					wp_send_json_error( [ 'message' => __( 'Product not available for selected dates', 'smart-rentals-wc' ) ] );
+					wp_send_json_error( [ 'message' => __( 'Product not available for selected dates and quantity', 'smart-rentals-wc' ) ] );
+				}
+
+				// Additional check: Get available quantity and ensure it's sufficient
+				$available_quantity = Smart_Rentals_WC()->options->get_available_quantity( $product_id, $pickup_timestamp, $dropoff_timestamp );
+				if ( $available_quantity < $quantity ) {
+					wp_send_json_error( [ 
+						'message' => sprintf( 
+							__( 'Only %d items available for selected dates. You requested %d items.', 'smart-rentals-wc' ), 
+							$available_quantity, 
+							$quantity 
+						) 
+					] );
 				}
 
 				// Add to cart with rental data

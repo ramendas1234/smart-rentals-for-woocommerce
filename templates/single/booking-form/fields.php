@@ -173,6 +173,26 @@ jQuery(document).ready(function($) {
         echo json_encode( $disabled_ranges );
     ?>;
     
+    // Get unavailable dates based on actual bookings and stock
+    var unavailableDates = <?php 
+        $unavailable_dates = [];
+        $rental_stock = intval( smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' ) );
+        
+        if ( $rental_stock > 0 ) {
+            // Check next 365 days for availability
+            for ( $i = 0; $i < 365; $i++ ) {
+                $check_date = date( 'Y-m-d', strtotime( '+' . $i . ' days' ) );
+                $available_quantity = Smart_Rentals_WC()->options->get_calendar_day_availability( $product_id, $check_date );
+                
+                if ( $available_quantity <= 0 ) {
+                    $unavailable_dates[] = $check_date;
+                }
+            }
+        }
+        
+        echo json_encode( $unavailable_dates );
+    ?>;
+    
     // Initialize daterangepicker.com with Apply button
     function initDateRangePicker() {
         console.log('Initializing daterangepicker...');
@@ -219,9 +239,8 @@ jQuery(document).ready(function($) {
             maxDate: moment().add(1, 'year')
         };
         
-        // Add disabled dates validation if needed
-        if ((disabledWeekdays && disabledWeekdays.length > 0) || (disabledDates && disabledDates.length > 0)) {
-            dateRangeConfig.isInvalidDate = function(date) {
+        // Add disabled dates validation (always needed for availability checking)
+        dateRangeConfig.isInvalidDate = function(date) {
                 // Check disabled weekdays
                 if (disabledWeekdays && disabledWeekdays.length > 0) {
                     var dayOfWeek = date.day();
@@ -240,9 +259,17 @@ jQuery(document).ready(function($) {
                         }
                     }
                 }
+                
+                // Check unavailable dates based on stock/bookings
+                if (unavailableDates && unavailableDates.length > 0) {
+                    var currentDate = date.format('YYYY-MM-DD');
+                    if (unavailableDates.indexOf(currentDate) !== -1) {
+                        return true;
+                    }
+                }
+                
                 return false;
             };
-        }
         
         // Set default start and end times based on rental type
         console.log('Setting default times - Pickup: <?php echo $default_pickup_time; ?>, Dropoff: <?php echo $default_dropoff_time; ?>');
