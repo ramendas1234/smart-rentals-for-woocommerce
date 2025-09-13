@@ -625,30 +625,84 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								autoApply: false,
 								autoUpdateInput: false,
 								showDropdowns: true,
+								timePicker: true,
+								timePicker24Hour: true,
+								timePickerIncrement: 30,
+								timePickerSeconds: false,
 								linkedCalendars: false,
 								alwaysShowCalendars: true,
 								opens: 'center',
+								drops: 'auto',
+								buttonClasses: 'btn btn-sm',
+								applyButtonClasses: 'btn-primary',
+								cancelButtonClasses: 'btn-secondary',
 								locale: {
-									format: 'YYYY-MM-DD',
+									format: 'YYYY-MM-DD HH:mm',
 									separator: ' - ',
 									applyLabel: '<?php _e( 'Apply', 'smart-rentals-wc' ); ?>',
 									cancelLabel: '<?php _e( 'Cancel', 'smart-rentals-wc' ); ?>',
 									fromLabel: '<?php _e( 'From', 'smart-rentals-wc' ); ?>',
 									toLabel: '<?php _e( 'To', 'smart-rentals-wc' ); ?>',
+									customRangeLabel: '<?php _e( 'Custom Range', 'smart-rentals-wc' ); ?>',
+									weekLabel: 'W',
+									daysOfWeek: [
+										'<?php _e( 'Su', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'Mo', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'Tu', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'We', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'Th', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'Fr', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'Sa', 'smart-rentals-wc' ); ?>'
+									],
+									monthNames: [
+										'<?php _e( 'January', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'February', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'March', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'April', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'May', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'June', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'July', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'August', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'September', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'October', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'November', 'smart-rentals-wc' ); ?>',
+										'<?php _e( 'December', 'smart-rentals-wc' ); ?>'
+									],
+									firstDay: 1
 								},
 								minDate: moment(),
-								maxDate: moment().add(2, 'years')
+								maxDate: moment().add(2, 'years'),
+								ranges: {
+									'<?php _e( 'Today', 'smart-rentals-wc' ); ?>': [moment(), moment()],
+									'<?php _e( 'Tomorrow', 'smart-rentals-wc' ); ?>': [moment().add(1, 'day'), moment().add(1, 'day')],
+									'<?php _e( 'This Weekend', 'smart-rentals-wc' ); ?>': [moment().day(6), moment().day(7)],
+									'<?php _e( 'Next Week', 'smart-rentals-wc' ); ?>': [moment().add(1, 'week').startOf('week'), moment().add(1, 'week').endOf('week')],
+									'<?php _e( 'Next Month', 'smart-rentals-wc' ); ?>': [moment().add(1, 'month').startOf('month'), moment().add(1, 'month').endOf('month')]
+								}
 							});
 							
 							// Handle Apply button
 							$(this).on('apply.daterangepicker', function(ev, picker) {
-								var startDate = picker.startDate.format('YYYY-MM-DD');
-								var endDate = picker.endDate.format('YYYY-MM-DD');
-								var displayText = startDate === endDate ? startDate : startDate + ' - ' + endDate;
+								var startDateTime = picker.startDate.format('YYYY-MM-DD HH:mm');
+								var endDateTime = picker.endDate.format('YYYY-MM-DD HH:mm');
+								
+								// Smart display format
+								var displayText;
+								if (startDateTime === endDateTime) {
+									displayText = startDateTime;
+								} else {
+									displayText = startDateTime + ' - ' + endDateTime;
+								}
 								
 								$(this).val(displayText);
-								$(this).siblings('.hidden-start-date').val(startDate);
-								$(this).siblings('.hidden-end-date').val(endDate);
+								$(this).siblings('.hidden-start-date').val(startDateTime);
+								$(this).siblings('.hidden-end-date').val(endDateTime);
+								
+								// Add visual feedback
+								$(this).addClass('range-selected');
+								setTimeout(function() {
+									$(this).removeClass('range-selected');
+								}.bind(this), 1000);
 							});
 							
 							// Handle Cancel button
@@ -699,44 +753,120 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			
 			<style>
 			.smart-rentals-disabled-dates {
-				margin: 15px 0;
+				margin: 20px 0;
+				background: #f9f9f9;
+				border: 1px solid #e1e1e1;
+				border-radius: 6px;
+				padding: 20px;
 			}
 			
 			.smart-rentals-disabled-dates h4 {
-				margin: 0 0 10px 0;
-				font-size: 14px;
+				margin: 0 0 15px 0;
+				font-size: 16px;
 				font-weight: 600;
+				color: #333;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			
+			.smart-rentals-disabled-dates h4::before {
+				content: '\f508';
+				font-family: dashicons;
+				font-size: 18px;
+				color: #666;
 			}
 			
 			.disabled-dates-table {
 				margin: 0;
+				background: #fff;
+				border: 1px solid #e1e1e1;
+				border-radius: 4px;
+				overflow: hidden;
 			}
 			
-			.disabled-dates-table th,
-			.disabled-dates-table td {
-				padding: 8px;
+			.disabled-dates-table th {
+				background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+				padding: 12px 15px;
 				text-align: left;
+				font-weight: 600;
+				color: #495057;
+				border-bottom: 2px solid #dee2e6;
+			}
+			
+			.disabled-dates-table td {
+				padding: 15px;
+				text-align: left;
+				border-bottom: 1px solid #f1f1f1;
+			}
+			
+			.disabled-dates-table tbody tr:last-child td {
+				border-bottom: none;
 			}
 			
 			.disabled-date-range-picker {
 				width: 100%;
-				padding: 8px;
-				border: 1px solid #ddd;
-				border-radius: 3px;
-				background: #fff;
+				height: 45px;
+				padding: 12px 15px;
+				border: 2px solid #e1e1e1;
+				border-radius: 6px;
+				background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 				cursor: pointer;
 				font-family: inherit;
+				font-size: 14px;
+				font-weight: 500;
+				color: #495057;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+			}
+			
+			.disabled-date-range-picker:hover {
+				border-color: #007cba;
+				background: #ffffff;
+				box-shadow: 0 4px 8px rgba(0, 124, 186, 0.1);
+				transform: translateY(-1px);
 			}
 			
 			.disabled-date-range-picker:focus {
 				border-color: #007cba;
-				box-shadow: 0 0 0 1px #007cba;
+				background: #ffffff;
+				box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1), 0 4px 8px rgba(0, 0, 0, 0.1);
 				outline: none;
+				transform: translateY(-1px);
+			}
+			
+			.disabled-date-range-picker.range-selected {
+				border-color: #28a745;
+				background: #d4edda;
+				animation: rangeSelectedPulse 0.6s ease-out;
+			}
+			
+			@keyframes rangeSelectedPulse {
+				0% { transform: scale(1); }
+				50% { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.2); }
+				100% { transform: scale(1); }
+			}
+			
+			.disabled-date-range-picker::placeholder {
+				color: #999;
+				font-style: italic;
 			}
 			
 			.remove-disabled-date {
-				padding: 4px 8px;
+				height: 40px;
+				padding: 8px 12px;
 				line-height: 1;
+				background: #f8f9fa;
+				border: 1px solid #dee2e6;
+				border-radius: 4px;
+				transition: all 0.3s ease;
+			}
+			
+			.remove-disabled-date:hover {
+				background: #dc3545;
+				border-color: #dc3545;
+				color: white;
+				transform: scale(1.05);
 			}
 			
 			.remove-disabled-date .dashicons {
@@ -746,20 +876,69 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 			
 			.add-disabled-date {
-				margin-top: 10px;
+				margin-top: 15px;
+				height: 45px;
+				padding: 12px 20px;
+				background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+				border: none;
+				border-radius: 6px;
+				color: white;
+				font-weight: 600;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 4px rgba(0, 124, 186, 0.2);
+			}
+			
+			.add-disabled-date:hover {
+				background: linear-gradient(135deg, #005a87 0%, #007cba 100%);
+				transform: translateY(-2px);
+				box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
+				color: white;
 			}
 			
 			.add-disabled-date .dashicons {
-				margin-right: 5px;
+				margin-right: 8px;
+				font-size: 18px;
 			}
 			
 			.date-range-header {
-				width: 80%;
+				width: 75%;
 			}
 			
 			.actions-header {
-				width: 20%;
+				width: 25%;
 				text-align: center;
+			}
+			
+			/* Professional table styling */
+			.disabled-dates-table tfoot td {
+				background: #f8f9fa;
+				padding: 20px;
+				text-align: center;
+				border-top: 2px solid #dee2e6;
+			}
+			
+			/* Responsive design */
+			@media (max-width: 768px) {
+				.smart-rentals-disabled-dates {
+					padding: 15px;
+				}
+				
+				.disabled-date-range-picker {
+					height: 40px;
+					padding: 10px 12px;
+					font-size: 13px;
+				}
+				
+				.add-disabled-date {
+					height: 40px;
+					padding: 10px 16px;
+					font-size: 13px;
+				}
+				
+				.disabled-dates-table th,
+				.disabled-dates-table td {
+					padding: 10px;
+				}
 			}
 			</style>
 			<?php
