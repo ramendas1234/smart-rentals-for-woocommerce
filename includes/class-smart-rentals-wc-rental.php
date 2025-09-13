@@ -91,7 +91,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Rental' ) ) {
 			}
 
 			$rental_stock = smart_rentals_wc_get_post_meta( $product->get_id(), 'rental_stock' );
-			$security_deposit = smart_rentals_wc_get_post_meta( $product->get_id(), 'security_deposit' );
+			$security_deposit = smart_rentals_wc_get_security_deposit( $product->get_id() );
 
 			?>
 			<div class="smart-rentals-info">

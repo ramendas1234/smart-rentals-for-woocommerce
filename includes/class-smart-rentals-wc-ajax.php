@@ -156,8 +156,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 				$dropoff_timestamp
 			);
 
-			// Get security deposit
-			$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+			// Get security deposit (with global fallback)
+			$security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
 
 			// Check availability
 			$available = Smart_Rentals_WC()->options->check_availability(

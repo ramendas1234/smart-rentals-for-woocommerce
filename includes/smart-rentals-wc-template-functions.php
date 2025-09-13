@@ -78,7 +78,7 @@ if ( !function_exists( 'smart_rentals_wc_get_price_display' ) ) {
         }
 
         $rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
-        $security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+        $security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
 
         ?>
         <div class="smart-rentals-info">

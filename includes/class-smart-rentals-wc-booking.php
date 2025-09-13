@@ -272,9 +272,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					$dropoff_date 
 				);
 				
-				// Get security deposit
-				$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
-				$security_deposit = floatval( $security_deposit );
+				// Get security deposit (with global fallback)
+				$security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
 				
 				$cart_item_data['rental_data'] = [
 					'pickup_date' => $pickup_date,
@@ -423,9 +422,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 					$rental_data['rental_quantity']
 				);
 
-				// Add security deposit to the total price
-				$security_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
-				$security_deposit = floatval( $security_deposit );
+				// Add security deposit to the total price (with global fallback)
+				$security_deposit = smart_rentals_wc_get_security_deposit( $product_id );
 				
 				$total_with_deposit = $total_price + $security_deposit;
 
@@ -525,7 +523,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				$rental_data['rental_quantity']
 			);
 
-			$security_deposit = smart_rentals_wc_get_post_meta( $rental_data['product_id'], 'security_deposit' );
+			$security_deposit = smart_rentals_wc_get_security_deposit( $rental_data['product_id'] );
 
 			$wpdb->insert(
 				$table_name,

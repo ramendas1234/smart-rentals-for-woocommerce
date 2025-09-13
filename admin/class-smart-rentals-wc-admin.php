@@ -256,6 +256,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<label for="enable_deposits"><?php _e( 'Allow partial payments and deposits', 'smart-rentals-wc' ); ?></label>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row">
+								<label for="global_security_deposit"><?php _e( 'Global Security Deposit', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="number" name="global_security_deposit" id="global_security_deposit" value="<?php echo esc_attr( smart_rentals_wc_get_meta_data( 'global_security_deposit', $settings, '' ) ); ?>" min="0" step="0.01" class="regular-text" />
+								<p class="description"><?php _e( 'Default security deposit amount for all rental products. Leave empty for no global deposit. Individual products can override this amount.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
 					</table>
 					<?php submit_button(); ?>
 				</form>
@@ -274,6 +283,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'default_dropoff_time' => sanitize_text_field( $_POST['default_dropoff_time'] ?? '09:30' ),
 				'enable_calendar' => isset( $_POST['enable_calendar'] ) ? 'yes' : 'no',
 				'enable_deposits' => isset( $_POST['enable_deposits'] ) ? 'yes' : 'no',
+				'global_security_deposit' => floatval( $_POST['global_security_deposit'] ?? 0 ),
 			];
 
 			smart_rentals_wc_update_option( 'settings', $settings );
@@ -490,17 +500,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			]);
 
 			// Security deposit
+			$global_deposit = smart_rentals_wc_get_meta_data( 'global_security_deposit', smart_rentals_wc_get_option( 'settings', [] ), 0 );
+			$deposit_description = __( 'Security deposit amount for this product.', 'smart-rentals-wc' );
+			if ( $global_deposit > 0 ) {
+				$deposit_description .= ' ' . sprintf( __( 'Leave empty to use global default (%s).', 'smart-rentals-wc' ), smart_rentals_wc_price( $global_deposit ) );
+			} else {
+				$deposit_description .= ' ' . __( 'Set a global default in Smart Rentals Settings.', 'smart-rentals-wc' );
+			}
+			
 			woocommerce_wp_text_input([
 				'id' => smart_rentals_wc_meta_key( 'security_deposit' ),
 				'label' => __( 'Security Deposit', 'smart-rentals-wc' ) . ' (' . ( function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$' ) . ')',
-				'placeholder' => '0.00',
+				'placeholder' => $global_deposit > 0 ? number_format( $global_deposit, 2, '.', '' ) : '0.00',
 				'type' => 'number',
 				'custom_attributes' => [
 					'step' => '0.01',
 					'min' => '0',
 				],
 				'desc_tip' => true,
-				'description' => __( 'Security deposit amount', 'smart-rentals-wc' ),
+				'description' => $deposit_description,
 			]);
 
 			echo '</div>';

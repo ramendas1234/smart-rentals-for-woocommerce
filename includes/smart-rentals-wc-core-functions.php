@@ -353,3 +353,23 @@ if ( !function_exists( 'smart_rentals_wc_current_time' ) ) {
         return current_time( 'timestamp' );
     }
 }
+
+/**
+ * Get security deposit for a product with global fallback
+ */
+if ( !function_exists( 'smart_rentals_wc_get_security_deposit' ) ) {
+    function smart_rentals_wc_get_security_deposit( $product_id ) {
+        // First check if product has its own security deposit
+        $product_deposit = smart_rentals_wc_get_post_meta( $product_id, 'security_deposit' );
+        
+        if ( !empty( $product_deposit ) && floatval( $product_deposit ) > 0 ) {
+            return floatval( $product_deposit );
+        }
+        
+        // Fall back to global security deposit
+        $settings = smart_rentals_wc_get_option( 'settings', [] );
+        $global_deposit = smart_rentals_wc_get_meta_data( 'global_security_deposit', $settings, 0 );
+        
+        return floatval( $global_deposit );
+    }
+}
