@@ -302,6 +302,21 @@ register_uninstall_hook( __FILE__, 'smart_rentals_wc_uninstall_plugin' );
  * Plugin activation callback
  */
 function smart_rentals_wc_activate_plugin() {
+	// Define constants first
+	if ( !defined( 'SMART_RENTALS_WC_PLUGIN_FILE' ) ) {
+		define( 'SMART_RENTALS_WC_PLUGIN_FILE', __FILE__ );
+		define( 'SMART_RENTALS_WC_PLUGIN_URI', plugin_dir_url( __FILE__ ) );
+		define( 'SMART_RENTALS_WC_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+		define( 'SMART_RENTALS_WC_PLUGIN_ADMIN', plugin_dir_path( __FILE__ ) . 'admin/' );
+		define( 'SMART_RENTALS_WC_PLUGIN_INC', plugin_dir_path( __FILE__ ) . 'includes/' );
+		define( 'SMART_RENTALS_WC_PLUGIN_TEMPLATES', plugin_dir_path( __FILE__ ) . 'templates/' );
+		define( 'SMART_RENTALS_WC_PREFIX', 'smart_rentals_wc_' );
+		define( 'SMART_RENTALS_WC_META_PREFIX', 'smart_rentals_' );
+	}
+	
+	// Include core functions first
+	require_once plugin_dir_path( __FILE__ ) . 'includes/smart-rentals-wc-core-functions.php';
+	
 	// Include install class
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-smart-rentals-wc-install.php';
 	
@@ -323,6 +338,21 @@ function smart_rentals_wc_deactivate_plugin() {
  * Plugin uninstall callback
  */
 function smart_rentals_wc_uninstall_plugin() {
+	// Define constants first
+	if ( !defined( 'SMART_RENTALS_WC_PLUGIN_FILE' ) ) {
+		define( 'SMART_RENTALS_WC_PLUGIN_FILE', __FILE__ );
+		define( 'SMART_RENTALS_WC_PLUGIN_URI', plugin_dir_url( __FILE__ ) );
+		define( 'SMART_RENTALS_WC_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+		define( 'SMART_RENTALS_WC_PLUGIN_ADMIN', plugin_dir_path( __FILE__ ) . 'admin/' );
+		define( 'SMART_RENTALS_WC_PLUGIN_INC', plugin_dir_path( __FILE__ ) . 'includes/' );
+		define( 'SMART_RENTALS_WC_PLUGIN_TEMPLATES', plugin_dir_path( __FILE__ ) . 'templates/' );
+		define( 'SMART_RENTALS_WC_PREFIX', 'smart_rentals_wc_' );
+		define( 'SMART_RENTALS_WC_META_PREFIX', 'smart_rentals_' );
+	}
+	
+	// Include core functions first
+	require_once plugin_dir_path( __FILE__ ) . 'includes/smart-rentals-wc-core-functions.php';
+	
 	// Include install class
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-smart-rentals-wc-install.php';
 	
