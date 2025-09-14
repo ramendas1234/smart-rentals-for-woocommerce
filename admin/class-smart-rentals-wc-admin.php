@@ -630,8 +630,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 										<div class="rental-item-info" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
 											<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
 												<div>
-													<strong><?php _e( 'Current Price:', 'smart-rentals-wc' ); ?></strong><br>
-													<?php echo smart_rentals_wc_price( $item->get_total() ); ?>
+													<strong><?php _e( 'Current Total:', 'smart-rentals-wc' ); ?></strong><br>
+													<span id="current_total_<?php echo $item_id; ?>"><?php echo smart_rentals_wc_price( $item->get_total() ); ?></span>
+												</div>
+												<div>
+													<strong><?php _e( 'Price per Unit:', 'smart-rentals-wc' ); ?></strong><br>
+													<span id="unit_price_<?php echo $item_id; ?>"><?php echo smart_rentals_wc_price( $product->get_price() ); ?></span>
+												</div>
+												<div>
+													<strong><?php _e( 'Calculated Total:', 'smart-rentals-wc' ); ?></strong><br>
+													<span id="calculated_total_<?php echo $item_id; ?>" style="color: #0073aa; font-weight: bold;">
+														<?php echo smart_rentals_wc_price( $product->get_price() * $rental_quantity ); ?>
+													</span>
 												</div>
 												<div>
 													<strong><?php _e( 'Product ID:', 'smart-rentals-wc' ); ?></strong><br>
@@ -679,7 +689,43 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			.rental-form-actions .button {
 				margin: 0 10px;
 			}
+			.calculated-total {
+				color: #0073aa;
+				font-weight: bold;
+				background: #e7f3ff;
+				padding: 2px 6px;
+				border-radius: 3px;
+			}
 			</style>
+			
+			<script>
+			jQuery(document).ready(function($) {
+				// Update calculated total when quantity changes
+				$('input[name*="[quantity]"]').on('input change', function() {
+					var itemId = $(this).attr('name').match(/\[(\d+)\]/)[1];
+					var quantity = parseInt($(this).val()) || 1;
+					var unitPrice = parseFloat($('#unit_price_' + itemId).text().replace(/[^\d.-]/g, '')) || 0;
+					var calculatedTotal = unitPrice * quantity;
+					
+					// Format the price (simple formatting)
+					var formattedPrice = '$' + calculatedTotal.toFixed(2);
+					
+					$('#calculated_total_' + itemId).text(formattedPrice).addClass('calculated-total');
+					
+					// Highlight if quantity changed
+					if (quantity > 1) {
+						$('#calculated_total_' + itemId).css('background', '#fff3cd').css('color', '#856404');
+					} else {
+						$('#calculated_total_' + itemId).css('background', '#e7f3ff').css('color', '#0073aa');
+					}
+				});
+				
+				// Initialize calculated totals on page load
+				$('input[name*="[quantity]"]').each(function() {
+					$(this).trigger('change');
+				});
+			});
+			</script>
 			<?php
 		}
 
@@ -704,7 +750,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 			
 			$modified_items = [];
-			$total_price_change = 0;
+			$price_changes = [];
 			
 			foreach ( $_POST['rental_data'] as $item_id => $rental_data ) {
 				$item = $order->get_item( $item_id );
@@ -741,6 +787,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					continue;
 				}
 				
+				// Store original price for comparison
+				$original_total = $item->get_total();
+				$original_subtotal = $item->get_subtotal();
+				
 				// Update rental data
 				if ( $pickup_date ) {
 					$item->update_meta_data( smart_rentals_wc_meta_key( 'pickup_date' ), date( 'Y-m-d H:i:s', strtotime( $pickup_date ) ) );
@@ -749,29 +799,72 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					$item->update_meta_data( smart_rentals_wc_meta_key( 'dropoff_date' ), date( 'Y-m-d H:i:s', strtotime( $dropoff_date ) ) );
 				}
 				
+				// Update quantity and recalculate prices
 				$item->set_quantity( $quantity );
 				$item->update_meta_data( smart_rentals_wc_meta_key( 'rental_quantity' ), $quantity );
 				$item->update_meta_data( smart_rentals_wc_meta_key( 'security_deposit' ), $security_deposit );
 				$item->update_meta_data( smart_rentals_wc_meta_key( 'is_rental' ), 'yes' );
+				
+				// Recalculate item prices based on new quantity
+				$product = $item->get_product();
+				if ( $product ) {
+					// Get the base price per unit
+					$base_price = $product->get_price();
+					
+					// Calculate new subtotal based on quantity
+					$new_subtotal = $base_price * $quantity;
+					
+					// Set the new subtotal and total
+					$item->set_subtotal( $new_subtotal );
+					$item->set_total( $new_subtotal );
+					
+					// Store price change info
+					$price_changes[] = [
+						'item_name' => $item->get_name(),
+						'quantity' => $quantity,
+						'old_total' => $original_total,
+						'new_total' => $new_subtotal,
+						'price_per_unit' => $base_price
+					];
+				}
 				
 				$item->save();
 				$modified_items[] = $item->get_name();
 			}
 			
 			if ( !empty( $modified_items ) ) {
-				// Recalculate order totals
+				// Recalculate order totals (this will handle tax calculation)
 				$order->calculate_totals();
 				$order->save();
 				
-				// Add order note
-				$order->add_order_note( sprintf( 
-					__( 'Rental details modified via admin: %s', 'smart-rentals-wc' ),
-					implode( ', ', $modified_items )
-				) );
+				// Add detailed order note
+				$note_parts = [ __( 'Rental details modified via admin:', 'smart-rentals-wc' ) ];
+				$note_parts[] = implode( ', ', $modified_items );
 				
-				// Show success message
-				add_action( 'admin_notices', function() {
-					echo '<div class="notice notice-success is-dismissible"><p>' . __( 'Rental modifications saved successfully!', 'smart-rentals-wc' ) . '</p></div>';
+				if ( !empty( $price_changes ) ) {
+					$note_parts[] = "\n" . __( 'Price changes:', 'smart-rentals-wc' );
+					foreach ( $price_changes as $change ) {
+						$note_parts[] = sprintf( 
+							'- %s: Qty %d × %s = %s (was %s)',
+							$change['item_name'],
+							$change['quantity'],
+							smart_rentals_wc_price( $change['price_per_unit'] ),
+							smart_rentals_wc_price( $change['new_total'] ),
+							smart_rentals_wc_price( $change['old_total'] )
+						);
+					}
+				}
+				
+				$order->add_order_note( implode( "\n", $note_parts ) );
+				
+				// Show success message with price change info
+				$message = __( 'Rental modifications saved successfully!', 'smart-rentals-wc' );
+				if ( !empty( $price_changes ) ) {
+					$message .= ' ' . __( 'Order totals have been recalculated.', 'smart-rentals-wc' );
+				}
+				
+				add_action( 'admin_notices', function() use ( $message ) {
+					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
 				});
 			}
 		}
