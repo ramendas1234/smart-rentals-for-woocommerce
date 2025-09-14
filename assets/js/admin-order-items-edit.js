@@ -58,14 +58,10 @@ jQuery(document).ready(function($) {
         
         // Edit toggle button
         $(document).on('click', '.rental-edit-toggle', function(e) {
-            console.log('=== EDIT TOGGLE CLICKED ===');
-            console.log('Event:', e);
-            console.log('Target:', e.target);
-            console.log('Current target:', e.currentTarget);
+            console.log('EDIT TOGGLE CLICKED');
             
             e.preventDefault();
             e.stopPropagation();
-            console.log('Event prevented and stopped');
             
             var $button = $(this);
             var itemId = $button.data('item-id');
@@ -73,14 +69,20 @@ jQuery(document).ready(function($) {
             var $displayMode = $container.find('.rental-display-mode');
             var $editMode = $container.find('.rental-edit-mode');
             
-            console.log('Button element:', $button);
             console.log('Item ID:', itemId);
             console.log('Container found:', $container.length);
-            console.log('Container element:', $container);
             console.log('Display mode found:', $displayMode.length);
-            console.log('Display mode element:', $displayMode);
             console.log('Edit mode found:', $editMode.length);
-            console.log('Edit mode element:', $editMode);
+            
+            if ($container.length === 0) {
+                console.error('Container not found!');
+                return;
+            }
+            
+            if ($editMode.length === 0) {
+                console.error('Edit mode not found!');
+                return;
+            }
             
             // Show edit mode
             $displayMode.hide();
@@ -92,7 +94,7 @@ jQuery(document).ready(function($) {
             $container.find('.rental-save').show();
             $container.find('.rental-cancel').show();
             
-            console.log('Switched to edit mode');
+            console.log('Switched to edit mode successfully');
         });
 
         // Cancel edit button
