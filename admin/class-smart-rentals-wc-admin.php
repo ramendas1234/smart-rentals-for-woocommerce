@@ -1637,9 +1637,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			woocommerce_wp_checkbox([
 				'id' => smart_rentals_wc_meta_key( 'enable_rental' ),
 				'wrapper_class' => 'show_if_simple',
-				'label' => __( 'Enable Rental Product', 'smart-rentals-wc' ),
-				'description' => __( 'Enable rental/booking functionality for this product', 'smart-rentals-wc' ),
-				'desc_tip' => true,
+				'label' => '<strong>' . __( 'Enable Rental Product', 'smart-rentals-wc' ) . '</strong>',
+				'description' => __( 'Check this option to allow customers to rent or book this product', 'smart-rentals-wc' ),
+				'desc_tip' => false,
 			]);
 		}
 
@@ -1878,6 +1878,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 							<tr>
 								<th class="date-range-header"><?php _e( 'Disabled Date Range', 'smart-rentals-wc' ); ?></th>
 								<th class="actions-header"><?php _e( 'Actions', 'smart-rentals-wc' ); ?></th>
+								<th><button type="button" class="button-primary add-disabled-date">Add</button></th>
 							</tr>
 						</thead>
 						<tbody class="disabled-dates-rows">
@@ -1900,7 +1901,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 											<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="<?php echo esc_attr( $end_date ); ?>" class="hidden-end-date" />
 										</td>
 										<td>
-											<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
+											<button type="button" class="button remove-disabled-date button-link-delete" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
 												<span class="dashicons dashicons-trash"></span>
 											</button>
 										</td>
@@ -1920,14 +1921,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 										<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="hidden-end-date" />
 									</td>
 									<td>
-										<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
+										<button type="button" class="button remove-disabled-date button-link-delete" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">
 											<span class="dashicons dashicons-trash"></span>
 										</button>
 									</td>
 								</tr>
 							<?php endif; ?>
 						</tbody>
-						<tfoot>
+						<!-- <tfoot>
 							<tr>
 								<td colspan="2">
 									<button type="button" class="button add-disabled-date">
@@ -1936,7 +1937,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 									</button>
 								</td>
 							</tr>
-						</tfoot>
+						</tfoot> -->
 					</table>
 				</div>
 			</div>
@@ -2053,7 +2054,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 							'<input type="hidden" name="<?php echo smart_rentals_wc_meta_key( 'disabled_end_dates' ); ?>[]" value="" class="hidden-end-date" />' +
 						'</td>' +
 						'<td>' +
-							'<button type="button" class="button remove-disabled-date" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">' +
+							'<button type="button" class="button remove-disabled-date button-link-delete" title="<?php esc_attr_e( 'Remove', 'smart-rentals-wc' ); ?>">' +
 								'<span class="dashicons dashicons-trash"></span>' +
 							'</button>' +
 						'</td>' +
@@ -2182,22 +2183,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				font-style: italic;
 			}
 			
-			.remove-disabled-date {
-				height: 40px;
-				padding: 8px 12px;
-				line-height: 1;
-				background: #f8f9fa;
-				border: 1px solid #dee2e6;
-				border-radius: 4px;
-				transition: all 0.3s ease;
+			.remove-disabled-date { 
+				padding-top: 5px !important;
 			}
 			
-			.remove-disabled-date:hover {
-				background: #dc3545;
-				border-color: #dc3545;
-				color: white;
-				transform: scale(1.05);
-			}
+			
 			
 			.remove-disabled-date .dashicons {
 				font-size: 16px;
@@ -2205,30 +2195,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				height: 16px;
 			}
 			
-			.add-disabled-date {
-				margin-top: 15px;
-				height: 45px;
-				padding: 12px 20px;
-				background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
-				border: none;
-				border-radius: 6px;
-				color: white;
-				font-weight: 600;
-				transition: all 0.3s ease;
-				box-shadow: 0 2px 4px rgba(0, 124, 186, 0.2);
-			}
-			
-			.add-disabled-date:hover {
-				background: linear-gradient(135deg, #005a87 0%, #007cba 100%);
-				transform: translateY(-2px);
-				box-shadow: 0 4px 12px rgba(0, 124, 186, 0.3);
-				color: white;
-			}
-			
-			.add-disabled-date .dashicons {
-				margin-right: 8px;
-				font-size: 18px;
-			}
 			
 			.date-range-header {
 				width: 75%;
@@ -2259,11 +2225,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					font-size: 13px;
 				}
 				
-				.add-disabled-date {
-					height: 40px;
-					padding: 10px 16px;
-					font-size: 13px;
-				}
+				
 				
 				.disabled-dates-table th,
 				.disabled-dates-table td {

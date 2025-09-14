@@ -1,4 +1,23 @@
 /* Smart Rentals WC Admin Styles */
+#smart_rentals_product_data input:not([type="checkbox"]):not([type="radio"]),
+#smart_rentals_product_data select {
+    height: 40px;
+    width: 50%;
+    box-sizing: border-box;
+}
+
+#smart_rentals_product_data span.select2-container{
+    width: 50% !important;
+}
+
+/* Target your tab */
+#woocommerce-product-data ul.wc-tabs li.smart_rentals_options a::before {
+    font-family: Dashicons;
+    content: "\f508"; /* change to desired dashicon */
+    margin-right: 0px;
+}
+
+/* END CUSTOM CSS */
 
 #smart-rentals-fields {
     border: 1px solid #ddd;

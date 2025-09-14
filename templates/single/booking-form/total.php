@@ -165,7 +165,7 @@ jQuery(document).ready(function($) {
                     
                     // Calculate and display total
                     var totalAmount = parseFloat(data.total_price || 0) + parseFloat(securityDeposit || 0);
-                    var currencySymbol = '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? esc_js( get_woocommerce_currency_symbol() ) : '$'; ?>';
+                    var currencySymbol = smartRentalsObject.currency_symbol;
                     $('#rental-total-amount').text(currencySymbol + totalAmount.toFixed(2));
                     
                     $('#smart-rentals-total-display').show();

@@ -221,7 +221,7 @@ jQuery(document).ready(function($) {
             timePickerSeconds: false,
             linkedCalendars: false,
             alwaysShowCalendars: true,
-            opens: 'left',
+            opens: 'center',
             drops: 'down',
             
             // Format based on rental type

@@ -1186,14 +1186,18 @@
    ======================================== */
 
 /* Compact Calendar Container */
+.single-product div.product .summary{
+    width: 45% !important;
+    margin-left: 5px;
+}
 .smart-rentals-calendar-container {
+    width: 52%;
     margin: 15px 0;
     background: #ffffff;
     border: 1px solid #e3e6ea;
     border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
     font-size: 13px;
 }
 

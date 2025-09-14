@@ -88,6 +88,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 				'minDate' => gmdate( 'Y-m-d' ),
 			]);
 
+			wp_localize_script( 'smart-rentals-wc-frontend', 'smartRentalsObject', [
+				'currency_symbol' => get_woocommerce_currency_symbol(),
+			]);
+
 			// Load on cart and checkout pages
 			if ( is_cart() || is_checkout() ) {
 				wp_enqueue_script(

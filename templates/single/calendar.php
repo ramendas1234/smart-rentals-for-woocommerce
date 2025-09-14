@@ -49,145 +49,148 @@ if ( $next_month > 12 ) {
 
 ?>
 
-<div class="smart-rentals-calendar-container">
-    <div class="smart-rentals-calendar-header">
-        <h3 class="calendar-title">
-            <i class="dashicons dashicons-calendar-alt"></i>
-            <?php _e( 'Availability Calendar', 'smart-rentals-wc' ); ?>
-        </h3>
-        <p class="calendar-description">
-            <?php _e( 'View availability and daily pricing. This calendar is for information only.', 'smart-rentals-wc' ); ?>
-        </p>
-    </div>
-
-    <div class="smart-rentals-calendar" id="smart-rentals-calendar-<?php echo $product_id; ?>" data-product-id="<?php echo $product_id; ?>">
-        <!-- Calendar Navigation -->
-        <div class="calendar-nav">
-            <button type="button" class="nav-prev" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>">
-                <i class="dashicons dashicons-arrow-left-alt2"></i>
-                <?php _e( 'Previous', 'smart-rentals-wc' ); ?>
-            </button>
-            <h4 class="current-month"><?php echo esc_html( $month_name ); ?></h4>
-            <button type="button" class="nav-next" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>">
-                <?php _e( 'Next', 'smart-rentals-wc' ); ?>
-                <i class="dashicons dashicons-arrow-right-alt2"></i>
-            </button>
+<div class="smart-rentals-calendar-container-wrapper">
+    <div class="smart-rentals-calendar-container">
+        <div class="smart-rentals-calendar-header">
+            <h3 class="calendar-title">
+                <i class="dashicons dashicons-calendar-alt"></i>
+                <?php _e( 'Availability Calendar', 'smart-rentals-wc' ); ?>
+            </h3>
+            <p class="calendar-description">
+                <?php _e( 'View availability and daily pricing. This calendar is for information only.', 'smart-rentals-wc' ); ?>
+            </p>
         </div>
 
-        <!-- Calendar Grid -->
-        <div class="calendar-grid">
-            <!-- Day Headers -->
-            <div class="calendar-header-row">
-                <div class="day-header"><?php _e( 'Sun', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Mon', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Tue', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Wed', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Thu', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Fri', 'smart-rentals-wc' ); ?></div>
-                <div class="day-header"><?php _e( 'Sat', 'smart-rentals-wc' ); ?></div>
+        <div class="smart-rentals-calendar" id="smart-rentals-calendar-<?php echo $product_id; ?>" data-product-id="<?php echo $product_id; ?>">
+            <!-- Calendar Navigation -->
+            <div class="calendar-nav">
+                <button type="button" class="nav-prev" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>">
+                    <i class="dashicons dashicons-arrow-left-alt2"></i>
+                    <?php _e( 'Previous', 'smart-rentals-wc' ); ?>
+                </button>
+                <h4 class="current-month"><?php echo esc_html( $month_name ); ?></h4>
+                <button type="button" class="nav-next" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>">
+                    <?php _e( 'Next', 'smart-rentals-wc' ); ?>
+                    <i class="dashicons dashicons-arrow-right-alt2"></i>
+                </button>
             </div>
 
-            <!-- Calendar Days -->
-            <div class="calendar-body">
-                <?php
-                // Add empty cells for days before the first day of the month
-                for ( $i = 0; $i < $first_day_of_week; $i++ ) {
-                    echo '<div class="calendar-day empty"></div>';
-                }
+            <!-- Calendar Grid -->
+            <div class="calendar-grid">
+                <!-- Day Headers -->
+                <div class="calendar-header-row">
+                    <div class="day-header"><?php _e( 'Sun', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Mon', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Tue', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Wed', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Thu', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Fri', 'smart-rentals-wc' ); ?></div>
+                    <div class="day-header"><?php _e( 'Sat', 'smart-rentals-wc' ); ?></div>
+                </div>
 
-                // Add days of the month
-                for ( $day = 1; $day <= $days_in_month; $day++ ) {
-                    $date = sprintf( '%04d-%02d-%02d', $current_year, $current_month, $day );
-                    $timestamp = mktime( 0, 0, 0, $current_month, $day, $current_year );
-                    $is_today = ( $date === date( 'Y-m-d' ) );
-                    $is_past = ( $timestamp < strtotime( 'today' ) );
-                    
-                    // Check if this weekday is disabled
-                    $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
-                    $disabled_weekdays = is_array( $disabled_weekdays ) ? array_map( 'intval', $disabled_weekdays ) : [];
-                    $weekday = date( 'w', $timestamp ); // 0 = Sunday
-                    $is_disabled_weekday = in_array( intval( $weekday ), $disabled_weekdays );
-                    
-                    // Check if this specific date is disabled
-                    $is_disabled_date = false;
-                    $disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
-                    $disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
-                    
-                    if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) && !empty( $disabled_start_dates ) ) {
-                        foreach ( $disabled_start_dates as $index => $disabled_start ) {
-                            $disabled_end = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $disabled_start;
-                            
-                            if ( !empty( $disabled_start ) ) {
-                                $disabled_start_timestamp = strtotime( $disabled_start );
-                                $disabled_end_timestamp = strtotime( $disabled_end );
+                <!-- Calendar Days -->
+                <div class="calendar-body">
+                    <?php
+                    // Add empty cells for days before the first day of the month
+                    for ( $i = 0; $i < $first_day_of_week; $i++ ) {
+                        echo '<div class="calendar-day empty"></div>';
+                    }
+
+                    // Add days of the month
+                    for ( $day = 1; $day <= $days_in_month; $day++ ) {
+                        $date = sprintf( '%04d-%02d-%02d', $current_year, $current_month, $day );
+                        $timestamp = mktime( 0, 0, 0, $current_month, $day, $current_year );
+                        $is_today = ( $date === date( 'Y-m-d' ) );
+                        $is_past = ( $timestamp < strtotime( 'today' ) );
+                        
+                        // Check if this weekday is disabled
+                        $disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+                        $disabled_weekdays = is_array( $disabled_weekdays ) ? array_map( 'intval', $disabled_weekdays ) : [];
+                        $weekday = date( 'w', $timestamp ); // 0 = Sunday
+                        $is_disabled_weekday = in_array( intval( $weekday ), $disabled_weekdays );
+                        
+                        // Check if this specific date is disabled
+                        $is_disabled_date = false;
+                        $disabled_start_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_start_dates' );
+                        $disabled_end_dates = smart_rentals_wc_get_post_meta( $product_id, 'disabled_end_dates' );
+                        
+                        if ( is_array( $disabled_start_dates ) && is_array( $disabled_end_dates ) && !empty( $disabled_start_dates ) ) {
+                            foreach ( $disabled_start_dates as $index => $disabled_start ) {
+                                $disabled_end = isset( $disabled_end_dates[$index] ) ? $disabled_end_dates[$index] : $disabled_start;
                                 
-                                if ( $timestamp >= $disabled_start_timestamp && $timestamp <= $disabled_end_timestamp ) {
-                                    $is_disabled_date = true;
-                                    break;
+                                if ( !empty( $disabled_start ) ) {
+                                    $disabled_start_timestamp = strtotime( $disabled_start );
+                                    $disabled_end_timestamp = strtotime( $disabled_end );
+                                    
+                                    if ( $timestamp >= $disabled_start_timestamp && $timestamp <= $disabled_end_timestamp ) {
+                                        $is_disabled_date = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    // Use the robust calendar-specific availability method
-                    $available_quantity = Smart_Rentals_WC()->options->get_calendar_day_availability( $product_id, $date );
-                    $is_available = ( $available_quantity > 0 && !$is_disabled_weekday && !$is_disabled_date );
-                    
-                    // Get price for this day
-                    $price_display = '';
-                    if ( $daily_price > 0 ) {
-                        $price_display = smart_rentals_wc_price( $daily_price );
-                    } elseif ( $hourly_price > 0 ) {
-                        $price_display = smart_rentals_wc_price( $hourly_price ) . '/' . __( 'hour', 'smart-rentals-wc' );
-                    }
-                    
-                    // Determine CSS classes
-                    $classes = [ 'calendar-day' ];
-                    if ( $is_today ) $classes[] = 'today';
-                    if ( $is_past ) $classes[] = 'past';
-                    if ( $is_disabled_weekday ) $classes[] = 'disabled-weekday';
-                    if ( $is_disabled_date ) $classes[] = 'disabled-date';
-                    if ( !$is_available || $is_past || $is_disabled_weekday || $is_disabled_date ) $classes[] = 'unavailable';
-                    else $classes[] = 'available';
-                    
-                    echo '<div class="' . implode( ' ', $classes ) . '" data-date="' . $date . '">';
-                    echo '<span class="day-number">' . $day . '</span>';
-                    
-                    if ( !$is_past ) {
-                        if ( $is_available ) {
-                            echo '<span class="availability-indicator available-count">' . $available_quantity . ' ' . __( 'available', 'smart-rentals-wc' ) . '</span>';
-                            if ( $price_display ) {
-                                echo '<span class="day-price">' . $price_display . '</span>';
-                            }
-                        } else {
-                            // All disabled/blocked/booked dates show as unavailable
-                            echo '<span class="availability-indicator unavailable-text">' . __( 'Unavailable', 'smart-rentals-wc' ) . '</span>';
+                        
+                        // Use the robust calendar-specific availability method
+                        $available_quantity = Smart_Rentals_WC()->options->get_calendar_day_availability( $product_id, $date );
+                        $is_available = ( $available_quantity > 0 && !$is_disabled_weekday && !$is_disabled_date );
+                        
+                        // Get price for this day
+                        $price_display = '';
+                        if ( $daily_price > 0 ) {
+                            $price_display = smart_rentals_wc_price( $daily_price );
+                        } elseif ( $hourly_price > 0 ) {
+                            $price_display = smart_rentals_wc_price( $hourly_price ) . '/' . __( 'hour', 'smart-rentals-wc' );
                         }
+                        
+                        // Determine CSS classes
+                        $classes = [ 'calendar-day' ];
+                        if ( $is_today ) $classes[] = 'today';
+                        if ( $is_past ) $classes[] = 'past';
+                        if ( $is_disabled_weekday ) $classes[] = 'disabled-weekday';
+                        if ( $is_disabled_date ) $classes[] = 'disabled-date';
+                        if ( !$is_available || $is_past || $is_disabled_weekday || $is_disabled_date ) $classes[] = 'unavailable';
+                        else $classes[] = 'available';
+                        
+                        echo '<div class="' . implode( ' ', $classes ) . '" data-date="' . $date . '">';
+                        echo '<span class="day-number">' . $day . '</span>';
+                        
+                        if ( !$is_past ) {
+                            if ( $is_available ) {
+                                echo '<span class="availability-indicator available-count">' . $available_quantity . ' ' . __( 'available', 'smart-rentals-wc' ) . '</span>';
+                                if ( $price_display ) {
+                                    echo '<span class="day-price">' . $price_display . '</span>';
+                                }
+                            } else {
+                                // All disabled/blocked/booked dates show as unavailable
+                                echo '<span class="availability-indicator unavailable-text">' . __( 'Unavailable', 'smart-rentals-wc' ) . '</span>';
+                            }
+                        }
+                        
+                        echo '</div>';
                     }
-                    
-                    echo '</div>';
-                }
-                ?>
+                    ?>
+                </div>
             </div>
-        </div>
 
-        <!-- Simplified Calendar Legend -->
-        <div class="calendar-legend">
-            <div class="legend-item">
-                <span class="legend-color available"></span>
-                <span class="legend-text"><?php _e( 'Available', 'smart-rentals-wc' ); ?></span>
-            </div>
-            <div class="legend-item">
-                <span class="legend-color unavailable"></span>
-                <span class="legend-text"><?php _e( 'Unavailable', 'smart-rentals-wc' ); ?></span>
-            </div>
-            <div class="legend-item">
-                <span class="legend-color today"></span>
-                <span class="legend-text"><?php _e( 'Today', 'smart-rentals-wc' ); ?></span>
+            <!-- Simplified Calendar Legend -->
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <span class="legend-color available"></span>
+                    <span class="legend-text"><?php _e( 'Available', 'smart-rentals-wc' ); ?></span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color unavailable"></span>
+                    <span class="legend-text"><?php _e( 'Unavailable', 'smart-rentals-wc' ); ?></span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color today"></span>
+                    <span class="legend-text"><?php _e( 'Today', 'smart-rentals-wc' ); ?></span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
