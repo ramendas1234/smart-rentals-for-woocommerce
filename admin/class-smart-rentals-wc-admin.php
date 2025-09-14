@@ -44,8 +44,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			add_action( 'restrict_manage_posts', [ $this, 'add_rental_filter' ] );
 			add_filter( 'parse_query', [ $this, 'filter_products_by_rental' ] );
 
-			// Modify product price display in admin
-			add_filter( 'woocommerce_get_price_html', [ $this, 'get_rental_price_html' ], 11, 2 );
+			// Product price display - handled by Smart_Rentals_WC_Rental class
 		}
 
 		/**
@@ -1629,38 +1628,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			}
 		}
 
-		/**
-		 * Get rental price HTML
-		 */
-		public function get_rental_price_html( $price, $product ) {
-			if ( smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
-				$rental_type = smart_rentals_wc_get_post_meta( $product->get_id(), 'rental_type' );
-				$daily_price = smart_rentals_wc_get_post_meta( $product->get_id(), 'daily_price' );
-				$hourly_price = smart_rentals_wc_get_post_meta( $product->get_id(), 'hourly_price' );
-				
-				$rental_price = '';
-				
-				if ( 'day' === $rental_type && $daily_price ) {
-					$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
-				} elseif ( 'hour' === $rental_type && $hourly_price ) {
-					$rental_price = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
-				} elseif ( 'mixed' === $rental_type ) {
-					if ( $daily_price && $hourly_price ) {
-						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' ) . ' / ' . smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
-					} elseif ( $daily_price ) {
-						$rental_price = smart_rentals_wc_price( $daily_price ) . ' ' . __( 'per day', 'smart-rentals-wc' );
-					} elseif ( $hourly_price ) {
-						$rental_price = smart_rentals_wc_price( $hourly_price ) . ' ' . __( 'per hour', 'smart-rentals-wc' );
-					}
-				}
-				
-				if ( $rental_price ) {
-					return $rental_price;
-				}
-			}
-			
-			return $price;
-		}
 
 		/**
 		 * Booking calendar page
