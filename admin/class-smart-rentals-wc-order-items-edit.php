@@ -14,6 +14,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * Constructor
          */
         public function __construct() {
+            // Debug: Always log constructor
+            echo '<!-- Smart Rentals Order Items Edit: Constructor called -->';
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'Smart Rentals Order Items Edit: Constructor called' );
+            }
+            
             // Add custom columns to order items table
             add_filter( 'woocommerce_admin_order_item_headers', [ $this, 'add_rental_columns' ] );
             add_action( 'woocommerce_admin_order_item_values', [ $this, 'add_rental_item_data' ], 10, 3 );
@@ -24,24 +30,41 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
             // AJAX handlers
             add_action( 'wp_ajax_smart_rentals_update_order_item_rental', [ $this, 'ajax_update_order_item_rental' ] );
             add_action( 'wp_ajax_smart_rentals_check_rental_availability', [ $this, 'ajax_check_rental_availability' ] );
+            
+            echo '<!-- Smart Rentals Order Items Edit: Hooks registered -->';
         }
 
         /**
          * Add rental columns to order items table
          */
         public function add_rental_columns( $order ) {
+            echo '<!-- Smart Rentals: add_rental_columns called for order #' . $order->get_id() . ' -->';
+            
             // Check if order has rental items
             $has_rental_items = false;
-            foreach ( $order->get_items() as $item ) {
-                if ( $this->is_rental_item( $item ) ) {
+            $rental_items_found = [];
+            
+            foreach ( $order->get_items() as $item_id => $item ) {
+                $is_rental = $this->is_rental_item( $item );
+                if ( $is_rental ) {
                     $has_rental_items = true;
-                    break;
+                    $rental_items_found[] = [
+                        'item_id' => $item_id,
+                        'name' => $item->get_name(),
+                        'is_rental' => $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ),
+                        'pickup_date' => $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) ),
+                        'dropoff_date' => $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) ),
+                    ];
                 }
             }
+            
+            echo '<!-- Smart Rentals: Has rental items: ' . ( $has_rental_items ? 'YES' : 'NO' ) . ' -->';
+            echo '<!-- Smart Rentals: Rental items found: ' . count( $rental_items_found ) . ' -->';
             
             if ( $has_rental_items ) {
                 echo '<th class="rental-dates-column">' . __( 'Rental Details', 'smart-rentals-wc' ) . '</th>';
                 echo '<th class="rental-actions-column">' . __( 'Actions', 'smart-rentals-wc' ) . '</th>';
+                echo '<!-- Smart Rentals: Columns added -->';
             }
         }
 
@@ -49,11 +72,19 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * Add rental item data to order items table
          */
         public function add_rental_item_data( $product, $item, $item_id ) {
-            if ( !$this->is_rental_item( $item ) ) {
+            echo '<!-- Smart Rentals: add_rental_item_data called for item #' . $item_id . ' (' . $item->get_name() . ') -->';
+            
+            $is_rental = $this->is_rental_item( $item );
+            echo '<!-- Smart Rentals: Is rental item: ' . ( $is_rental ? 'YES' : 'NO' ) . ' -->';
+            
+            if ( !$is_rental ) {
                 echo '<td class="rental-dates-column"></td>';
                 echo '<td class="rental-actions-column"></td>';
+                echo '<!-- Smart Rentals: Empty columns added for non-rental item -->';
                 return;
             }
+            
+            echo '<!-- Smart Rentals: Processing rental item data -->';
 
             $pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
             $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
@@ -189,33 +220,46 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * Enqueue admin scripts
          */
         public function admin_scripts( $hook ) {
+            echo '<!-- Smart Rentals: admin_scripts called with hook: ' . $hook . ' -->';
+            
             // Only on order edit pages
             if ( 'post.php' !== $hook ) {
+                echo '<!-- Smart Rentals: Not post.php hook, skipping -->';
                 return;
             }
 
             global $post;
             if ( !$post || $post->post_type !== 'shop_order' ) {
+                echo '<!-- Smart Rentals: Not shop_order post type, skipping -->';
                 return;
             }
+
+            echo '<!-- Smart Rentals: Processing order #' . $post->ID . ' -->';
 
             // Check if order has rental items
             $order = wc_get_order( $post->ID );
             if ( !$order ) {
+                echo '<!-- Smart Rentals: Order not found, skipping -->';
                 return;
             }
 
             $has_rental_items = false;
+            $rental_items_count = 0;
             foreach ( $order->get_items() as $item ) {
                 if ( $this->is_rental_item( $item ) ) {
                     $has_rental_items = true;
-                    break;
+                    $rental_items_count++;
                 }
             }
 
+            echo '<!-- Smart Rentals: Has rental items: ' . ( $has_rental_items ? 'YES' : 'NO' ) . ' (' . $rental_items_count . ' items) -->';
+
             if ( !$has_rental_items ) {
+                echo '<!-- Smart Rentals: No rental items, skipping script enqueue -->';
                 return;
             }
+            
+            echo '<!-- Smart Rentals: Enqueuing scripts and styles -->';
 
             // Enqueue scripts
             wp_enqueue_script( 'jquery' );

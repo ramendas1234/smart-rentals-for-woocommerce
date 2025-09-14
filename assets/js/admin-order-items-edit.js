@@ -6,8 +6,39 @@
 jQuery(document).ready(function($) {
     'use strict';
 
-    console.log('Smart Rentals Order Items Edit script loaded');
-    console.log('Order ID:', smartRentalsOrderItems.order_id);
+    console.log('=== Smart Rentals Order Items Edit Script Loading ===');
+    console.log('Script loaded at:', new Date().toISOString());
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Order ID:', smartRentalsOrderItems ? smartRentalsOrderItems.order_id : 'undefined');
+    console.log('AJAX URL:', smartRentalsOrderItems ? smartRentalsOrderItems.ajax_url : 'undefined');
+    console.log('Nonce:', smartRentalsOrderItems ? smartRentalsOrderItems.nonce : 'undefined');
+    
+    // Show visible alert for debugging
+    if (typeof smartRentalsOrderItems !== 'undefined') {
+        console.log('Smart Rentals Order Items object found!');
+        // Uncomment the line below to show a visible alert
+        // alert('Smart Rentals Order Items Edit script loaded successfully!');
+    } else {
+        console.error('Smart Rentals Order Items object NOT found!');
+        // Uncomment the line below to show a visible alert
+        // alert('ERROR: Smart Rentals Order Items object not found!');
+    }
+    
+    // Check if required elements exist
+    console.log('Rental edit toggles found:', $('.rental-edit-toggle').length);
+    console.log('Rental item containers found:', $('.rental-item-container').length);
+    console.log('Order items table found:', $('.woocommerce_order_items').length);
+    
+    // Log all rental-related elements
+    console.log('All rental elements:', {
+        editToggles: $('.rental-edit-toggle').length,
+        itemContainers: $('.rental-item-container').length,
+        displayModes: $('.rental-display-mode').length,
+        editModes: $('.rental-edit-mode').length,
+        checkButtons: $('.rental-check-availability').length,
+        saveButtons: $('.rental-save').length,
+        cancelButtons: $('.rental-cancel').length
+    });
 
     // Initialize the inline editing system
     initInlineEditing();
@@ -27,9 +58,14 @@ jQuery(document).ready(function($) {
         
         // Edit toggle button
         $(document).on('click', '.rental-edit-toggle', function(e) {
+            console.log('=== EDIT TOGGLE CLICKED ===');
+            console.log('Event:', e);
+            console.log('Target:', e.target);
+            console.log('Current target:', e.currentTarget);
+            
             e.preventDefault();
             e.stopPropagation();
-            console.log('Edit toggle clicked');
+            console.log('Event prevented and stopped');
             
             var $button = $(this);
             var itemId = $button.data('item-id');
@@ -37,10 +73,14 @@ jQuery(document).ready(function($) {
             var $displayMode = $container.find('.rental-display-mode');
             var $editMode = $container.find('.rental-edit-mode');
             
+            console.log('Button element:', $button);
             console.log('Item ID:', itemId);
             console.log('Container found:', $container.length);
+            console.log('Container element:', $container);
             console.log('Display mode found:', $displayMode.length);
+            console.log('Display mode element:', $displayMode);
             console.log('Edit mode found:', $editMode.length);
+            console.log('Edit mode element:', $editMode);
             
             // Show edit mode
             $displayMode.hide();
