@@ -1783,6 +1783,4 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			return self::$_instance;
 		}
 	}
-
-	Smart_Rentals_WC_Admin::instance();
 }
