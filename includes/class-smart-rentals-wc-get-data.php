@@ -443,6 +443,13 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			if ( !$product_id || !$date_string ) {
 				return 0;
 			}
+			
+			// Validate and normalize date format
+			$date_parts = explode( '-', $date_string );
+			if ( count( $date_parts ) !== 3 ) {
+				smart_rentals_wc_log( "Invalid date format passed to get_calendar_day_availability: $date_string" );
+				return 0;
+			}
 
 			// Check if this weekday is disabled
 			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
@@ -480,7 +487,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			$total_stock = $rental_stock ? intval( $rental_stock ) : 1;
 
 			// Convert date string to timestamps for the entire day
-			$day_timestamp = strtotime( $date_string );
+			// Ensure we're working with the start of the day (00:00:00)
+			$day_timestamp = strtotime( date( 'Y-m-d', strtotime( $date_string ) ) . ' 00:00:00' );
 			$day_start = $day_timestamp; // 00:00:00
 			$day_end = $day_timestamp + 86400 - 1; // 23:59:59
 
@@ -497,10 +505,21 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					WHERE product_id = %d
 					AND status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
 				", $product_id ));
+				
+				// Debug: Log all bookings found
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG && !empty( $bookings ) ) {
+					smart_rentals_wc_log( sprintf(
+						"Found %d bookings for product %d when checking date %s",
+						count( $bookings ),
+						$product_id,
+						$date_string
+					));
+				}
 
 				foreach ( $bookings as $booking ) {
-					$booking_pickup = strtotime( $booking->pickup_date );
-					$booking_dropoff = strtotime( $booking->dropoff_date );
+					// Normalize booking dates to start of day for daily rentals
+					$booking_pickup = strtotime( date( 'Y-m-d', strtotime( $booking->pickup_date ) ) . ' 00:00:00' );
+					$booking_dropoff = strtotime( date( 'Y-m-d', strtotime( $booking->dropoff_date ) ) . ' 00:00:00' );
 					
 					// Get rental type for proper logic
 					$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
@@ -510,12 +529,24 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					if ( $rental_type === 'day' ) {
 						// For daily rentals, exclude the dropoff day from the booking period
 						// The day is only booked if: pickup <= day < dropoff
-						if ( $day_timestamp >= $booking_pickup && $day_timestamp < $booking_dropoff ) {
+						// CRITICAL: Ensure both timestamps are normalized to midnight for accurate comparison
+						$is_within_booking = ( $day_timestamp >= $booking_pickup && $day_timestamp < $booking_dropoff );
+						
+						if ( $is_within_booking ) {
 							$booked_quantity += intval( $booking->quantity );
 							
 							// Debug logging
 							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								smart_rentals_wc_log( "Calendar (Daily): Date $date_string is within booking period {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+								smart_rentals_wc_log( sprintf(
+									"Calendar (Daily): Date %s (timestamp: %d) is within booking period %s (timestamp: %d) to %s (timestamp: %d), Qty: %d",
+									$date_string,
+									$day_timestamp,
+									$booking->pickup_date,
+									$booking_pickup,
+									$booking->dropoff_date,
+									$booking_dropoff,
+									$booking->quantity
+								));
 							}
 						}
 					} else {
@@ -576,8 +607,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 
 				foreach ( $order_bookings as $booking ) {
 					if ( $booking->pickup_date && $booking->dropoff_date ) {
-						$booking_pickup = strtotime( $booking->pickup_date );
-						$booking_dropoff = strtotime( $booking->dropoff_date );
+						// Normalize booking dates to start of day for daily rentals
+						$booking_pickup = strtotime( date( 'Y-m-d', strtotime( $booking->pickup_date ) ) . ' 00:00:00' );
+						$booking_dropoff = strtotime( date( 'Y-m-d', strtotime( $booking->dropoff_date ) ) . ' 00:00:00' );
 						$booking_quantity = intval( $booking->quantity ) ?: 1; // Default to 1 if not set
 						
 						// Get rental type for proper logic
@@ -592,7 +624,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 								
 								// Debug logging
 								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-									smart_rentals_wc_log( "Calendar Order (Daily): Date $date_string is within booking period {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking_quantity}" );
+									smart_rentals_wc_log( sprintf(
+										"Calendar Order (Daily): Date %s (timestamp: %d) is within booking period %s (timestamp: %d) to %s (timestamp: %d), Qty: %d",
+										$date_string,
+										$day_timestamp,
+										$booking->pickup_date,
+										$booking_pickup,
+										$booking->dropoff_date,
+										$booking_dropoff,
+										$booking_quantity
+									));
 								}
 							}
 						} else {
@@ -617,10 +658,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 
 			$available_quantity = max( 0, $total_stock - $booked_quantity );
 			
+			// Enhanced debug logging
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				smart_rentals_wc_log( "Calendar Availability - Date: $date_string, Stock: $total_stock, Booked: $booked_quantity, Available: $available_quantity" );
+				smart_rentals_wc_log( sprintf(
+					"=== CALENDAR AVAILABILITY ===\nDate: %s (timestamp: %d)\nProduct: %d\nRental Type: %s\nTotal Stock: %d\nBooked Quantity: %d\nAvailable: %d\n===",
+					$date_string,
+					$day_timestamp,
+					$product_id,
+					smart_rentals_wc_get_post_meta( $product_id, 'rental_type' ),
+					$total_stock,
+					$booked_quantity,
+					$available_quantity
+				));
 			}
-
+			
 			return $available_quantity;
 		}
 
