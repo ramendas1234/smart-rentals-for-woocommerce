@@ -1,0 +1,314 @@
+/**
+ * Smart Rentals WC Order Edit V2 Styles
+ * Enhanced styling for the order edit interface
+ */
+
+#smart-rentals-order-edit-v2 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.smart-rentals-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.smart-rentals-header h3 {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.smart-rentals-header p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-size: 14px;
+}
+
+.rental-item-card {
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.rental-item-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.rental-item-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    padding: 20px;
+}
+
+.rental-item-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.rental-item-header h4 span {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.rental-item-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.rental-display-mode {
+    padding: 25px;
+}
+
+.rental-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.rental-info-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.rental-info-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.rental-info-item strong {
+    display: block;
+    color: #495057;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rental-info-item div {
+    color: #2c3e50;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.rental-edit-mode {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-top: 1px solid #dee2e6;
+    padding: 25px;
+}
+
+.rental-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    color: #495057;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.rental-form-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rental-form-actions button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rental-form-actions .button-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.rental-form-actions .button-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.rental-form-actions .button-success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    color: white;
+}
+
+.rental-form-actions .button-success:hover {
+    background: linear-gradient(135deg, #4a9626 0%, #96d4b8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(86, 171, 47, 0.4);
+}
+
+.rental-form-actions .button-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.rental-form-actions .button-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.rental-feedback {
+    margin-top: 20px;
+}
+
+.rental-feedback .notice {
+    margin: 0;
+    padding: 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+}
+
+.rental-feedback .notice-success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.rental-feedback .notice-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.rental-feedback .notice-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.rental-form-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .rental-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rental-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rental-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rental-form-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .rental-item-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .rental-item-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .rental-item-card {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .rental-item-header {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        border-color: #4a5568;
+    }
+    
+    .rental-info-item {
+        background: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .rental-edit-mode {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        border-color: #4a5568;
+    }
+    
+    .form-group input {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .form-group input:focus {
+        border-color: #667eea;
+        background: #2d3748;
+    }
+}
