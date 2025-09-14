@@ -502,21 +502,36 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					$booking_pickup = strtotime( $booking->pickup_date );
 					$booking_dropoff = strtotime( $booking->dropoff_date );
 					
-					// Get turnaround time for this product
-					$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
-					$turnaround_seconds = $turnaround_hours * 3600; // Convert hours to seconds
+					// Get rental type for proper logic
+					$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 					
-					// Add turnaround time to dropoff for availability calculation
-					$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
-					
-					// Check overlap: booking affects this day if it overlaps with any part of the day
-					// OR if we're still in the turnaround period after dropoff
-					if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
-						$booked_quantity += intval( $booking->quantity );
+					// For daily rentals (hotel logic), the dropoff date is NOT included in the booking period
+					// Example: Booking from Sep 25 to Sep 26 means the guest uses Sep 25 only, checks out on Sep 26
+					if ( $rental_type === 'day' ) {
+						// For daily rentals, exclude the dropoff day from the booking period
+						// The day is only booked if: pickup <= day < dropoff
+						if ( $day_timestamp >= $booking_pickup && $day_timestamp < $booking_dropoff ) {
+							$booked_quantity += intval( $booking->quantity );
+							
+							// Debug logging
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								smart_rentals_wc_log( "Calendar (Daily): Date $date_string is within booking period {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking->quantity}" );
+							}
+						}
+					} else {
+						// For hourly/mixed rentals, include turnaround time
+						$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+						$turnaround_seconds = $turnaround_hours * 3600;
+						$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
 						
-						// Debug logging
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-							smart_rentals_wc_log( "Calendar: Date $date_string conflicts with booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking->quantity}" );
+						// Check overlap including turnaround
+						if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
+							$booked_quantity += intval( $booking->quantity );
+							
+							// Debug logging
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								smart_rentals_wc_log( "Calendar (Hourly/Mixed): Date $date_string conflicts with booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking->quantity}" );
+							}
 						}
 					}
 				}
@@ -563,21 +578,37 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 					if ( $booking->pickup_date && $booking->dropoff_date ) {
 						$booking_pickup = strtotime( $booking->pickup_date );
 						$booking_dropoff = strtotime( $booking->dropoff_date );
+						$booking_quantity = intval( $booking->quantity ) ?: 1; // Default to 1 if not set
 						
-						// Get turnaround time for this product
-						$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
-						$turnaround_seconds = $turnaround_hours * 3600; // Convert hours to seconds
+						// Get rental type for proper logic
+						$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 						
-						// Add turnaround time to dropoff for availability calculation
-						$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
-						
-						// Check overlap including turnaround time
-						if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
-							$booked_quantity += intval( $booking->quantity );
+						// For daily rentals (hotel logic), the dropoff date is NOT included in the booking period
+						if ( $rental_type === 'day' ) {
+							// For daily rentals, exclude the dropoff day from the booking period
+							// The day is only booked if: pickup <= day < dropoff
+							if ( $day_timestamp >= $booking_pickup && $day_timestamp < $booking_dropoff ) {
+								$booked_quantity += $booking_quantity;
+								
+								// Debug logging
+								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+									smart_rentals_wc_log( "Calendar Order (Daily): Date $date_string is within booking period {$booking->pickup_date} to {$booking->dropoff_date}, Qty: {$booking_quantity}" );
+								}
+							}
+						} else {
+							// For hourly/mixed rentals, include turnaround time
+							$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+							$turnaround_seconds = $turnaround_hours * 3600;
+							$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
 							
-							// Debug logging
-							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								smart_rentals_wc_log( "Calendar: Date $date_string conflicts with order booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking->quantity}" );
+							// Check overlap including turnaround
+							if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
+								$booked_quantity += $booking_quantity;
+								
+								// Debug logging
+								if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+									smart_rentals_wc_log( "Calendar Order (Hourly/Mixed): Date $date_string conflicts with order booking {$booking->pickup_date} to {$booking->dropoff_date} (+ {$turnaround_hours}h turnaround), Qty: {$booking_quantity}" );
+								}
 							}
 						}
 					}

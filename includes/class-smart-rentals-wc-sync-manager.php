@@ -295,38 +295,100 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 				return;
 			}
 			
+			// Track changes for cache invalidation
+			$affected_products = [];
+			$affected_dates = [];
+			
 			// Process each item
 			foreach ( $order->get_items() as $item_id => $item ) {
 				if ( $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ) === 'yes' ) {
-					$pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
-					$dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
-					$quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: $item->get_quantity();
+					$product_id = $item->get_product_id();
+					$new_pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+					$new_dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+					$new_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: $item->get_quantity();
 					
-					// Check if booking record exists
-					$booking_id = $wpdb->get_var( $wpdb->prepare(
-						"SELECT id FROM $table_name WHERE order_id = %d AND product_id = %d",
+					// Get existing booking to track old dates
+					$existing_booking = $wpdb->get_row( $wpdb->prepare(
+						"SELECT * FROM $table_name WHERE order_id = %d AND product_id = %d",
 						$order_id,
-						$item->get_product_id()
+						$product_id
 					));
 					
-					if ( $booking_id ) {
+					if ( $existing_booking ) {
+						// Store old dates for cache invalidation
+						$old_pickup = strtotime( $existing_booking->pickup_date );
+						$old_dropoff = strtotime( $existing_booking->dropoff_date );
+						$new_pickup = strtotime( $new_pickup_date );
+						$new_dropoff = strtotime( $new_dropoff_date );
+						
+						// Track affected products
+						$affected_products[$product_id] = true;
+						
+						// Track all affected dates (old and new ranges)
+						// For daily rentals, remember dropoff date is not included
+						$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
+						
+						// Add old date range
+						$current_date = $old_pickup;
+						while ( $current_date < $old_dropoff ) { // Note: < not <= for daily rentals
+							$affected_dates[date( 'Y-m-d', $current_date )] = true;
+							$current_date += 86400;
+						}
+						
+						// Add new date range
+						$current_date = $new_pickup;
+						while ( $current_date < $new_dropoff ) { // Note: < not <= for daily rentals
+							$affected_dates[date( 'Y-m-d', $current_date )] = true;
+							$current_date += 86400;
+						}
+						
 						// Update existing booking
 						$wpdb->update(
 							$table_name,
 							[
-								'pickup_date' => $pickup_date,
-								'dropoff_date' => $dropoff_date,
-								'quantity' => $quantity,
+								'pickup_date' => $new_pickup_date,
+								'dropoff_date' => $new_dropoff_date,
+								'quantity' => $new_quantity,
 								'updated_at' => current_time( 'mysql' )
 							],
-							[ 'id' => $booking_id ],
+							[ 'id' => $existing_booking->id ],
 							[ '%s', '%s', '%d', '%s' ],
 							[ '%d' ]
 						);
+						
+						// Log the change
+						$this->log_sync_event( 'admin_booking_modified', [
+							'order_id' => $order_id,
+							'product_id' => $product_id,
+							'old_dates' => [ 'pickup' => $existing_booking->pickup_date, 'dropoff' => $existing_booking->dropoff_date ],
+							'new_dates' => [ 'pickup' => $new_pickup_date, 'dropoff' => $new_dropoff_date ],
+							'old_quantity' => $existing_booking->quantity,
+							'new_quantity' => $new_quantity
+						]);
 					} else {
 						// Create new booking record
 						$this->ensure_booking_record( $order, $item );
+						
+						// Track affected dates for new booking
+						$affected_products[$product_id] = true;
+						$current_date = strtotime( $new_pickup_date );
+						$end_date = strtotime( $new_dropoff_date );
+						while ( $current_date < $end_date ) {
+							$affected_dates[date( 'Y-m-d', $current_date )] = true;
+							$current_date += 86400;
+						}
 					}
+				}
+			}
+			
+			// Trigger cache invalidation for affected products and dates
+			if ( !empty( $affected_products ) ) {
+				foreach ( $affected_products as $product_id => $true ) {
+					// Clear any availability cache for this product
+					$this->invalidate_availability_cache( $product_id, array_keys( $affected_dates ) );
+					
+					// Trigger real-time update event
+					do_action( 'smart_rentals_availability_changed', $product_id, array_keys( $affected_dates ) );
 				}
 			}
 		}
@@ -796,6 +858,32 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 		 */
 		public function clear_expired_locks( $user_login, $user ) {
 			$this->cleanup_expired_locks();
+		}
+
+		/**
+		 * Invalidate availability cache
+		 */
+		private function invalidate_availability_cache( $product_id, $dates = [] ) {
+			// Clear transient cache for this product
+			delete_transient( 'smart_rentals_availability_' . $product_id );
+			
+			// Clear specific date caches if provided
+			if ( !empty( $dates ) ) {
+				foreach ( $dates as $date ) {
+					delete_transient( 'smart_rentals_availability_' . $product_id . '_' . $date );
+				}
+			}
+			
+			// Trigger cache clear for any external caching plugins
+			if ( function_exists( 'wp_cache_delete' ) ) {
+				wp_cache_delete( 'smart_rentals_product_' . $product_id, 'smart_rentals' );
+			}
+			
+			// Log cache invalidation
+			$this->log_sync_event( 'cache_invalidated', [
+				'product_id' => $product_id,
+				'dates' => $dates
+			]);
 		}
 
 		/**
