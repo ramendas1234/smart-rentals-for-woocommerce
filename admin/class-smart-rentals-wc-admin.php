@@ -1708,8 +1708,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
 						'start' => $booking->pickup_date,
 						'end' => $booking->dropoff_date,
-						'backgroundColor' => $this->get_booking_color( $booking->status ),
-						'borderColor' => $this->get_booking_color( $booking->status ),
+						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking->status ),
+						'borderColor' => smart_rentals_wc_get_booking_color( $booking->status ),
 						'textColor' => '#ffffff',
 						'extendedProps' => [
 							'booking_id' => $booking->id,
@@ -1787,8 +1787,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						'title' => $booking->product_name . ' (' . ($booking->quantity ?: 1) . ')',
 						'start' => $booking->pickup_date,
 						'end' => $booking->dropoff_date,
-						'backgroundColor' => $this->get_booking_color( $booking_status ),
-						'borderColor' => $this->get_booking_color( $booking_status ),
+						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking_status ),
+						'borderColor' => smart_rentals_wc_get_booking_color( $booking_status ),
 						'textColor' => '#ffffff',
 						'extendedProps' => [
 							'booking_id' => $booking->order_id,
@@ -1805,21 +1805,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			return $events;
 		}
 
-		/**
-		 * Get booking color based on status
-		 */
-		private function get_booking_color( $status ) {
-			$colors = [
-				'pending' => '#ffc107',     // Yellow
-				'confirmed' => '#28a745',   // Green
-				'active' => '#17a2b8',      // Blue
-				'processing' => '#fd7e14',  // Orange
-				'completed' => '#6f42c1',   // Purple
-				'cancelled' => '#dc3545',   // Red
-			];
-			
-			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
-		}
 
 		/**
 		 * Main Smart_Rentals_WC_Admin Instance.

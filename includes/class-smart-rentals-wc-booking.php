@@ -89,8 +89,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			}
 
 			// Enhanced datetime validation with multiple format support
-			$pickup_timestamp = $this->parse_datetime_string( $pickup_date );
-			$dropoff_timestamp = $this->parse_datetime_string( $dropoff_date );
+			$pickup_timestamp = smart_rentals_wc_parse_datetime_string( $pickup_date );
+			$dropoff_timestamp = smart_rentals_wc_parse_datetime_string( $dropoff_date );
 
 			if ( !$pickup_timestamp ) {
 				smart_rentals_wc_log( 'Invalid pickup date format: ' . $pickup_date );
@@ -639,8 +639,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				$product_id = $rental_data['product_id'];
 
 				// Final availability check with enhanced datetime parsing
-				$pickup_timestamp = $this->parse_datetime_string( $rental_data['pickup_date'] );
-				$dropoff_timestamp = $this->parse_datetime_string( $rental_data['dropoff_date'] );
+				$pickup_timestamp = smart_rentals_wc_parse_datetime_string( $rental_data['pickup_date'] );
+				$dropoff_timestamp = smart_rentals_wc_parse_datetime_string( $rental_data['dropoff_date'] );
 				
 				if ( !Smart_Rentals_WC()->options->check_availability( 
 					$product_id, 
@@ -840,43 +840,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			return isset( $weekdays[ $weekday_number ] ) ? $weekdays[ $weekday_number ] : __( 'Unknown', 'smart-rentals-wc' );
 		}
 
-		/**
-		 * Parse datetime string with multiple format support
-		 */
-		private function parse_datetime_string( $datetime_string ) {
-			if ( empty( $datetime_string ) ) {
-				return false;
-			}
-
-			// Try different datetime formats
-			$formats = [
-				'Y-m-d H:i',     // 2025-09-14 10:00
-				'Y-m-d H:i:s',   // 2025-09-14 10:00:00
-				'Y-m-d',         // 2025-09-14
-				'm/d/Y H:i',     // 09/14/2025 10:00
-				'm/d/Y',         // 09/14/2025
-				'd-m-Y H:i',     // 14-09-2025 10:00
-				'd-m-Y',         // 14-09-2025
-			];
-
-			foreach ( $formats as $format ) {
-				$timestamp = DateTime::createFromFormat( $format, $datetime_string );
-				if ( $timestamp && $timestamp->format( $format ) === $datetime_string ) {
-					smart_rentals_wc_log( 'Successfully parsed datetime in booking: ' . $datetime_string . ' with format: ' . $format );
-					return $timestamp->getTimestamp();
-				}
-			}
-
-			// Fallback to strtotime
-			$timestamp = strtotime( $datetime_string );
-			if ( $timestamp ) {
-				smart_rentals_wc_log( 'Parsed datetime in booking with strtotime: ' . $datetime_string . ' -> ' . $timestamp );
-				return $timestamp;
-			}
-
-			smart_rentals_wc_log( 'Failed to parse datetime in booking: ' . $datetime_string );
-			return false;
-		}
 
 		/**
 		 * Set rental order status after order creation

@@ -48,43 +48,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			}
 		}
 
-		/**
-		 * Parse datetime string with multiple format support
-		 */
-		private function parse_datetime_string( $datetime_string ) {
-			if ( empty( $datetime_string ) ) {
-				return false;
-			}
-
-			// Try different datetime formats
-			$formats = [
-				'Y-m-d H:i',     // 2025-09-14 10:00
-				'Y-m-d H:i:s',   // 2025-09-14 10:00:00
-				'Y-m-d',         // 2025-09-14
-				'm/d/Y H:i',     // 09/14/2025 10:00
-				'm/d/Y',         // 09/14/2025
-				'd-m-Y H:i',     // 14-09-2025 10:00
-				'd-m-Y',         // 14-09-2025
-			];
-
-			foreach ( $formats as $format ) {
-				$timestamp = DateTime::createFromFormat( $format, $datetime_string );
-				if ( $timestamp && $timestamp->format( $format ) === $datetime_string ) {
-					smart_rentals_wc_log( 'Successfully parsed datetime: ' . $datetime_string . ' with format: ' . $format );
-					return $timestamp->getTimestamp();
-				}
-			}
-
-			// Fallback to strtotime
-			$timestamp = strtotime( $datetime_string );
-			if ( $timestamp ) {
-				smart_rentals_wc_log( 'Parsed datetime with strtotime: ' . $datetime_string . ' -> ' . $timestamp );
-				return $timestamp;
-			}
-
-			smart_rentals_wc_log( 'Failed to parse datetime: ' . $datetime_string );
-			return false;
-		}
 
 		/**
 		 * Calculate rental total
@@ -122,8 +85,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 
 			// Parse datetime strings properly with enhanced handling
 			// Handle different datetime formats that might come from daterangepicker
-			$pickup_timestamp = $this->parse_datetime_string( $pickup_date );
-			$dropoff_timestamp = $this->parse_datetime_string( $dropoff_date );
+			$pickup_timestamp = smart_rentals_wc_parse_datetime_string( $pickup_date );
+			$dropoff_timestamp = smart_rentals_wc_parse_datetime_string( $dropoff_date );
 
 			// Enhanced validation with detailed logging
 			if ( !$pickup_timestamp ) {
@@ -522,8 +485,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
 						'start' => $booking->pickup_date,
 						'end' => $booking->dropoff_date,
-						'backgroundColor' => $this->get_booking_color( $booking->status ),
-						'borderColor' => $this->get_booking_color( $booking->status ),
+						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking->status ),
+						'borderColor' => smart_rentals_wc_get_booking_color( $booking->status ),
 						'textColor' => '#ffffff',
 						'extendedProps' => [
 							'booking_id' => $booking->id,
@@ -617,8 +580,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 						'title' => $booking->product_name . ' (' . ($booking->quantity ?: 1) . ')',
 						'start' => $booking->pickup_date,
 						'end' => $booking->dropoff_date,
-						'backgroundColor' => $this->get_booking_color( $booking_status ),
-						'borderColor' => $this->get_booking_color( $booking_status ),
+						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking_status ),
+						'borderColor' => smart_rentals_wc_get_booking_color( $booking_status ),
 						'textColor' => '#ffffff',
 						'extendedProps' => [
 							'booking_id' => $booking->order_id,
@@ -635,21 +598,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 			return $events;
 		}
 
-		/**
-		 * Get booking color based on status
-		 */
-		private function get_booking_color( $status ) {
-			$colors = [
-				'pending' => '#ffc107',     // Yellow
-				'confirmed' => '#28a745',   // Green
-				'active' => '#17a2b8',      // Blue
-				'processing' => '#fd7e14',  // Orange
-				'completed' => '#6f42c1',   // Purple
-				'cancelled' => '#dc3545',   // Red
-			];
-			
-			return isset( $colors[$status] ) ? $colors[$status] : '#6c757d';
-		}
 
 		/**
 		 * Check availability for order edit
