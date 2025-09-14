@@ -173,6 +173,7 @@ jQuery(document).ready(function($) {
                     order_id: smartRentalsOrderItems.order_id
                 },
                 success: function(response) {
+                    console.log('Check availability response:', response);
                     $button.prop('disabled', false);
                     $button.html('<span class="dashicons dashicons-search"></span> Check');
                     
@@ -186,10 +187,16 @@ jQuery(document).ready(function($) {
                         showFeedback($feedback, 'error', '<strong>✗ Not Available</strong><br>' + response.data.message);
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.error('Check availability AJAX error:', {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText,
+                        statusCode: xhr.status
+                    });
                     $button.prop('disabled', false);
                     $button.html('<span class="dashicons dashicons-search"></span> Check');
-                    showFeedback($feedback, 'error', smartRentalsOrderItems.strings.error);
+                    showFeedback($feedback, 'error', 'AJAX Error: ' + status + ' - ' + error);
                 }
             });
         });
@@ -235,6 +242,7 @@ jQuery(document).ready(function($) {
                     security_deposit: formData.security_deposit
                 },
                 success: function(response) {
+                    console.log('Save rental response:', response);
                     $button.prop('disabled', false);
                     $button.html('<span class="dashicons dashicons-yes"></span> Save');
                     
@@ -264,10 +272,16 @@ jQuery(document).ready(function($) {
                         showFeedback($feedback, 'error', '<strong>✗ Save Failed</strong><br>' + response.data.message);
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.error('Save rental AJAX error:', {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText,
+                        statusCode: xhr.status
+                    });
                     $button.prop('disabled', false);
                     $button.html('<span class="dashicons dashicons-yes"></span> Save');
-                    showFeedback($feedback, 'error', smartRentalsOrderItems.strings.error);
+                    showFeedback($feedback, 'error', 'AJAX Error: ' + status + ' - ' + error);
                 }
             });
         });

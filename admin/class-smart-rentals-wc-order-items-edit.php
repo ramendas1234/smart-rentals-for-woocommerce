@@ -14,8 +14,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * Constructor
          */
         public function __construct() {
-            // Debug: Always log constructor
-            echo '<!-- Smart Rentals Order Items Edit: Constructor called -->';
+            // Debug: Log constructor
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 error_log( 'Smart Rentals Order Items Edit: Constructor called' );
             }
@@ -30,8 +29,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
             // AJAX handlers
             add_action( 'wp_ajax_smart_rentals_update_order_item_rental', [ $this, 'ajax_update_order_item_rental' ] );
             add_action( 'wp_ajax_smart_rentals_check_rental_availability', [ $this, 'ajax_check_rental_availability' ] );
-            
-            echo '<!-- Smart Rentals Order Items Edit: Hooks registered -->';
         }
 
         /**
@@ -301,6 +298,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * AJAX handler for updating order item rental data
          */
         public function ajax_update_order_item_rental() {
+            // Clean any output that might interfere with JSON response
+            if ( ob_get_level() ) {
+                ob_clean();
+            }
+            
             // Verify nonce
             if ( !wp_verify_nonce( $_POST['nonce'], 'smart-rentals-order-items-edit' ) ) {
                 wp_send_json_error( [ 'message' => __( 'Security check failed', 'smart-rentals-wc' ) ] );
@@ -408,6 +410,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
          * AJAX handler for checking rental availability
          */
         public function ajax_check_rental_availability() {
+            // Clean any output that might interfere with JSON response
+            if ( ob_get_level() ) {
+                ob_clean();
+            }
+            
             // Verify nonce
             if ( !wp_verify_nonce( $_POST['nonce'], 'smart-rentals-order-items-edit' ) ) {
                 wp_send_json_error( [ 'message' => __( 'Security check failed', 'smart-rentals-wc' ) ] );
