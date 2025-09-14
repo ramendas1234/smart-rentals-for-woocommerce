@@ -35,6 +35,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 
 			// Enqueue admin scripts
 			add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_admin_scripts' ] );
+			
+			// AJAX handlers
+			add_action( 'wp_ajax_check_rental_availability', [ $this, 'ajax_check_rental_availability' ] );
 
 			// Add rental columns to product list
 			add_filter( 'manage_product_posts_columns', [ $this, 'add_product_columns' ] );
@@ -536,8 +539,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			// Enqueue scripts and styles
 			wp_enqueue_script( 'jquery' );
 			wp_enqueue_script( 'jquery-ui-datepicker' );
+			wp_enqueue_script( 'jquery-ui-timepicker-addon', 'https://cdn.jsdelivr.net/npm/jquery-ui-timepicker-addon@1.6.3/dist/jquery-ui-timepicker-addon.min.js', ['jquery', 'jquery-ui-datepicker'], '1.6.3', true );
 			wp_enqueue_style( 'wp-admin' );
 			wp_enqueue_style( 'jquery-ui-css', 'https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css' );
+			wp_enqueue_style( 'jquery-ui-timepicker-css', 'https://cdn.jsdelivr.net/npm/jquery-ui-timepicker-addon@1.6.3/dist/jquery-ui-timepicker-addon.min.css', ['jquery-ui-css'] );
 			
 			?>
 			<div class="wrap">
@@ -583,22 +588,34 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 												<label for="pickup_date_<?php echo $item_id; ?>" style="display: block; margin-bottom: 5px; font-weight: bold;">
 													<?php _e( 'Pickup Date & Time', 'smart-rentals-wc' ); ?>
 												</label>
-												<input type="datetime-local" 
+												<input type="text" 
 													   id="pickup_date_<?php echo $item_id; ?>"
 													   name="rental_data[<?php echo $item_id; ?>][pickup_date]" 
-													   value="<?php echo esc_attr( $pickup_date ? date( 'Y-m-d\TH:i', strtotime( $pickup_date ) ) : '' ); ?>" 
+													   value="<?php echo esc_attr( $pickup_date ? date( 'Y-m-d H:i', strtotime( $pickup_date ) ) : '' ); ?>" 
+													   class="datetime-picker"
+													   data-product-id="<?php echo $product_id; ?>"
+													   data-item-id="<?php echo $item_id; ?>"
+													   data-field-type="pickup"
+													   placeholder="<?php _e( 'Select pickup date and time', 'smart-rentals-wc' ); ?>"
 													   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />
+												<div id="pickup_availability_<?php echo $item_id; ?>" class="availability-message" style="margin-top: 5px; font-size: 12px;"></div>
 											</div>
 											
 											<div class="form-group">
 												<label for="dropoff_date_<?php echo $item_id; ?>" style="display: block; margin-bottom: 5px; font-weight: bold;">
 													<?php _e( 'Dropoff Date & Time', 'smart-rentals-wc' ); ?>
 												</label>
-												<input type="datetime-local" 
+												<input type="text" 
 													   id="dropoff_date_<?php echo $item_id; ?>"
 													   name="rental_data[<?php echo $item_id; ?>][dropoff_date]" 
-													   value="<?php echo esc_attr( $dropoff_date ? date( 'Y-m-d\TH:i', strtotime( $dropoff_date ) ) : '' ); ?>" 
+													   value="<?php echo esc_attr( $dropoff_date ? date( 'Y-m-d H:i', strtotime( $dropoff_date ) ) : '' ); ?>" 
+													   class="datetime-picker"
+													   data-product-id="<?php echo $product_id; ?>"
+													   data-item-id="<?php echo $item_id; ?>"
+													   data-field-type="dropoff"
+													   placeholder="<?php _e( 'Select dropoff date and time', 'smart-rentals-wc' ); ?>"
 													   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />
+												<div id="dropoff_availability_<?php echo $item_id; ?>" class="availability-message" style="margin-top: 5px; font-size: 12px;"></div>
 											</div>
 											
 											<div class="form-group">
@@ -696,10 +713,52 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				padding: 2px 6px;
 				border-radius: 3px;
 			}
+			.availability-message {
+				padding: 5px 8px;
+				border-radius: 4px;
+				font-weight: 500;
+				margin-top: 5px;
+			}
+			.availability-success {
+				background: #d4edda;
+				color: #155724;
+				border: 1px solid #c3e6cb;
+			}
+			.availability-warning {
+				background: #fff3cd;
+				color: #856404;
+				border: 1px solid #ffeaa7;
+			}
+			.availability-error {
+				background: #f8d7da;
+				color: #721c24;
+				border: 1px solid #f5c6cb;
+			}
+			.datetime-picker {
+				background: #fff;
+				cursor: pointer;
+			}
+			.datetime-picker:focus {
+				border-color: #0073aa;
+				box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
+			}
 			</style>
 			
 			<script>
 			jQuery(document).ready(function($) {
+				// Initialize date-time pickers
+				$('.datetime-picker').datetimepicker({
+					dateFormat: 'yy-mm-dd',
+					timeFormat: 'HH:mm',
+					showButtonPanel: true,
+					changeMonth: true,
+					changeYear: true,
+					yearRange: 'c-1:c+2',
+					onSelect: function(dateText, inst) {
+						checkAvailability($(this));
+					}
+				});
+				
 				// Update calculated total when quantity changes
 				$('input[name*="[quantity]"]').on('input change', function() {
 					var itemId = $(this).attr('name').match(/\[(\d+)\]/)[1];
@@ -718,6 +777,68 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					} else {
 						$('#calculated_total_' + itemId).css('background', '#e7f3ff').css('color', '#0073aa');
 					}
+					
+					// Check availability when quantity changes
+					checkAvailability($(this));
+				});
+				
+				// Check availability function
+				function checkAvailability(element) {
+					var itemId = element.attr('name').match(/\[(\d+)\]/)[1];
+					var productId = element.data('product-id') || $('input[name*="[pickup_date]"]').filter('[data-item-id="' + itemId + '"]').data('product-id');
+					var pickupDate = $('#pickup_date_' + itemId).val();
+					var dropoffDate = $('#dropoff_date_' + itemId).val();
+					var quantity = parseInt($('#quantity_' + itemId).val()) || 1;
+					var fieldType = element.data('field-type') || 'pickup';
+					var orderId = <?php echo $order_id; ?>;
+					
+					// Only check if both dates are selected
+					if (!pickupDate || !dropoffDate) {
+						$('#pickup_availability_' + itemId).html('').removeClass('availability-success availability-warning availability-error');
+						$('#dropoff_availability_' + itemId).html('').removeClass('availability-success availability-warning availability-error');
+						return;
+					}
+					
+					// Show loading
+					$('#pickup_availability_' + itemId).html('<span style="color: #666;">Checking availability...</span>').removeClass('availability-success availability-warning availability-error');
+					$('#dropoff_availability_' + itemId).html('<span style="color: #666;">Checking availability...</span>').removeClass('availability-success availability-warning availability-error');
+					
+					// AJAX call to check availability
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'check_rental_availability',
+							nonce: '<?php echo wp_create_nonce( 'check_rental_availability' ); ?>',
+							product_id: productId,
+							pickup_date: pickupDate,
+							dropoff_date: dropoffDate,
+							quantity: quantity,
+							exclude_order_id: orderId
+						},
+						success: function(response) {
+							if (response.success) {
+								var data = response.data;
+								var messageClass = 'availability-' + data.type;
+								var icon = data.type === 'success' ? '✓' : (data.type === 'warning' ? '⚠' : '✗');
+								
+								$('#pickup_availability_' + itemId).html(icon + ' ' + data.message).removeClass('availability-success availability-warning availability-error').addClass(messageClass);
+								$('#dropoff_availability_' + itemId).html(icon + ' ' + data.message).removeClass('availability-success availability-warning availability-error').addClass(messageClass);
+							} else {
+								$('#pickup_availability_' + itemId).html('✗ Error checking availability').removeClass('availability-success availability-warning availability-error').addClass('availability-error');
+								$('#dropoff_availability_' + itemId).html('✗ Error checking availability').removeClass('availability-success availability-warning availability-error').addClass('availability-error');
+							}
+						},
+						error: function() {
+							$('#pickup_availability_' + itemId).html('✗ Error checking availability').removeClass('availability-success availability-warning availability-error').addClass('availability-error');
+							$('#dropoff_availability_' + itemId).html('✗ Error checking availability').removeClass('availability-success availability-warning availability-error').addClass('availability-error');
+						}
+					});
+				}
+				
+				// Check availability when date fields change
+				$('.datetime-picker').on('change', function() {
+					checkAvailability($(this));
 				});
 				
 				// Initialize calculated totals on page load
@@ -866,6 +987,107 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				add_action( 'admin_notices', function() use ( $message ) {
 					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
 				});
+			}
+		}
+
+		/**
+		 * AJAX handler for checking rental availability
+		 */
+		public function ajax_check_rental_availability() {
+			// Verify nonce
+			if ( !wp_verify_nonce( $_POST['nonce'], 'check_rental_availability' ) ) {
+				wp_send_json_error( [ 'message' => __( 'Security check failed', 'smart-rentals-wc' ) ] );
+			}
+			
+			$product_id = intval( $_POST['product_id'] );
+			$pickup_date = sanitize_text_field( $_POST['pickup_date'] );
+			$dropoff_date = sanitize_text_field( $_POST['dropoff_date'] );
+			$quantity = intval( $_POST['quantity'] );
+			$exclude_order_id = intval( $_POST['exclude_order_id'] ?? 0 );
+			
+			if ( !$product_id || !$pickup_date || !$dropoff_date ) {
+				wp_send_json_error( [ 'message' => __( 'Missing required data', 'smart-rentals-wc' ) ] );
+			}
+			
+			// Check availability using the booking system
+			$availability = $this->check_product_availability( $product_id, $pickup_date, $dropoff_date, $quantity, $exclude_order_id );
+			
+			wp_send_json_success( $availability );
+		}
+		
+		/**
+		 * Check product availability for given dates
+		 */
+		private function check_product_availability( $product_id, $pickup_date, $dropoff_date, $quantity, $exclude_order_id = 0 ) {
+			global $wpdb;
+			
+			// Get product stock quantity
+			$product = wc_get_product( $product_id );
+			$total_stock = $product ? $product->get_stock_quantity() : 0;
+			
+			if ( $total_stock <= 0 ) {
+				return [
+					'available' => false,
+					'message' => __( 'Product is out of stock', 'smart-rentals-wc' ),
+					'type' => 'error'
+				];
+			}
+			
+			// Convert dates to proper format
+			$pickup_timestamp = strtotime( $pickup_date );
+			$dropoff_timestamp = strtotime( $dropoff_date );
+			
+			if ( $pickup_timestamp >= $dropoff_timestamp ) {
+				return [
+					'available' => false,
+					'message' => __( 'Dropoff date must be after pickup date', 'smart-rentals-wc' ),
+					'type' => 'error'
+				];
+			}
+			
+			// Check for overlapping bookings
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			
+			$query = $wpdb->prepare( "
+				SELECT SUM(rental_quantity) as booked_quantity
+				FROM {$table_name}
+				WHERE product_id = %d
+				AND order_id != %d
+				AND (
+					(pickup_date <= %s AND dropoff_date > %s) OR
+					(pickup_date < %s AND dropoff_date >= %s) OR
+					(pickup_date >= %s AND dropoff_date <= %s)
+				)
+			", $product_id, $exclude_order_id, $pickup_date, $pickup_date, $dropoff_date, $dropoff_date, $pickup_date, $dropoff_date );
+			
+			$booked_quantity = $wpdb->get_var( $query ) ?: 0;
+			$available_quantity = $total_stock - $booked_quantity;
+			
+			if ( $available_quantity >= $quantity ) {
+				return [
+					'available' => true,
+					'message' => sprintf( 
+						__( 'Available: %d units free on selected dates', 'smart-rentals-wc' ), 
+						$available_quantity 
+					),
+					'type' => 'success',
+					'available_quantity' => $available_quantity,
+					'booked_quantity' => $booked_quantity,
+					'total_stock' => $total_stock
+				];
+			} else {
+				return [
+					'available' => false,
+					'message' => sprintf( 
+						__( 'WARNING: Only %d units available on selected dates (%d already booked)', 'smart-rentals-wc' ), 
+						$available_quantity,
+						$booked_quantity
+					),
+					'type' => 'warning',
+					'available_quantity' => $available_quantity,
+					'booked_quantity' => $booked_quantity,
+					'total_stock' => $total_stock
+				];
 			}
 		}
 
