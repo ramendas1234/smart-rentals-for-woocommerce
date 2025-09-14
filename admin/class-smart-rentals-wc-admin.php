@@ -951,6 +951,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				
 				$item->save();
 				$modified_items[] = $item->get_name();
+				
+				// Update the custom bookings table for frontend synchronization
+				$this->update_custom_booking_table( $order->get_id(), $item_id, strtotime( $pickup_date ), strtotime( $dropoff_date ), $quantity );
 			}
 			
 			if ( !empty( $modified_items ) ) {
@@ -1022,22 +1025,37 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		}
 		
 		/**
-		 * Check product availability for given dates using proper rental logic
+		 * Check product availability for given dates using proper rental logic with order exclusion
 		 */
 		private function check_product_availability( $product_id, $pickup_date, $dropoff_date, $quantity, $exclude_order_id = 0 ) {
-			// Use the proper rental availability checking logic
-			$is_available = Smart_Rentals_WC()->options->check_availability( $product_id, $pickup_date, $dropoff_date, $quantity );
-			$available_quantity = Smart_Rentals_WC()->options->get_available_quantity( $product_id, $pickup_date, $dropoff_date );
+			// Convert dates to timestamps
+			$pickup_timestamp = strtotime( $pickup_date );
+			$dropoff_timestamp = strtotime( $dropoff_date );
+			
+			if ( !$pickup_timestamp || !$dropoff_timestamp || $pickup_timestamp >= $dropoff_timestamp ) {
+				return [
+					'available' => false,
+					'message' => __( 'Invalid date range', 'smart-rentals-wc' ),
+					'type' => 'error',
+					'available_quantity' => 0,
+					'booked_quantity' => 0,
+					'total_stock' => 0
+				];
+			}
+			
+			// Use the proper availability checking with order exclusion
+			$is_available = $this->check_availability_excluding_order( $product_id, $pickup_timestamp, $dropoff_timestamp, $quantity, $exclude_order_id );
+			$available_quantity = $this->get_available_quantity_excluding_order( $product_id, $pickup_timestamp, $dropoff_timestamp, $exclude_order_id );
 			
 			// Get rental stock for display
 			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
 			$booked_quantity = $rental_stock - $available_quantity;
 			
 			// Debug logging
-			error_log( "Smart Rentals Rental Availability - Product: $product_id, Rental Stock: $rental_stock, Available: $available_quantity, Booked: $booked_quantity, Required: $quantity" );
+			error_log( "Smart Rentals Rental Availability (Excluding Order $exclude_order_id) - Product: $product_id, Rental Stock: $rental_stock, Available: $available_quantity, Booked: $booked_quantity, Required: $quantity" );
 			
 			if ( $is_available ) {
-				error_log( "Smart Rentals: Rental availability check passed" );
+				error_log( "Smart Rentals: Rental availability check passed (excluding order $exclude_order_id)" );
 				return [
 					'available' => true,
 					'message' => sprintf( 
@@ -1062,7 +1080,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						'total_stock' => 0
 					];
 				} else {
-					error_log( "Smart Rentals: Rental availability check failed - Available: $available_quantity < Required: $quantity" );
+					error_log( "Smart Rentals: Rental availability check failed (excluding order $exclude_order_id) - Available: $available_quantity < Required: $quantity" );
 					return [
 						'available' => false,
 						'message' => sprintf( 
@@ -1075,6 +1093,196 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 						'booked_quantity' => $booked_quantity,
 						'total_stock' => $rental_stock
 					];
+				}
+			}
+		}
+		
+		/**
+		 * Check availability excluding specific order (for admin modifications)
+		 */
+		private function check_availability_excluding_order( $product_id, $pickup_timestamp, $dropoff_timestamp, $quantity, $exclude_order_id ) {
+			global $wpdb;
+			
+			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
+			if ( !$rental_stock || $rental_stock < 1 ) {
+				return false;
+			}
+			
+			// Check disabled weekdays
+			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
+			if ( is_array( $disabled_weekdays ) && !empty( $disabled_weekdays ) ) {
+				$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
+				
+				// For daily rentals, exclude return date from validation
+				$validation_end_timestamp = $dropoff_timestamp;
+				if ( $rental_type === 'day' ) {
+					$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+				}
+				
+				// Check if pickup date falls on disabled weekday
+				$pickup_weekday = date( 'w', $pickup_timestamp );
+				if ( in_array( intval( $pickup_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+					return false;
+				}
+				
+				// For hourly/mixed rentals, also check dropoff date
+				if ( $rental_type !== 'day' ) {
+					$dropoff_weekday = date( 'w', $dropoff_timestamp );
+					if ( in_array( intval( $dropoff_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+						return false;
+					}
+				}
+				
+				// Check usage period only (excluding return date for daily rentals)
+				if ( $pickup_timestamp !== $validation_end_timestamp ) {
+					$current_date = $pickup_timestamp;
+					while ( $current_date <= $validation_end_timestamp ) {
+						$current_weekday = date( 'w', $current_date );
+						if ( in_array( intval( $current_weekday ), array_map( 'intval', $disabled_weekdays ) ) ) {
+							return false;
+						}
+						$current_date += 86400; // Add one day
+					}
+				}
+			}
+			
+			// Get booked dates excluding the specified order
+			$booked_dates = $this->get_booked_dates_excluding_order( $product_id, $exclude_order_id );
+			
+			$booked_quantity = 0;
+			$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
+			
+			// For daily rentals (hotel logic), exclude return date from overlap checking
+			$validation_end_timestamp = $dropoff_timestamp;
+			if ( $rental_type === 'day' ) {
+				$validation_end_timestamp = $dropoff_timestamp - 86400; // Exclude return day
+			}
+			
+			foreach ( $booked_dates as $booking ) {
+				$booking_pickup = strtotime( $booking->pickup_date );
+				$booking_dropoff = strtotime( $booking->dropoff_date );
+				
+				// For daily rentals, exclude return dates from both bookings
+				$booking_validation_end = $booking_dropoff;
+				if ( $rental_type === 'day' ) {
+					$booking_validation_end = $booking_dropoff - 86400; // Exclude return day from existing booking
+				}
+				
+				// Enhanced overlap logic: Only check usage periods, not return dates
+				if ( $pickup_timestamp <= $booking_validation_end && $validation_end_timestamp >= $booking_pickup ) {
+					$booked_quantity += intval( $booking->quantity );
+				}
+			}
+			
+			$available_quantity = $rental_stock - $booked_quantity;
+			return $available_quantity >= $quantity;
+		}
+		
+		/**
+		 * Get available quantity excluding specific order
+		 */
+		private function get_available_quantity_excluding_order( $product_id, $pickup_timestamp, $dropoff_timestamp, $exclude_order_id ) {
+			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
+			if ( !$rental_stock || $rental_stock < 1 ) {
+				return 0;
+			}
+			
+			$booked_dates = $this->get_booked_dates_excluding_order( $product_id, $exclude_order_id );
+			$booked_quantity = 0;
+			
+			foreach ( $booked_dates as $booking ) {
+				$booking_pickup = strtotime( $booking->pickup_date );
+				$booking_dropoff = strtotime( $booking->dropoff_date );
+				
+				// Check if dates overlap
+				if ( $pickup_timestamp < $booking_dropoff && $dropoff_timestamp > $booking_pickup ) {
+					$booked_quantity += intval( $booking->quantity );
+				}
+			}
+			
+			return max( 0, $rental_stock - $booked_quantity );
+		}
+		
+		/**
+		 * Get booked dates excluding specific order
+		 */
+		private function get_booked_dates_excluding_order( $product_id, $exclude_order_id ) {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return [];
+			}
+			
+			return $wpdb->get_results( $wpdb->prepare( "
+				SELECT pickup_date, dropoff_date, quantity
+				FROM $table_name
+				WHERE product_id = %d
+				AND order_id != %d
+				AND status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
+			", $product_id, $exclude_order_id ) );
+		}
+
+		/**
+		 * Update custom booking table for frontend synchronization
+		 */
+		private function update_custom_booking_table( $order_id, $item_id, $pickup_timestamp, $dropoff_timestamp, $quantity ) {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return;
+			}
+			
+			// Check if booking record exists
+			$existing_booking = $wpdb->get_row( $wpdb->prepare( "
+				SELECT id FROM $table_name 
+				WHERE order_id = %d AND product_id = (
+					SELECT meta_value FROM {$wpdb->postmeta} 
+					WHERE post_id = %d AND meta_key = '_product_id'
+				)
+			", $order_id, $item_id ) );
+			
+			if ( $existing_booking ) {
+				// Update existing booking record
+				$wpdb->update(
+					$table_name,
+					[
+						'pickup_date' => date( 'Y-m-d H:i:s', $pickup_timestamp ),
+						'dropoff_date' => date( 'Y-m-d H:i:s', $dropoff_timestamp ),
+						'quantity' => $quantity,
+						'updated_at' => current_time( 'mysql' )
+					],
+					[ 'id' => $existing_booking->id ],
+					[ '%s', '%s', '%d', '%s' ],
+					[ '%d' ]
+				);
+				
+				error_log( "Smart Rentals: Updated booking record ID {$existing_booking->id} for order $order_id" );
+			} else {
+				// Get product ID from order item
+				$order = wc_get_order( $order_id );
+				$item = $order->get_item( $item_id );
+				$product_id = $item ? $item->get_product_id() : 0;
+				
+				if ( $product_id ) {
+					// Create new booking record
+					$wpdb->insert(
+						$table_name,
+						[
+							'order_id' => $order_id,
+							'product_id' => $product_id,
+							'pickup_date' => date( 'Y-m-d H:i:s', $pickup_timestamp ),
+							'dropoff_date' => date( 'Y-m-d H:i:s', $dropoff_timestamp ),
+							'quantity' => $quantity,
+							'status' => 'confirmed',
+							'created_at' => current_time( 'mysql' ),
+							'updated_at' => current_time( 'mysql' )
+						],
+						[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
+					);
+					
+					error_log( "Smart Rentals: Created new booking record for order $order_id, product $product_id" );
 				}
 			}
 		}
