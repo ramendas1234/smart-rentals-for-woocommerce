@@ -158,6 +158,10 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-cron.php';
 			new Smart_Rentals_WC_Cron();
 
+			// Sync Manager for tight frontend-backend coupling
+			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-sync-manager.php';
+			new Smart_Rentals_WC_Sync_Manager();
+
 			// Templates
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'smart-rentals-wc-template-functions.php' );
 			require_once( SMART_RENTALS_WC_PLUGIN_INC . 'smart-rentals-wc-template-hooks.php' );

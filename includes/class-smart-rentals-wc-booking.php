@@ -522,11 +522,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			// Check if table exists
 			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				smart_rentals_wc_log( 'Bookings table does not exist, cannot save booking' );
 				return;
 			}
 
-			$pickup_timestamp = strtotime( $rental_data['pickup_date'] );
-			$dropoff_timestamp = strtotime( $rental_data['dropoff_date'] );
+			// Parse dates with enhanced handling
+			$pickup_timestamp = smart_rentals_wc_parse_datetime_string( $rental_data['pickup_date'] );
+			$dropoff_timestamp = smart_rentals_wc_parse_datetime_string( $rental_data['dropoff_date'] );
+
+			if ( !$pickup_timestamp || !$dropoff_timestamp ) {
+				smart_rentals_wc_log( 'Invalid dates when saving booking - Pickup: ' . $rental_data['pickup_date'] . ', Dropoff: ' . $rental_data['dropoff_date'] );
+				return;
+			}
 
 			$total_price = Smart_Rentals_WC()->options->calculate_rental_price(
 				$rental_data['product_id'],
@@ -537,33 +544,71 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 
 			$security_deposit = smart_rentals_wc_get_security_deposit( $rental_data['product_id'] );
 
-			$wpdb->insert(
-				$table_name,
-				[
-					'order_id' => $order->get_id(),
-					'product_id' => $rental_data['product_id'],
-					'pickup_date' => gmdate( 'Y-m-d H:i:s', $pickup_timestamp ),
-					'dropoff_date' => gmdate( 'Y-m-d H:i:s', $dropoff_timestamp ),
-					'pickup_location' => $rental_data['pickup_location'] ?? '',
-					'dropoff_location' => $rental_data['dropoff_location'] ?? '',
-					'quantity' => $rental_data['rental_quantity'],
-					'status' => 'pending',
-					'total_price' => $total_price,
-					'security_deposit' => $security_deposit,
-				],
-				[
-					'%d', // order_id
-					'%d', // product_id
-					'%s', // pickup_date
-					'%s', // dropoff_date
-					'%s', // pickup_location
-					'%s', // dropoff_location
-					'%d', // quantity
-					'%s', // status
-					'%f', // total_price
-					'%f', // security_deposit
-				]
-			);
+			// Check if booking already exists (prevent duplicates)
+			$existing = $wpdb->get_var( $wpdb->prepare(
+				"SELECT id FROM $table_name WHERE order_id = %d AND product_id = %d",
+				$order->get_id(),
+				$rental_data['product_id']
+			));
+
+			if ( $existing ) {
+				// Update existing booking
+				$wpdb->update(
+					$table_name,
+					[
+						'pickup_date' => gmdate( 'Y-m-d H:i:s', $pickup_timestamp ),
+						'dropoff_date' => gmdate( 'Y-m-d H:i:s', $dropoff_timestamp ),
+						'quantity' => $rental_data['rental_quantity'],
+						'total_price' => $total_price,
+						'security_deposit' => $security_deposit,
+						'updated_at' => current_time( 'mysql' )
+					],
+					[ 'id' => $existing ],
+					[ '%s', '%s', '%d', '%f', '%f', '%s' ],
+					[ '%d' ]
+				);
+				
+				smart_rentals_wc_log( 'Updated existing booking ID: ' . $existing . ' for order: ' . $order->get_id() );
+			} else {
+				// Insert new booking
+				$result = $wpdb->insert(
+					$table_name,
+					[
+						'order_id' => $order->get_id(),
+						'product_id' => $rental_data['product_id'],
+						'pickup_date' => gmdate( 'Y-m-d H:i:s', $pickup_timestamp ),
+						'dropoff_date' => gmdate( 'Y-m-d H:i:s', $dropoff_timestamp ),
+						'pickup_location' => $rental_data['pickup_location'] ?? '',
+						'dropoff_location' => $rental_data['dropoff_location'] ?? '',
+						'quantity' => $rental_data['rental_quantity'],
+						'status' => 'pending',
+						'total_price' => $total_price,
+						'security_deposit' => $security_deposit,
+						'created_at' => current_time( 'mysql' ),
+						'updated_at' => current_time( 'mysql' )
+					],
+					[
+						'%d', // order_id
+						'%d', // product_id
+						'%s', // pickup_date
+						'%s', // dropoff_date
+						'%s', // pickup_location
+						'%s', // dropoff_location
+						'%d', // quantity
+						'%s', // status
+						'%f', // total_price
+						'%f', // security_deposit
+						'%s', // created_at
+						'%s', // updated_at
+					]
+				);
+
+				if ( $result ) {
+					smart_rentals_wc_log( 'Created new booking ID: ' . $wpdb->insert_id . ' for order: ' . $order->get_id() );
+				} else {
+					smart_rentals_wc_log( 'Failed to create booking for order: ' . $order->get_id() . ' - Error: ' . $wpdb->last_error );
+				}
+			}
 		}
 
 		/**

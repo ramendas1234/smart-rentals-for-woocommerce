@@ -71,6 +71,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Assets' ) ) {
 				'security' => wp_create_nonce( 'smart-rentals-security-ajax' ),
 			]);
 
+			// Enqueue sync manager script
+			wp_enqueue_script(
+				'smart-rentals-wc-sync',
+				SMART_RENTALS_WC_PLUGIN_URI . 'assets/js/smart-rentals-sync.js',
+				[ 'jquery', 'smart-rentals-wc-frontend' ],
+				Smart_Rentals_WC()->get_version(),
+				true
+			);
+
 			// Date picker options
 			wp_localize_script( 'smart-rentals-wc-frontend', 'datePickerOptions', [
 				'format' => Smart_Rentals_WC()->options->get_date_format(),
