@@ -173,7 +173,8 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 
 			// Elementor
 			if ( defined( 'ELEMENTOR_VERSION' ) ) {
-				require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-elementor.php' );
+				// Elementor integration will be added in future version
+				// require_once( SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-elementor.php' );
 			}
 		}
 

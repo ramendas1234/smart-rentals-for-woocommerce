@@ -27,7 +27,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Install' ) ) {
 
 			// Set installed flag
 			update_option( 'smart_rentals_wc_installed', true );
-			update_option( 'smart_rentals_wc_version', Smart_Rentals_WC()->get_version() );
+			
+			// Get version from plugin file
+			$plugin_data = get_plugin_data( SMART_RENTALS_WC_PLUGIN_FILE, false, false );
+			$version = isset( $plugin_data['Version'] ) ? $plugin_data['Version'] : '1.0.0';
+			update_option( 'smart_rentals_wc_version', $version );
 		}
 
 		/**
