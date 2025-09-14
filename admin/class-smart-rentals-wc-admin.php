@@ -1009,8 +1009,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				wp_send_json_error( [ 'message' => __( 'Missing required data', 'smart-rentals-wc' ) ] );
 			}
 			
+			// Debug logging
+			error_log( "Smart Rentals Availability Check - Product ID: $product_id, Pickup: $pickup_date, Dropoff: $dropoff_date, Quantity: $quantity, Exclude Order: $exclude_order_id" );
+			
 			// Check availability using the booking system
 			$availability = $this->check_product_availability( $product_id, $pickup_date, $dropoff_date, $quantity, $exclude_order_id );
+			
+			// Debug logging
+			error_log( "Smart Rentals Availability Result: " . print_r( $availability, true ) );
 			
 			wp_send_json_success( $availability );
 		}
@@ -1023,15 +1029,56 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			
 			// Get product stock quantity
 			$product = wc_get_product( $product_id );
-			$total_stock = $product ? $product->get_stock_quantity() : 0;
 			
-			if ( $total_stock <= 0 ) {
+			// For rental products, check if stock management is enabled
+			if ( !$product ) {
+				return [
+					'available' => false,
+					'message' => __( 'Product not found', 'smart-rentals-wc' ),
+					'type' => 'error'
+				];
+			}
+			
+			// Check if stock management is enabled
+			$manage_stock = $product->get_manage_stock();
+			$stock_status = $product->get_stock_status();
+			$stock_quantity = $product->get_stock_quantity();
+			
+			// Debug logging
+			error_log( "Smart Rentals Stock Check - Manage Stock: " . ( $manage_stock ? 'Yes' : 'No' ) . ", Stock Status: $stock_status, Stock Quantity: " . ( $stock_quantity === null ? 'NULL' : $stock_quantity ) );
+			
+			// If stock management is disabled, assume unlimited stock
+			if ( !$manage_stock ) {
+				$total_stock = 999; // Assume unlimited stock for rental products
+				error_log( "Smart Rentals: Stock management disabled, using unlimited stock (999)" );
+			} else {
+				$total_stock = $stock_quantity;
+				
+				// If stock quantity is null or false, check stock status
+				if ( $total_stock === null || $total_stock === false ) {
+					if ( $stock_status === 'instock' ) {
+						$total_stock = 999; // Assume unlimited if in stock
+						error_log( "Smart Rentals: Stock quantity null but in stock, using unlimited (999)" );
+					} else {
+						$total_stock = 0;
+						error_log( "Smart Rentals: Stock quantity null and not in stock, using 0" );
+					}
+				} else {
+					error_log( "Smart Rentals: Using actual stock quantity: $total_stock" );
+				}
+			}
+			
+			// If still no stock and not in stock, return error
+			if ( $total_stock <= 0 && $stock_status !== 'instock' ) {
+				error_log( "Smart Rentals: Product out of stock - Total Stock: $total_stock, Stock Status: $stock_status" );
 				return [
 					'available' => false,
 					'message' => __( 'Product is out of stock', 'smart-rentals-wc' ),
 					'type' => 'error'
 				];
 			}
+			
+			error_log( "Smart Rentals: Product stock check passed - Total Stock: $total_stock" );
 			
 			// Convert dates to proper format
 			$pickup_timestamp = strtotime( $pickup_date );
@@ -1063,7 +1110,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			$booked_quantity = $wpdb->get_var( $query ) ?: 0;
 			$available_quantity = $total_stock - $booked_quantity;
 			
+			// Debug logging
+			error_log( "Smart Rentals Availability Calculation - Total Stock: $total_stock, Booked: $booked_quantity, Available: $available_quantity, Required: $quantity" );
+			
 			if ( $available_quantity >= $quantity ) {
+				error_log( "Smart Rentals: Availability check passed - Available: $available_quantity >= Required: $quantity" );
 				return [
 					'available' => true,
 					'message' => sprintf( 
@@ -1076,6 +1127,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'total_stock' => $total_stock
 				];
 			} else {
+				error_log( "Smart Rentals: Availability check failed - Available: $available_quantity < Required: $quantity" );
 				return [
 					'available' => false,
 					'message' => sprintf( 
