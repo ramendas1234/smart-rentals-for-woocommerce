@@ -619,6 +619,34 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 								<p class="description"><?php _e( 'Time needed to prepare rental items after return (cleaning, maintenance, inspection). Items become available again after this time. Individual products can override this setting.', 'smart-rentals-wc' ); ?></p>
 							</td>
 						</tr>
+						<tr>
+							<th scope="row">
+								<label for="notify_customer_on_modification"><?php _e( 'Customer Notifications', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="checkbox" 
+									   id="notify_customer_on_modification" 
+									   name="notify_customer_on_modification" 
+									   value="yes" 
+									   <?php checked( smart_rentals_wc_get_meta_data( 'notify_customer_on_modification', $settings, 'yes' ), 'yes' ); ?> />
+								<label for="notify_customer_on_modification"><?php _e( 'Send email notifications to customers when rental details are modified', 'smart-rentals-wc' ); ?></label>
+								<p class="description"><?php _e( 'When enabled, customers will receive email notifications when admin modifies pickup/dropoff dates, quantities, or other rental details.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="enable_order_modification_log"><?php _e( 'Order Modification Log', 'smart-rentals-wc' ); ?></label>
+							</th>
+							<td>
+								<input type="checkbox" 
+									   id="enable_order_modification_log" 
+									   name="enable_order_modification_log" 
+									   value="yes" 
+									   <?php checked( smart_rentals_wc_get_meta_data( 'enable_order_modification_log', $settings, 'yes' ), 'yes' ); ?> />
+								<label for="enable_order_modification_log"><?php _e( 'Enable detailed logging of order modifications', 'smart-rentals-wc' ); ?></label>
+								<p class="description"><?php _e( 'When enabled, all order modifications will be logged with timestamps, user information, and change details for audit purposes.', 'smart-rentals-wc' ); ?></p>
+							</td>
+						</tr>
 					</table>
 					<?php submit_button(); ?>
 				</form>
@@ -640,6 +668,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'global_security_deposit' => floatval( $_POST['global_security_deposit'] ?? 0 ),
 				'rental_order_status' => sanitize_text_field( $_POST['rental_order_status'] ?? '' ),
 				'default_turnaround_time' => floatval( $_POST['default_turnaround_time'] ?? 2 ),
+				'notify_customer_on_modification' => isset( $_POST['notify_customer_on_modification'] ) ? 'yes' : 'no',
+				'enable_order_modification_log' => isset( $_POST['enable_order_modification_log'] ) ? 'yes' : 'no',
 			];
 
 			smart_rentals_wc_update_option( 'settings', $settings );
@@ -1772,6 +1802,90 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			return $events;
 		}
 
+
+		/**
+		 * Get order modification history
+		 */
+		public function get_order_modification_history( $order_id ) {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_order_modifications';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return [];
+			}
+			
+			$modifications = $wpdb->get_results( $wpdb->prepare(
+				"SELECT * FROM $table_name WHERE order_id = %d ORDER BY modified_at DESC",
+				$order_id
+			) );
+			
+			foreach ( $modifications as &$modification ) {
+				$modification->changes = json_decode( $modification->changes, true );
+				$modification->modified_by_user = get_userdata( $modification->modified_by );
+			}
+			
+			return $modifications;
+		}
+		
+		/**
+		 * Display order modification history in order edit screen
+		 */
+		public function display_order_modification_history( $order ) {
+			$modifications = $this->get_order_modification_history( $order->get_id() );
+			
+			if ( empty( $modifications ) ) {
+				return;
+			}
+			
+			?>
+			<div class="smart-rentals-modification-history" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
+				<h4 style="margin: 0 0 15px 0; color: #333;">
+					<span class="dashicons dashicons-history" style="vertical-align: middle; margin-right: 5px;"></span>
+					<?php _e( 'Order Modification History', 'smart-rentals-wc' ); ?>
+				</h4>
+				
+				<div class="modification-list" style="max-height: 300px; overflow-y: auto;">
+					<?php foreach ( $modifications as $modification ) : ?>
+						<div class="modification-item" style="margin-bottom: 15px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+							<div class="modification-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+								<span style="font-weight: bold; color: #333;">
+									<?php printf( __( 'Modified by %s', 'smart-rentals-wc' ), 
+										$modification->modified_by_user ? $modification->modified_by_user->display_name : __( 'Unknown User', 'smart-rentals-wc' )
+									); ?>
+								</span>
+								<span style="font-size: 12px; color: #666;">
+									<?php echo date( 'M j, Y g:i A', strtotime( $modification->modified_at ) ); ?>
+								</span>
+							</div>
+							
+							<?php if ( !empty( $modification->changes ) ) : ?>
+								<div class="modification-changes">
+									<?php foreach ( $modification->changes as $item ) : ?>
+										<div style="margin-bottom: 8px;">
+											<strong><?php echo esc_html( $item['item_name'] ); ?></strong>
+											<ul style="margin: 5px 0 0 20px; padding: 0;">
+												<?php foreach ( $item['changes'] as $change ) : ?>
+													<li style="margin-bottom: 3px;"><?php echo esc_html( $change ); ?></li>
+												<?php endforeach; ?>
+											</ul>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
+							
+							<?php if ( $modification->total_change != 0 ) : ?>
+								<div style="margin-top: 10px; padding: 8px; background: #e9ecef; border-radius: 3px; font-weight: bold;">
+									<?php printf( __( 'Total Change: %s', 'smart-rentals-wc' ), 
+										$modification->total_change >= 0 ? '+' . smart_rentals_wc_price( $modification->total_change ) : smart_rentals_wc_price( $modification->total_change )
+									); ?>
+								</div>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+			<?php
+		}
 
 		/**
 		 * Main Smart_Rentals_WC_Admin Instance.
