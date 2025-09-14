@@ -445,6 +445,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 smart_rentals_wc_log( 'admin_order_item_headers called for order #' . $order->get_id() );
             }
+            
+            // Add debug comment to HTML
+            echo '<!-- Smart Rentals: admin_order_item_headers called for order #' . $order->get_id() . ' -->';
 
             // Check if order has rental items (support both old and new orders)
             $has_rental_items = false;
@@ -481,6 +484,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
                 smart_rentals_wc_log( 'admin_order_item_values called for item #' . $item_id );
             }
+            
+            // Add debug comment to HTML
+            echo '<!-- Smart Rentals: admin_order_item_values called for item #' . $item_id . ' -->';
 
             // Check if this is a rental item (support both old and new orders)
             $is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
@@ -1338,170 +1344,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit' ) ) {
                 SMART_RENTALS_WC_VERSION 
             );
 
-            // Add inline script for comprehensive functionality
-            wp_add_inline_script( 'smart-rentals-order-edit', '
-                jQuery(document).ready(function($) {
-                    console.log("Smart Rentals: Document ready, setting up event handlers");
-                    
-                    // Use event delegation for dynamic content
-                    $(document).off("click.smartRentals").on("click.smartRentals", ".rental-edit-toggle", function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log("Smart Rentals: Edit button clicked");
-                        
-                        var $button = $(this);
-                        var itemId = $button.data("item-id");
-                        var $container = $button.closest(".rental-edit-container");
-                        var $fields = $container.find(".rental-edit-fields");
-                        var $display = $container.find(".rental-display-info");
-                        
-                        console.log("Container:", $container.length, "Fields:", $fields.length, "Display:", $display.length);
-                        
-                        if ($fields.is(":visible")) {
-                            // Switch to display mode
-                            $fields.slideUp(200);
-                            $display.slideDown(200);
-                            $button.text("' . __( 'Edit Rental Details', 'smart-rentals-wc' ) . '");
-                            console.log("Switched to display mode");
-                        } else {
-                            // Switch to edit mode
-                            $display.slideUp(200);
-                            $fields.slideDown(200);
-                            $button.text("' . __( 'Cancel Edit', 'smart-rentals-wc' ) . '");
-                            console.log("Switched to edit mode");
-                        }
-                    });
-                    
-                    // Check availability button
-                    $(document).off("click.smartRentalsCheck").on("click.smartRentalsCheck", ".rental-check-availability", function(e) {
-                        e.preventDefault();
-                        console.log("Check availability clicked");
-                        
-                        var $button = $(this);
-                        var itemId = $button.data("item-id");
-                        var productId = $button.data("product-id");
-                        var $container = $button.closest(".rental-edit-container");
-                        var $result = $container.find(".rental-availability-result");
-                        
-                        var pickupDate = $container.find("input[name=\"rental_pickup_date[" + itemId + "]\"]").val();
-                        var dropoffDate = $container.find("input[name=\"rental_dropoff_date[" + itemId + "]\"]").val();
-                        var quantity = $container.find("input[name=\"rental_quantity[" + itemId + "]\"]").val() || 1;
-
-                        if (!pickupDate || !dropoffDate) {
-                            $result.html("<div class=\"notice notice-error inline\"><p>Please select both pickup and dropoff dates.</p></div>");
-                            return;
-                        }
-
-                        // Show loading
-                        $result.html("<div class=\"notice notice-info inline\"><p>Checking availability...</p></div>");
-                        $button.prop("disabled", true);
-
-                        // AJAX call
-                        $.ajax({
-                            url: "' . admin_url( 'admin-ajax.php' ) . '",
-                            type: "POST",
-                            data: {
-                                action: "smart_rentals_check_order_edit_availability",
-                                nonce: "' . wp_create_nonce( 'smart-rentals-order-edit' ) . '",
-                                product_id: productId,
-                                pickup_date: pickupDate,
-                                dropoff_date: dropoffDate,
-                                quantity: quantity,
-                                exclude_order_id: $("#post_ID").val() || 0
-                            },
-                            success: function(response) {
-                                $button.prop("disabled", false);
-                                if (response.success) {
-                                    var message = "<div class=\"notice notice-success inline\"><p>";
-                                    message += "<strong>Available</strong><br>";
-                                    message += "Available quantity: " + response.data.available_quantity + "<br>";
-                                    message += "New price: " + response.data.formatted_price + "<br>";
-                                    message += "Duration: " + response.data.duration_text;
-                                    message += "</p></div>";
-                                    $result.html(message);
-                                } else {
-                                    $result.html("<div class=\"notice notice-error inline\"><p><strong>Not available</strong><br>" + response.data.message + "</p></div>");
-                                }
-                            },
-                            error: function() {
-                                $button.prop("disabled", false);
-                                $result.html("<div class=\"notice notice-error inline\"><p>Error checking availability</p></div>");
-                            }
-                        });
-                    });
-                    
-                    // Save rental item button
-                    $(document).off("click.smartRentalsSave").on("click.smartRentalsSave", ".rental-save-item", function(e) {
-                        e.preventDefault();
-                        console.log("Save rental item clicked");
-                        
-                        var $button = $(this);
-                        var itemId = $button.data("item-id");
-                        var $container = $button.closest(".rental-edit-container");
-                        var $result = $container.find(".rental-availability-result");
-                        
-                        var pickupDate = $container.find("input[name=\"rental_pickup_date[" + itemId + "]\"]").val();
-                        var dropoffDate = $container.find("input[name=\"rental_dropoff_date[" + itemId + "]\"]").val();
-                        var quantity = $container.find("input[name=\"rental_quantity[" + itemId + "]\"]").val() || 1;
-                        var securityDeposit = $container.find("input[name=\"rental_security_deposit[" + itemId + "]\"]").val() || 0;
-
-                        // Show loading
-                        $result.html("<div class=\"notice notice-info inline\"><p>Saving rental details...</p></div>");
-                        $button.prop("disabled", true);
-
-                        // AJAX call
-                        $.ajax({
-                            url: "' . admin_url( 'admin-ajax.php' ) . '",
-                            type: "POST",
-                            data: {
-                                action: "smart_rentals_save_order_item_rental_data",
-                                nonce: "' . wp_create_nonce( 'smart-rentals-order-edit' ) . '",
-                                item_id: itemId,
-                                pickup_date: pickupDate,
-                                dropoff_date: dropoffDate,
-                                quantity: quantity,
-                                security_deposit: securityDeposit
-                            },
-                            success: function(response) {
-                                $button.prop("disabled", false);
-                                
-                                if (response.success) {
-                                    var message = "<div class=\"notice notice-success inline\"><p>";
-                                    message += "<strong>✓ Saved Successfully</strong><br>";
-                                    message += "New price: " + response.data.formatted_price;
-                                    message += "</p></div>";
-                                    $result.html(message);
-                                    
-                                    // Update display values
-                                    $container.find(".pickup-date-display").text(pickupDate ? new Date(pickupDate).toLocaleString() : "' . __( 'Not set', 'smart-rentals-wc' ) . '");
-                                    $container.find(".dropoff-date-display").text(dropoffDate ? new Date(dropoffDate).toLocaleString() : "' . __( 'Not set', 'smart-rentals-wc' ) . '");
-                                    $container.find(".rental-quantity-display").text(quantity);
-                                    $container.find(".security-deposit-display").text(securityDeposit > 0 ? "' . get_woocommerce_currency_symbol() . '" + parseFloat(securityDeposit).toFixed(2) : "' . __( 'None', 'smart-rentals-wc' ) . '");
-                                    $container.find(".rental-total-display").text(response.data.formatted_price);
-                                    
-                                    // Switch back to display mode
-                                    $container.find(".rental-edit-fields").slideUp(200);
-                                    $container.find(".rental-display-info").slideDown(200);
-                                    $container.find(".rental-edit-toggle").text("' . __( 'Edit Details', 'smart-rentals-wc' ) . '");
-                                    
-                                    // Refresh the page after a short delay to update order totals
-                                    setTimeout(function() {
-                                        location.reload();
-                                    }, 1500);
-                                } else {
-                                    $result.html("<div class=\"notice notice-error inline\"><p><strong>✗ Save Failed</strong><br>" + response.data.message + "</p></div>");
-                                }
-                            },
-                            error: function() {
-                                $button.prop("disabled", false);
-                                $result.html("<div class=\"notice notice-error inline\"><p>Error saving rental details</p></div>");
-                            }
-                        });
-                    });
-                    
-                    console.log("Smart Rentals: Event handlers registered");
-                });
-            ' );
+            // JavaScript is handled by the external admin-order-edit.js file
         }
 
         /**
