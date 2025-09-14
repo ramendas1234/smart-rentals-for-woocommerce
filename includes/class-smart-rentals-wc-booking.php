@@ -959,6 +959,11 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				}
 			}
 			
+			// Create booking records in smart_rentals_bookings table for frontend synchronization
+			if ( $has_rental_items ) {
+				$this->create_booking_records( $order );
+			}
+			
 			// Debug log
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				smart_rentals_wc_log( sprintf( 
@@ -1051,6 +1056,116 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 						) );
 					}
 				}
+			}
+		}
+
+		/**
+		 * Create booking records in smart_rentals_bookings table for frontend synchronization
+		 */
+		private function create_booking_records( $order ) {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return;
+			}
+			
+			$order_id = $order->get_id();
+			
+			// Check if booking records already exist for this order
+			$existing_bookings = $wpdb->get_var( $wpdb->prepare( "
+				SELECT COUNT(*) FROM $table_name WHERE order_id = %d
+			", $order_id ) );
+			
+			if ( $existing_bookings > 0 ) {
+				// Update existing records instead of creating new ones
+				$this->update_booking_records( $order );
+				return;
+			}
+			
+			// Create booking records for each rental item
+			foreach ( $order->get_items() as $item_id => $item ) {
+				$is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+				if ( $is_rental !== 'yes' ) {
+					continue;
+				}
+				
+				$pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+				$dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+				$quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: $item->get_quantity();
+				$product_id = $item->get_product_id();
+				
+				if ( !$pickup_date || !$dropoff_date || !$product_id ) {
+					continue;
+				}
+				
+				// Determine booking status based on order status
+				$order_status = $order->get_status();
+				$booking_status = 'pending';
+				if ( in_array( $order_status, ['processing', 'completed', 'on-hold'] ) ) {
+					$booking_status = 'confirmed';
+				}
+				
+				// Insert booking record
+				$wpdb->insert(
+					$table_name,
+					[
+						'order_id' => $order_id,
+						'product_id' => $product_id,
+						'pickup_date' => $pickup_date,
+						'dropoff_date' => $dropoff_date,
+						'quantity' => $quantity,
+						'status' => $booking_status,
+						'created_at' => current_time( 'mysql' ),
+						'updated_at' => current_time( 'mysql' )
+					],
+					[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
+				);
+				
+				// Debug logging
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					smart_rentals_wc_log( sprintf( 
+						'Created booking record for order #%d, product #%d, dates: %s to %s, qty: %d, status: %s', 
+						$order_id, $product_id, $pickup_date, $dropoff_date, $quantity, $booking_status
+					) );
+				}
+			}
+		}
+		
+		/**
+		 * Update existing booking records
+		 */
+		private function update_booking_records( $order ) {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			$order_id = $order->get_id();
+			
+			// Determine booking status based on order status
+			$order_status = $order->get_status();
+			$booking_status = 'pending';
+			if ( in_array( $order_status, ['processing', 'completed', 'on-hold'] ) ) {
+				$booking_status = 'confirmed';
+			}
+			
+			// Update existing booking records
+			$wpdb->update(
+				$table_name,
+				[
+					'status' => $booking_status,
+					'updated_at' => current_time( 'mysql' )
+				],
+				[ 'order_id' => $order_id ],
+				[ '%s', '%s' ],
+				[ '%d' ]
+			);
+			
+			// Debug logging
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( sprintf( 
+					'Updated booking records for order #%d to status: %s', 
+					$order_id, $booking_status
+				) );
 			}
 		}
 

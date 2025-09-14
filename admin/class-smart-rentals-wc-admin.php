@@ -188,6 +188,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 * Manage Bookings page
 		 */
 		public function manage_bookings_page() {
+			// Auto-sync existing orders to bookings table (one-time operation)
+			$sync_done = get_option( 'smart_rentals_sync_done', false );
+			if ( !$sync_done ) {
+				$synced_count = $this->sync_existing_orders_to_bookings();
+				if ( $synced_count > 0 ) {
+					add_action( 'admin_notices', function() use ( $synced_count ) {
+						echo '<div class="notice notice-info is-dismissible"><p>' . 
+							sprintf( __( 'Smart Rentals: Synced %d existing orders to bookings table for frontend synchronization.', 'smart-rentals-wc' ), $synced_count ) . 
+							'</p></div>';
+					});
+				}
+				update_option( 'smart_rentals_sync_done', true );
+			}
+			
 			// Check if we're modifying a rental
 			if ( isset( $_GET['action'] ) && $_GET['action'] === 'modify_rental' && isset( $_GET['id'] ) ) {
 				$this->modify_rental_page( intval( $_GET['id'] ) );
@@ -1234,14 +1248,20 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				return;
 			}
 			
+			// Get product ID from order item
+			$order = wc_get_order( $order_id );
+			$item = $order->get_item( $item_id );
+			$product_id = $item ? $item->get_product_id() : 0;
+			
+			if ( !$product_id ) {
+				return;
+			}
+			
 			// Check if booking record exists
 			$existing_booking = $wpdb->get_row( $wpdb->prepare( "
 				SELECT id FROM $table_name 
-				WHERE order_id = %d AND product_id = (
-					SELECT meta_value FROM {$wpdb->postmeta} 
-					WHERE post_id = %d AND meta_key = '_product_id'
-				)
-			", $order_id, $item_id ) );
+				WHERE order_id = %d AND product_id = %d
+			", $order_id, $product_id ) );
 			
 			if ( $existing_booking ) {
 				// Update existing booking record
@@ -1260,31 +1280,105 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				
 				error_log( "Smart Rentals: Updated booking record ID {$existing_booking->id} for order $order_id" );
 			} else {
-				// Get product ID from order item
-				$order = wc_get_order( $order_id );
-				$item = $order->get_item( $item_id );
-				$product_id = $item ? $item->get_product_id() : 0;
+				// Create new booking record
+				$wpdb->insert(
+					$table_name,
+					[
+						'order_id' => $order_id,
+						'product_id' => $product_id,
+						'pickup_date' => date( 'Y-m-d H:i:s', $pickup_timestamp ),
+						'dropoff_date' => date( 'Y-m-d H:i:s', $dropoff_timestamp ),
+						'quantity' => $quantity,
+						'status' => 'confirmed',
+						'created_at' => current_time( 'mysql' ),
+						'updated_at' => current_time( 'mysql' )
+					],
+					[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
+				);
 				
-				if ( $product_id ) {
-					// Create new booking record
+				error_log( "Smart Rentals: Created new booking record for order $order_id, product $product_id" );
+			}
+		}
+
+		/**
+		 * Sync existing orders to bookings table (for orders created before this fix)
+		 */
+		public function sync_existing_orders_to_bookings() {
+			global $wpdb;
+			
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return;
+			}
+			
+			// Get all orders with rental items that don't have booking records
+			$orders_without_bookings = $wpdb->get_results( "
+				SELECT DISTINCT o.ID as order_id
+				FROM {$wpdb->posts} o
+				INNER JOIN {$wpdb->prefix}woocommerce_order_items oi ON o.ID = oi.order_id
+				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim ON oi.order_item_id = oim.order_item_id
+				WHERE o.post_type = 'shop_order'
+				AND oim.meta_key = 'smart_rentals_wc_is_rental'
+				AND oim.meta_value = 'yes'
+				AND o.ID NOT IN (
+					SELECT DISTINCT order_id FROM $table_name
+				)
+				LIMIT 100
+			" );
+			
+			$synced_count = 0;
+			
+			foreach ( $orders_without_bookings as $order_data ) {
+				$order = wc_get_order( $order_data->order_id );
+				if ( !$order ) {
+					continue;
+				}
+				
+				// Create booking records for this order
+				foreach ( $order->get_items() as $item_id => $item ) {
+					$is_rental = $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) );
+					if ( $is_rental !== 'yes' ) {
+						continue;
+					}
+					
+					$pickup_date = $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) );
+					$dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
+					$quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: $item->get_quantity();
+					$product_id = $item->get_product_id();
+					
+					if ( !$pickup_date || !$dropoff_date || !$product_id ) {
+						continue;
+					}
+					
+					// Determine booking status based on order status
+					$order_status = $order->get_status();
+					$booking_status = 'pending';
+					if ( in_array( $order_status, ['processing', 'completed', 'on-hold'] ) ) {
+						$booking_status = 'confirmed';
+					}
+					
+					// Insert booking record
 					$wpdb->insert(
 						$table_name,
 						[
-							'order_id' => $order_id,
+							'order_id' => $order->get_id(),
 							'product_id' => $product_id,
-							'pickup_date' => date( 'Y-m-d H:i:s', $pickup_timestamp ),
-							'dropoff_date' => date( 'Y-m-d H:i:s', $dropoff_timestamp ),
+							'pickup_date' => $pickup_date,
+							'dropoff_date' => $dropoff_date,
 							'quantity' => $quantity,
-							'status' => 'confirmed',
+							'status' => $booking_status,
 							'created_at' => current_time( 'mysql' ),
 							'updated_at' => current_time( 'mysql' )
 						],
 						[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
 					);
 					
-					error_log( "Smart Rentals: Created new booking record for order $order_id, product $product_id" );
+					$synced_count++;
 				}
 			}
+			
+			error_log( "Smart Rentals: Synced $synced_count booking records from existing orders" );
+			return $synced_count;
 		}
 
 		/**
