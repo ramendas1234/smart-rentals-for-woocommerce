@@ -191,29 +191,8 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 		 * Initialize admin
 		 */
 		public function init_admin() {
-			echo '<!-- Smart Rentals: init_admin() called -->';
-			
 			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
 			new Smart_Rentals_WC_Admin();
-			echo '<!-- Smart Rentals: Admin class loaded -->';
-			
-			// Use the new order items edit class for inline editing
-			$order_items_file = SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-order-items-edit.php';
-			echo '<!-- Smart Rentals: Loading order items file: ' . $order_items_file . ' -->';
-			
-			if ( file_exists( $order_items_file ) ) {
-				require_once $order_items_file;
-				echo '<!-- Smart Rentals: Order items file loaded -->';
-				
-				if ( class_exists( 'Smart_Rentals_WC_Order_Items_Edit' ) ) {
-					new Smart_Rentals_WC_Order_Items_Edit();
-					echo '<!-- Smart Rentals: Order Items Edit class instantiated -->';
-				} else {
-					echo '<!-- Smart Rentals: Order Items Edit class NOT found -->';
-				}
-			} else {
-				echo '<!-- Smart Rentals: Order items file NOT found -->';
-			}
 		}
 
 

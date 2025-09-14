@@ -160,12 +160,18 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking_List' ) ) {
         public function column_actions( $item ) {
             $order_id = $item['order_id'];
             $edit_url = admin_url( 'post.php?post=' . $order_id . '&action=edit' );
+            $modify_rental_url = admin_url( 'admin.php?page=smart-rentals-wc-bookings&action=modify_rental&id=' . $order_id );
             
             $actions = [
                 'edit' => sprintf(
                     '<a href="%s" target="_blank">%s</a>',
                     esc_url( $edit_url ),
                     __( 'Edit Order', 'smart-rentals-wc' )
+                ),
+                'modify_rental' => sprintf(
+                    '<a href="%s" class="button button-primary button-small">%s</a>',
+                    esc_url( $modify_rental_url ),
+                    __( 'Modify Rental', 'smart-rentals-wc' )
                 ),
             ];
             
