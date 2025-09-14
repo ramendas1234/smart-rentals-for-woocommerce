@@ -11,8 +11,8 @@ $min_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'min_rental_pe
 $max_rental_period = smart_rentals_wc_get_post_meta( $product_id, 'max_rental_period' );
 
 // Get date format
-$date_format = Smart_Rentals_WC()->options->get_date_format();
-$time_format = Smart_Rentals_WC()->options->get_time_format();
+$date_format = smart_rentals_wc_get_setting( 'date_format', 'Y-m-d' );
+$time_format = smart_rentals_wc_get_setting( 'time_format', 'H:i' );
 
 // Get values from URL parameters
 $pickup_date = isset( $_GET['pickup_date'] ) ? sanitize_text_field( $_GET['pickup_date'] ) : '';

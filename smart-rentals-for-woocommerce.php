@@ -147,7 +147,7 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			// Note: Removed CPT class - not needed for our checkbox-based approach
 
 			// Shortcodes
-			require_once SMART_RENTALS_WC_PLUGIN_INC. 'class-smart-rentals-wc-shortcodes.php';
+			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-shortcodes.php';
 			new Smart_Rentals_WC_Shortcodes();
 
 			// Mail
@@ -155,7 +155,7 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 			new Smart_Rentals_WC_Mail();
 
 			// Cron
-			require_once SMART_RENTALS_WC_PLUGIN_INC .  'class-smart-rentals-wc-cron.php';
+			require_once SMART_RENTALS_WC_PLUGIN_INC . 'class-smart-rentals-wc-cron.php';
 			new Smart_Rentals_WC_Cron();
 
 			// Templates
@@ -192,6 +192,8 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 		 */
 		public function init_admin() {
 			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
+			new Smart_Rentals_WC_Admin();
+			
 			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-order-edit.php';
 			new Smart_Rentals_WC_Order_Edit();
 		}
@@ -290,6 +292,9 @@ function smart_rentals_wc_woocommerce_missing_notice() {
 // Activation hook
 register_activation_hook( __FILE__, 'smart_rentals_wc_activate_plugin' );
 
+// Deactivation hook
+register_deactivation_hook( __FILE__, 'smart_rentals_wc_deactivate_plugin' );
+
 // Uninstall hook
 register_uninstall_hook( __FILE__, 'smart_rentals_wc_uninstall_plugin' );
 
@@ -303,6 +308,15 @@ function smart_rentals_wc_activate_plugin() {
 	if ( class_exists( 'Smart_Rentals_WC_Install' ) ) {
 		Smart_Rentals_WC_Install::install();
 	}
+}
+
+/**
+ * Plugin deactivation callback
+ */
+function smart_rentals_wc_deactivate_plugin() {
+	// Clear scheduled events
+	wp_clear_scheduled_hook( 'smart_rentals_wc_daily_tasks' );
+	wp_clear_scheduled_hook( 'smart_rentals_wc_hourly_tasks' );
 }
 
 /**

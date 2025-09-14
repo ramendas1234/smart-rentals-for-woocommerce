@@ -20,8 +20,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Cron' ) ) {
 			add_action( 'smart_rentals_wc_daily_tasks', [ $this, 'daily_tasks' ] );
 			add_action( 'smart_rentals_wc_hourly_tasks', [ $this, 'hourly_tasks' ] );
 			
-			// Deactivation hook
-			register_deactivation_hook( SMART_RENTALS_WC_PLUGIN_FILE, [ $this, 'clear_scheduled_events' ] );
+			// Deactivation hook (will be registered by main plugin class)
+			// register_deactivation_hook( SMART_RENTALS_WC_PLUGIN_FILE, [ $this, 'clear_scheduled_events' ] );
 		}
 
 		/**

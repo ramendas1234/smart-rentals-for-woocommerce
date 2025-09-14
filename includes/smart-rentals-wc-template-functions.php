@@ -21,52 +21,8 @@ if ( !function_exists( 'smart_rentals_wc_get_booking_form' ) ) {
     }
 }
 
-/**
- * Get template (following external plugin pattern)
- */
-if ( !function_exists( 'smart_rentals_wc_get_template' ) ) {
-    function smart_rentals_wc_get_template( $template_name = '', $args = [], $template_path = '', $default_path = '' ) {
-        if ( smart_rentals_wc_array_exists( $args ) ) {
-            extract( $args );
-        }
-
-        $template_file = smart_rentals_wc_locate_template( $template_name, $template_path, $default_path );
-        
-        if ( !file_exists( $template_file ) ) {
-            smart_rentals_wc_log( 'Template not found: ' . $template_file );
-            return;
-        }
-
-        include $template_file;
-    }
-}
-
-/**
- * Locate template (following external plugin pattern)
- */
-if ( !function_exists( 'smart_rentals_wc_locate_template' ) ) {
-    function smart_rentals_wc_locate_template( $template_name = '', $template_path = '', $default_path = '' ) {
-        // Set variable to search in smart-rentals-wc folder of theme
-        if ( !$template_path ) {
-            $template_path = 'smart-rentals-wc/';
-        }
-
-        // Set default plugin templates path
-        if ( !$default_path ) {
-            $default_path = SMART_RENTALS_WC_PLUGIN_TEMPLATES;
-        }
-
-        // Search template file in theme folder
-        $template = locate_template( [ $template_path . $template_name ] );
-
-        // Get plugin template file
-        if ( !$template ) {
-            $template = $default_path . $template_name;
-        }
-
-        return apply_filters( 'smart_rentals_wc_locate_template', $template, $template_name, $template_path, $default_path );
-    }
-}
+// Template functions are now defined in smart-rentals-wc-core-functions.php
+// This file only contains template-specific functions
 
 /**
  * Get rental price display
