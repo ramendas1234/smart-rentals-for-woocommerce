@@ -1,0 +1,289 @@
+/**
+ * Smart Rentals WC Order Items Edit Styles
+ * Inline editing styles for order items table
+ */
+
+/* Rental columns styling */
+.rental-dates-column {
+    min-width: 300px !important;
+    vertical-align: top !important;
+}
+
+.rental-actions-column {
+    min-width: 150px !important;
+    vertical-align: top !important;
+}
+
+/* Rental item container */
+.rental-item-container {
+    padding: 10px;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+.rental-item-container:hover {
+    background-color: #f8f9fa;
+    border-color: #0073aa;
+}
+
+/* Display mode styling */
+.rental-display-mode {
+    font-size: 13px;
+}
+
+.rental-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.rental-date-info,
+.rental-quantity-info,
+.rental-deposit-info {
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.rental-date-info strong,
+.rental-quantity-info strong,
+.rental-deposit-info strong {
+    display: block;
+    color: #495057;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.rental-date-info span,
+.rental-quantity-info span,
+.rental-deposit-info span {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* Edit mode styling */
+.rental-edit-mode {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 2px solid #0073aa;
+}
+
+.rental-form-row {
+    margin-bottom: 12px;
+}
+
+.rental-form-row label {
+    display: block;
+    color: #495057;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.rental-form-row input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.rental-form-row input:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 2px rgba(0, 115, 170, 0.1);
+}
+
+/* Actions styling */
+.rental-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rental-actions button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+
+.rental-edit-toggle {
+    background: #0073aa;
+    color: white;
+}
+
+.rental-edit-toggle:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 115, 170, 0.3);
+}
+
+.rental-check-availability {
+    background: #28a745;
+    color: white;
+}
+
+.rental-check-availability:hover {
+    background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.rental-save {
+    background: #0073aa;
+    color: white;
+}
+
+.rental-save:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 115, 170, 0.3);
+}
+
+.rental-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.rental-cancel:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+/* Feedback styling */
+.rental-feedback {
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.rental-feedback-success {
+    color: #155724;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+.rental-feedback-error {
+    color: #721c24;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+.rental-feedback-info {
+    color: #0c5460;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.rental-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .rental-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .rental-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .rental-actions button {
+        flex: 1;
+        min-width: 80px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .rental-item-container {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .rental-item-container:hover {
+        background-color: #4a5568;
+        border-color: #0073aa;
+    }
+    
+    .rental-date-info,
+    .rental-quantity-info,
+    .rental-deposit-info {
+        background: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .rental-edit-mode {
+        background: #4a5568;
+        border-color: #0073aa;
+    }
+    
+    .rental-form-row input {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .rental-form-row input:focus {
+        border-color: #0073aa;
+        background: #2d3748;
+    }
+}
+
+/* Integration with WooCommerce order items table */
+.woocommerce_order_items .rental-dates-column,
+.woocommerce_order_items .rental-actions-column {
+    border-left: 1px solid #e1e5e9;
+}
+
+.woocommerce_order_items tr:hover .rental-item-container {
+    background-color: #f8f9fa;
+    border-color: #0073aa;
+}
+
+/* Ensure proper spacing in order items table */
+.woocommerce_order_items .rental-dates-column td,
+.woocommerce_order_items .rental-actions-column td {
+    padding: 8px;
+    vertical-align: top;
+}

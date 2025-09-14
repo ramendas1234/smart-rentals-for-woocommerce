@@ -191,79 +191,14 @@ if ( !class_exists( 'Smart_Rentals_WC' ) ) {
 		 * Initialize admin
 		 */
 		public function init_admin() {
-			// Debug: Always log admin initialization
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'Smart Rentals: init_admin() called' );
-			}
-			
-			// Add a simple test meta box to verify meta box system works
-			add_action( 'add_meta_boxes', [ $this, 'add_test_meta_box' ] );
-			
 			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-admin.php';
 			new Smart_Rentals_WC_Admin();
 			
-			// Use the new enhanced order edit class
-			$order_edit_file = SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-order-edit-v2.php';
-			
-			// Debug: Check if file exists
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'Smart Rentals: Loading order edit file: ' . $order_edit_file );
-				error_log( 'Smart Rentals: File exists: ' . ( file_exists( $order_edit_file ) ? 'YES' : 'NO' ) );
-			}
-			
-			if ( file_exists( $order_edit_file ) ) {
-				require_once $order_edit_file;
-				
-				if ( class_exists( 'Smart_Rentals_WC_Order_Edit_V2' ) ) {
-					new Smart_Rentals_WC_Order_Edit_V2();
-					
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'Smart Rentals: Order Edit V2 class instantiated successfully' );
-					}
-				} else {
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-						error_log( 'Smart Rentals: Order Edit V2 class not found after require_once' );
-					}
-				}
-			} else {
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( 'Smart Rentals: Order Edit V2 file not found: ' . $order_edit_file );
-				}
-			}
+			// Use the new order items edit class for inline editing
+			require_once SMART_RENTALS_WC_PLUGIN_ADMIN . 'class-smart-rentals-wc-order-items-edit.php';
+			new Smart_Rentals_WC_Order_Items_Edit();
 		}
 
-		/**
-		 * Add test meta box
-		 */
-		public function add_test_meta_box() {
-			global $post;
-			
-			if ( !$post || $post->post_type !== 'shop_order' ) {
-				return;
-			}
-			
-			add_meta_box(
-				'smart-rentals-test-main',
-				'Smart Rentals Test (Main Plugin)',
-				[ $this, 'test_meta_box_content_main' ],
-				'shop_order',
-				'normal',
-				'high'
-			);
-		}
-
-		/**
-		 * Test meta box content
-		 */
-		public function test_meta_box_content_main( $post ) {
-			echo '<div style="padding: 20px; background: #e7f3ff; border: 2px solid #0073aa;">';
-			echo '<h3>✅ Smart Rentals Main Plugin Test</h3>';
-			echo '<p><strong>This meta box is from the main plugin file.</strong></p>';
-			echo '<p><strong>Order ID:</strong> ' . $post->ID . '</p>';
-			echo '<p><strong>Post Type:</strong> ' . $post->post_type . '</p>';
-			echo '<p>If you can see this, the meta box system is working!</p>';
-			echo '</div>';
-		}
 
 		/**
 		 * Woocommerce loaded
