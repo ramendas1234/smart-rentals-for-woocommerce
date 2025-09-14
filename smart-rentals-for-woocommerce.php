@@ -3,9 +3,9 @@
 Plugin Name: Smart Rentals For WooCommerce
 Plugin URI: https://github.com/your-repo/smart-rentals-for-woocommerce
 Description: A comprehensive WooCommerce rental and booking plugin with advanced features for equipment rental, car rental, and more.
-Author: Smart Rentals Team
+Author: StoreApps
 Version: 1.0.0
-Author URI: https://smartrentals.com
+Author URI: https://www.storeapps.org/
 Text Domain: smart-rentals-wc
 Domain Path: /languages/
 Requires Plugins: woocommerce
@@ -304,6 +304,7 @@ register_uninstall_hook( __FILE__, 'smart_rentals_wc_uninstall_plugin' );
  * Plugin activation callback
  */
 function smart_rentals_wc_activate_plugin() {
+	add_option( 'smart_rentals_wc_do_activation_redirect', true );
 	// Define constants first
 	if ( !defined( 'SMART_RENTALS_WC_PLUGIN_FILE' ) ) {
 		define( 'SMART_RENTALS_WC_PLUGIN_FILE', __FILE__ );

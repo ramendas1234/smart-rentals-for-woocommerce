@@ -18,6 +18,10 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		 * Constructor
 		 */
 		public function __construct() {
+
+			// // Redirect after activation
+			add_action( 'admin_init', [ $this, 'smart_rentals_wc_redirect' ] );
+			
 			// Admin menu
 			add_action( 'admin_menu', [ $this, 'admin_menu' ] );
 
@@ -51,9 +55,25 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 		}
 
 		/**
+		 * Redirect after plugin activation
+		 */
+		public function smart_rentals_wc_redirect() {
+			if ( get_option( 'smart_rentals_wc_do_activation_redirect', false ) ) {
+				delete_option( 'smart_rentals_wc_do_activation_redirect' );
+
+				// Avoid redirect during bulk activation
+				if ( ! isset( $_GET['activate-multi'] ) ) {
+					wp_safe_redirect( admin_url( 'admin.php?page=smart-rentals-wc-settings' ) );
+					exit;
+				}
+			}
+		}
+
+		/**
 		 * Admin menu
 		 */
 		public function admin_menu() {
+			
 			add_menu_page(
 				__( 'Smart Rentals', 'smart-rentals-wc' ),
 				__( 'Smart Rentals', 'smart-rentals-wc' ),
@@ -62,15 +82,6 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				[ $this, 'admin_page' ],
 				'dashicons-calendar-alt',
 				56
-			);
-
-			add_submenu_page(
-				'smart-rentals-wc',
-				__( 'Settings', 'smart-rentals-wc' ),
-				__( 'Settings', 'smart-rentals-wc' ),
-				'manage_woocommerce',
-				'smart-rentals-wc-settings',
-				[ $this, 'settings_page' ]
 			);
 
 			add_submenu_page(
@@ -90,6 +101,17 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 				'smart-rentals-wc-booking-calendar',
 				[ $this, 'booking_calendar_page' ]
 			);
+
+			add_submenu_page(
+				'smart-rentals-wc',
+				__( 'Settings', 'smart-rentals-wc' ),
+				__( 'Settings', 'smart-rentals-wc' ),
+				'manage_woocommerce',
+				'smart-rentals-wc-settings',
+				[ $this, 'settings_page' ]
+			);
+
+			
 		}
 
 		/**

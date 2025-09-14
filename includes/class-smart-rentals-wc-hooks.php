@@ -17,9 +17,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			add_action( 'init', [ $this, 'rental_product_remove_actions' ] );
 
 			// Product hooks (rental badge removed - using checkbox instead)
-			
-			// Shop loop hooks
-			add_action( 'woocommerce_after_shop_loop_item_title', [ $this, 'add_rental_badge_to_loop' ], 15 );
+
 			
 			// Single product hooks - following external plugin pattern
 			add_action( 'woocommerce_single_product_summary', [ $this, 'rental_product_price' ], 9 );
@@ -162,16 +160,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Hooks' ) ) {
 			return;
 		}
 
-		/**
-		 * Add rental badge to shop loop
-		 */
-		public function add_rental_badge_to_loop() {
-			global $product;
-			
-			if ( $product && smart_rentals_wc_is_rental_product( $product->get_id() ) ) {
-				echo '<span class="smart-rentals-badge">' . __( 'Rental', 'smart-rentals-wc' ) . '</span>';
-			}
-		}
+		
 
 		/**
 		 * Rental product price (following external plugin pattern)
