@@ -32,23 +32,60 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit_V2' ) ) {
         public function add_rental_edit_meta_box() {
             global $post;
             
+            // Debug logging
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'Smart Rentals V2: add_rental_edit_meta_box called' );
+                error_log( 'Post: ' . ( $post ? $post->ID . ' (' . $post->post_type . ')' : 'null' ) );
+            }
+            
             if ( !$post || $post->post_type !== 'shop_order' ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'Smart Rentals V2: Not a shop order, skipping' );
+                }
                 return;
             }
             
             $order = wc_get_order( $post->ID );
             if ( !$order ) {
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'Smart Rentals V2: Order not found for post ' . $post->ID );
+                }
                 return;
             }
             
             // Check if order has rental items
             $has_rental_items = false;
-            foreach ( $order->get_items() as $item ) {
-                if ( $this->is_rental_item( $item ) ) {
+            $rental_items_found = [];
+            
+            foreach ( $order->get_items() as $item_id => $item ) {
+                $is_rental = $this->is_rental_item( $item );
+                if ( $is_rental ) {
                     $has_rental_items = true;
-                    break;
+                    $rental_items_found[] = [
+                        'item_id' => $item_id,
+                        'name' => $item->get_name(),
+                        'is_rental' => $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ),
+                        'pickup_date' => $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) ),
+                        'dropoff_date' => $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) ),
+                        'rental_quantity' => $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ),
+                    ];
                 }
             }
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'Smart Rentals V2: Has rental items: ' . ( $has_rental_items ? 'YES' : 'NO' ) );
+                error_log( 'Smart Rentals V2: Rental items found: ' . print_r( $rental_items_found, true ) );
+            }
+            
+            // Always add a test meta box first to verify the system works
+            add_meta_box(
+                'smart-rentals-test',
+                __( 'Smart Rentals Debug Test', 'smart-rentals-wc' ),
+                [ $this, 'test_meta_box_content' ],
+                'shop_order',
+                'normal',
+                'high'
+            );
             
             if ( $has_rental_items ) {
                 add_meta_box(
@@ -59,7 +96,43 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit_V2' ) ) {
                     'normal',
                     'high'
                 );
+                
+                if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                    error_log( 'Smart Rentals V2: Meta box added successfully' );
+                }
             }
+        }
+
+        /**
+         * Test meta box content for debugging
+         */
+        public function test_meta_box_content( $post ) {
+            $order = wc_get_order( $post->ID );
+            if ( !$order ) {
+                echo '<p>Order not found</p>';
+                return;
+            }
+            
+            echo '<div style="padding: 20px; background: #f0f0f0; border: 1px solid #ccc;">';
+            echo '<h3>Smart Rentals Debug Information</h3>';
+            echo '<p><strong>Order ID:</strong> ' . $order->get_id() . '</p>';
+            echo '<p><strong>Order Status:</strong> ' . $order->get_status() . '</p>';
+            echo '<p><strong>Total Items:</strong> ' . count( $order->get_items() ) . '</p>';
+            
+            echo '<h4>Order Items:</h4>';
+            echo '<ul>';
+            foreach ( $order->get_items() as $item_id => $item ) {
+                echo '<li>';
+                echo '<strong>' . $item->get_name() . '</strong> (ID: ' . $item_id . ')<br>';
+                echo 'is_rental: ' . $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ) . '<br>';
+                echo 'pickup_date: ' . $item->get_meta( smart_rentals_wc_meta_key( 'pickup_date' ) ) . '<br>';
+                echo 'dropoff_date: ' . $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) ) . '<br>';
+                echo 'rental_quantity: ' . $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) . '<br>';
+                echo 'Is rental item: ' . ( $this->is_rental_item( $item ) ? 'YES' : 'NO' );
+                echo '</li>';
+            }
+            echo '</ul>';
+            echo '</div>';
         }
 
         /**
@@ -71,7 +144,14 @@ if ( !class_exists( 'Smart_Rentals_WC_Order_Edit_V2' ) ) {
             $dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
             $rental_quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) );
             
-            return ( $is_rental === 'yes' || ( $pickup_date && $dropoff_date ) || $rental_quantity );
+            $result = ( $is_rental === 'yes' || ( $pickup_date && $dropoff_date ) || $rental_quantity );
+            
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                error_log( 'Smart Rentals V2: Checking item - ' . $item->get_name() );
+                error_log( 'Smart Rentals V2: is_rental=' . $is_rental . ', pickup=' . $pickup_date . ', dropoff=' . $dropoff_date . ', qty=' . $rental_quantity . ', result=' . ( $result ? 'YES' : 'NO' ) );
+            }
+            
+            return $result;
         }
 
         /**
