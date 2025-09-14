@@ -23,7 +23,8 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 			add_action( 'woocommerce_add_to_cart', [ $this, 'sync_cart_addition' ], 10, 6 );
 			add_action( 'woocommerce_remove_cart_item', [ $this, 'sync_cart_removal' ], 10, 2 );
 			add_action( 'woocommerce_cart_item_restored', [ $this, 'sync_cart_restoration' ], 10, 2 );
-			add_action( 'woocommerce_checkout_order_created', [ $this, 'sync_order_creation' ], 10, 1 );
+			// Use woocommerce_checkout_order_processed instead to ensure order ID exists
+			add_action( 'woocommerce_checkout_order_processed', [ $this, 'sync_order_creation_after_save' ], 10, 3 );
 			add_action( 'woocommerce_order_status_changed', [ $this, 'sync_order_status_change' ], 10, 4 );
 			add_action( 'before_delete_post', [ $this, 'sync_order_deletion' ], 10, 1 );
 			add_action( 'wp_trash_post', [ $this, 'sync_order_trash' ], 10, 1 );
@@ -37,6 +38,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 			add_action( 'wp_ajax_nopriv_smart_rentals_sync_availability', [ $this, 'ajax_sync_availability' ] );
 			add_action( 'wp_ajax_smart_rentals_validate_booking', [ $this, 'ajax_validate_booking' ] );
 			add_action( 'wp_ajax_nopriv_smart_rentals_validate_booking', [ $this, 'ajax_validate_booking' ] );
+			
+			// Schedule cleanup of orphaned bookings
+			add_action( 'smart_rentals_cleanup_orphaned_bookings', [ $this, 'cleanup_orphaned_bookings' ] );
+			if ( !wp_next_scheduled( 'smart_rentals_cleanup_orphaned_bookings' ) ) {
+				wp_schedule_event( time(), 'hourly', 'smart_rentals_cleanup_orphaned_bookings' );
+			}
 			
 			// Session-based temporary booking locks
 			add_action( 'init', [ $this, 'init_session' ] );
@@ -147,12 +154,34 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 		}
 
 		/**
-		 * Sync order creation
+		 * Sync order creation after save
 		 */
-		public function sync_order_creation( $order ) {
+		public function sync_order_creation_after_save( $order_id, $posted_data, $order ) {
+			// Ensure we have a valid order ID
+			if ( !$order_id || $order_id === 0 ) {
+				$this->log_sync_event( 'order_creation_error', [
+					'message' => 'Order ID is 0 or invalid',
+					'order' => $order ? 'exists' : 'null'
+				]);
+				return;
+			}
+			
+			// If order object not passed, get it
+			if ( !$order ) {
+				$order = wc_get_order( $order_id );
+			}
+			
+			if ( !$order ) {
+				$this->log_sync_event( 'order_creation_error', [
+					'message' => 'Could not retrieve order',
+					'order_id' => $order_id
+				]);
+				return;
+			}
+			
 			foreach ( $order->get_items() as $item ) {
 				if ( $item->get_meta( smart_rentals_wc_meta_key( 'is_rental' ) ) === 'yes' ) {
-					// Ensure booking record exists
+					// Ensure booking record exists with valid order ID
 					$this->ensure_booking_record( $order, $item );
 					
 					// Convert temporary locks to permanent bookings
@@ -647,6 +676,16 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 			$order_id = $order->get_id();
 			$product_id = $item->get_product_id();
 			
+			// CRITICAL: Skip if order ID is 0 or invalid
+			if ( !$order_id || $order_id === 0 ) {
+				$this->log_sync_event( 'booking_creation_skipped', [
+					'reason' => 'Invalid order ID (0)',
+					'product_id' => $product_id,
+					'order_status' => $order->get_status()
+				]);
+				return;
+			}
+			
 			// Check if record exists
 			$exists = $wpdb->get_var( $wpdb->prepare(
 				"SELECT COUNT(*) FROM $table_name WHERE order_id = %d AND product_id = %d",
@@ -660,20 +699,69 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 				$dropoff_date = $item->get_meta( smart_rentals_wc_meta_key( 'dropoff_date' ) );
 				$quantity = $item->get_meta( smart_rentals_wc_meta_key( 'rental_quantity' ) ) ?: $item->get_quantity();
 				
-				$wpdb->insert(
-					$table_name,
-					[
-						'order_id' => $order_id,
-						'product_id' => $product_id,
-						'pickup_date' => $pickup_date,
-						'dropoff_date' => $dropoff_date,
-						'quantity' => $quantity,
-						'status' => $this->map_order_status_to_booking_status( $order->get_status() ),
-						'created_at' => current_time( 'mysql' ),
-						'updated_at' => current_time( 'mysql' )
-					],
-					[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
-				);
+				// Also check if there's an orphaned booking with order_id = 0 that we should update
+				$orphaned_booking = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id FROM $table_name 
+					WHERE order_id = 0 
+					AND product_id = %d 
+					AND pickup_date = %s 
+					AND dropoff_date = %s 
+					AND quantity = %d
+					ORDER BY created_at DESC
+					LIMIT 1",
+					$product_id,
+					$pickup_date,
+					$dropoff_date,
+					$quantity
+				));
+				
+				if ( $orphaned_booking ) {
+					// Update the orphaned booking with the correct order ID
+					$updated = $wpdb->update(
+						$table_name,
+						[
+							'order_id' => $order_id,
+							'status' => $this->map_order_status_to_booking_status( $order->get_status() ),
+							'updated_at' => current_time( 'mysql' )
+						],
+						[ 'id' => $orphaned_booking->id ],
+						[ '%d', '%s', '%s' ],
+						[ '%d' ]
+					);
+					
+					if ( $updated ) {
+						$this->log_sync_event( 'orphaned_booking_updated', [
+							'booking_id' => $orphaned_booking->id,
+							'order_id' => $order_id,
+							'product_id' => $product_id
+						]);
+					}
+				} else {
+					// Create new booking record
+					$result = $wpdb->insert(
+						$table_name,
+						[
+							'order_id' => $order_id,
+							'product_id' => $product_id,
+							'pickup_date' => $pickup_date,
+							'dropoff_date' => $dropoff_date,
+							'quantity' => $quantity,
+							'status' => $this->map_order_status_to_booking_status( $order->get_status() ),
+							'created_at' => current_time( 'mysql' ),
+							'updated_at' => current_time( 'mysql' )
+						],
+						[ '%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s' ]
+					);
+					
+					if ( $result ) {
+						$this->log_sync_event( 'booking_created', [
+							'booking_id' => $wpdb->insert_id,
+							'order_id' => $order_id,
+							'product_id' => $product_id,
+							'quantity' => $quantity
+						]);
+					}
+				}
 			}
 		}
 
@@ -884,6 +972,37 @@ if ( !class_exists( 'Smart_Rentals_WC_Sync_Manager' ) ) {
 				'product_id' => $product_id,
 				'dates' => $dates
 			]);
+		}
+
+		/**
+		 * Clean up orphaned bookings (order_id = 0)
+		 */
+		public function cleanup_orphaned_bookings() {
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) != $table_name ) {
+				return;
+			}
+			
+			// Delete bookings with order_id = 0 that are older than 1 hour
+			$one_hour_ago = date( 'Y-m-d H:i:s', strtotime( '-1 hour' ) );
+			
+			$deleted = $wpdb->query( $wpdb->prepare(
+				"DELETE FROM $table_name 
+				WHERE order_id = 0 
+				AND created_at < %s",
+				$one_hour_ago
+			));
+			
+			if ( $deleted > 0 ) {
+				$this->log_sync_event( 'orphaned_bookings_cleaned', [
+					'count' => $deleted,
+					'older_than' => $one_hour_ago
+				]);
+			}
+			
+			return $deleted;
 		}
 
 		/**

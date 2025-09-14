@@ -1004,10 +1004,13 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 				}
 			}
 			
-			// Create booking records in smart_rentals_bookings table for frontend synchronization
+			// DISABLED: Booking records are now created by the Sync Manager to prevent duplicates
+			// The Sync Manager uses woocommerce_checkout_order_processed which ensures valid order IDs
+			/*
 			if ( $has_rental_items ) {
 				$this->create_booking_records( $order );
 			}
+			*/
 			
 			// Debug log
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1116,6 +1119,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Booking' ) ) {
 			}
 			
 			$order_id = $order->get_id();
+			
+			// CRITICAL: Prevent creating bookings with order_id = 0
+			if ( !$order_id || $order_id === 0 ) {
+				smart_rentals_wc_log( 'WARNING: Attempted to create booking with order_id = 0. Skipping.' );
+				return;
+			}
 			
 			// Check if booking records already exist for this order
 			$existing_bookings = $wpdb->get_var( $wpdb->prepare( "
