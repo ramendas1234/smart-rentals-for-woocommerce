@@ -433,21 +433,30 @@ if ( !function_exists( 'smart_rentals_wc_get_security_deposit' ) ) {
 }
 
 /**
- * Get turnaround time for a product with global fallback
+ * Get turnaround time for hourly rentals
  */
 if ( !function_exists( 'smart_rentals_wc_get_turnaround_time' ) ) {
     function smart_rentals_wc_get_turnaround_time( $product_id ) {
         // First check if product has its own turnaround time
         $product_turnaround = smart_rentals_wc_get_post_meta( $product_id, 'turnaround_time' );
         
-        if ( !empty( $product_turnaround ) && floatval( $product_turnaround ) >= 0 ) {
+        if ( !empty( $product_turnaround ) && floatval( $product_turnaround ) > 0 ) {
             return floatval( $product_turnaround );
         }
         
-        // Fall back to global turnaround time
+        // Fall back to global turnaround time (default 1 hour)
         $settings = smart_rentals_wc_get_option( 'settings', [] );
-        $global_turnaround = smart_rentals_wc_get_meta_data( 'default_turnaround_time', $settings, 2 );
+        $global_turnaround = smart_rentals_wc_get_meta_data( 'global_turnaround_time', $settings, 1 );
         
         return floatval( $global_turnaround );
+    }
+}
+
+/**
+ * Get current time
+ */
+if ( !function_exists( 'smart_rentals_wc_current_time' ) ) {
+    function smart_rentals_wc_current_time() {
+        return current_time( 'timestamp' );
     }
 }

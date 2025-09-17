@@ -436,8 +436,150 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 		}
 
 		/**
+		 * Get availability for hourly rentals on a specific day
+		 * This method checks if there's any availability during the day for hourly rentals
+		 */
+		public function get_hourly_day_availability( $product_id, $date_string, $total_stock ) {
+			// For hourly rentals, we need to check if there's any time slot available during the day
+			// This is a simplified approach - in a real implementation, you might want to check specific time slots
+			
+			$day_timestamp = strtotime( date( 'Y-m-d', strtotime( $date_string ) ) . ' 00:00:00' );
+			$day_start = $day_timestamp; // 00:00:00
+			$day_end = $day_timestamp + 86400 - 1; // 23:59:59
+			
+			$booked_quantity = 0;
+			
+			// Check custom bookings table first
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
+			
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
+				$bookings = $wpdb->get_results( $wpdb->prepare("
+					SELECT pickup_date, dropoff_date, quantity, status
+					FROM $table_name
+					WHERE product_id = %d
+					AND status IN ('pending', 'confirmed', 'active', 'processing', 'completed')
+				", $product_id ));
+				
+				foreach ( $bookings as $booking ) {
+					$booking_pickup = strtotime( $booking->pickup_date );
+					$booking_dropoff = strtotime( $booking->dropoff_date );
+					
+					// For hourly rentals, check if the booking overlaps with the day
+					// Include turnaround time for hourly rentals
+					$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+					$turnaround_seconds = $turnaround_hours * 3600;
+					$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
+					
+					// Check if booking overlaps with the day (including turnaround)
+					if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
+						$booked_quantity += intval( $booking->quantity );
+						
+						// Debug logging
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							smart_rentals_wc_log( sprintf(
+								"Hourly Calendar: Date %s conflicts with booking %s to %s (+ %dh turnaround), Qty: %d",
+								$date_string,
+								$booking->pickup_date,
+								$booking->dropoff_date,
+								$turnaround_hours,
+								$booking->quantity
+							));
+						}
+					}
+				}
+			}
+			
+			// Also check WooCommerce orders as fallback
+			if ( $booked_quantity === 0 ) {
+				$order_status = $this->get_booking_order_status();
+				$status_placeholders = implode( "','", array_map( 'esc_sql', $order_status ) );
+
+				$order_bookings = $wpdb->get_results( $wpdb->prepare("
+					SELECT 
+						pickup_date.meta_value as pickup_date,
+						dropoff_date.meta_value as dropoff_date,
+						quantity.meta_value as quantity
+					FROM {$wpdb->prefix}woocommerce_order_items AS items
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS pickup_date 
+						ON items.order_item_id = pickup_date.order_item_id 
+						AND pickup_date.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS dropoff_date 
+						ON items.order_item_id = dropoff_date.order_item_id 
+						AND dropoff_date.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS quantity 
+						ON items.order_item_id = quantity.order_item_id 
+						AND quantity.meta_key = %s
+					LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS product_meta 
+						ON items.order_item_id = product_meta.order_item_id 
+						AND product_meta.meta_key = '_product_id'
+					LEFT JOIN {$wpdb->posts} AS orders 
+						ON items.order_id = orders.ID
+					WHERE 
+						product_meta.meta_value = %d
+						AND orders.post_status IN ('{$status_placeholders}')
+						AND pickup_date.meta_value IS NOT NULL
+						AND dropoff_date.meta_value IS NOT NULL
+				",
+					smart_rentals_wc_meta_key( 'pickup_date' ),
+					smart_rentals_wc_meta_key( 'dropoff_date' ),
+					smart_rentals_wc_meta_key( 'rental_quantity' ),
+					$product_id
+				));
+
+				foreach ( $order_bookings as $booking ) {
+					if ( $booking->pickup_date && $booking->dropoff_date ) {
+						$booking_pickup = strtotime( $booking->pickup_date );
+						$booking_dropoff = strtotime( $booking->dropoff_date );
+						$booking_quantity = intval( $booking->quantity ) ?: 1;
+						
+						// For hourly rentals, include turnaround time
+						$turnaround_hours = smart_rentals_wc_get_turnaround_time( $product_id );
+						$turnaround_seconds = $turnaround_hours * 3600;
+						$booking_dropoff_with_turnaround = $booking_dropoff + $turnaround_seconds;
+						
+						// Check if booking overlaps with the day (including turnaround)
+						if ( $booking_pickup <= $day_end && $booking_dropoff_with_turnaround >= $day_start ) {
+							$booked_quantity += $booking_quantity;
+							
+							// Debug logging
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								smart_rentals_wc_log( sprintf(
+									"Hourly Calendar Order: Date %s conflicts with order booking %s to %s (+ %dh turnaround), Qty: %d",
+									$date_string,
+									$booking->pickup_date,
+									$booking->dropoff_date,
+									$turnaround_hours,
+									$booking_quantity
+								));
+							}
+						}
+					}
+				}
+			}
+			
+			$available_quantity = max( 0, $total_stock - $booked_quantity );
+			
+			// Enhanced debug logging for hourly rentals
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				smart_rentals_wc_log( sprintf(
+					"=== HOURLY CALENDAR AVAILABILITY ===\nDate: %s (timestamp: %d)\nProduct: %d\nRental Type: %s\nTotal Stock: %d\nBooked Quantity: %d\nAvailable: %d\n===",
+					$date_string,
+					$day_timestamp,
+					$product_id,
+					smart_rentals_wc_get_post_meta( $product_id, 'rental_type' ),
+					$total_stock,
+					$booked_quantity,
+					$available_quantity
+				));
+			}
+			
+			return $available_quantity;
+		}
+
+		/**
 		 * Get available quantity for a specific calendar day
-		 * More robust method specifically for calendar display
+		 * Enhanced method for both daily and hourly rentals
 		 */
 		public function get_calendar_day_availability( $product_id, $date_string ) {
 			if ( !$product_id || !$date_string ) {
@@ -450,6 +592,9 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 				smart_rentals_wc_log( "Invalid date format passed to get_calendar_day_availability: $date_string" );
 				return 0;
 			}
+
+			// Get rental type for proper logic
+			$rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 
 			// Check if this weekday is disabled
 			$disabled_weekdays = smart_rentals_wc_get_post_meta( $product_id, 'disabled_weekdays' );
@@ -485,6 +630,12 @@ if ( !class_exists( 'Smart_Rentals_WC_Get_Data' ) ) {
 			// Get product stock
 			$rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
 			$total_stock = $rental_stock ? intval( $rental_stock ) : 1;
+
+			// For hourly rentals, we need to check if there's any availability during the day
+			// For daily rentals, we use the existing logic
+			if ( $rental_type === 'hour' || $rental_type === 'appointment' ) {
+				return $this->get_hourly_day_availability( $product_id, $date_string, $total_stock );
+			}
 
 			// Convert date string to timestamps for the entire day
 			// Ensure we're working with the start of the day (00:00:00)
