@@ -115,6 +115,7 @@ jQuery(document).ready(function($) {
     
     // Calendar events data
     var calendarEvents = <?php echo json_encode( $events ); ?>;
+    console.log(calendarEvents);
     var allEvents = calendarEvents; // Keep original events for filtering
     
     // Initialize FullCalendar
@@ -132,26 +133,7 @@ jQuery(document).ready(function($) {
         eventClick: function(info) {
             showBookingDetails(info.event);
         },
-        eventMouseEnter: function(info) {
-            var event = info.event;
-            var tooltip = '<div class="booking-tooltip">' +
-                '<strong>' + event.title + '</strong><br>' +
-                '<strong><?php _e( 'Status:', 'smart-rentals-wc' ); ?></strong> ' + event.extendedProps.status + '<br>' +
-                '<strong><?php _e( 'Dates:', 'smart-rentals-wc' ); ?></strong> ' + 
-                event.start.toLocaleDateString() + ' - ' + 
-                (event.end ? event.end.toLocaleDateString() : event.start.toLocaleDateString()) +
-                '</div>';
-            
-            $(info.el).attr('title', '').tooltip({
-                content: tooltip,
-                show: { effect: 'fadeIn', duration: 200 },
-                hide: { effect: 'fadeOut', duration: 200 },
-                position: { my: 'center bottom-20', at: 'center top' }
-            }).tooltip('open');
-        },
-        eventMouseLeave: function(info) {
-            $(info.el).tooltip('close');
-        }
+        
     });
     
     calendar.render();
@@ -205,18 +187,22 @@ jQuery(document).ready(function($) {
     // Show booking details modal
     function showBookingDetails(event) {
         var props = event.extendedProps;
-        var startDate = event.start.toLocaleDateString();
-        var endDate = event.end ? event.end.toLocaleDateString() : startDate;
-        
+        var startDate = event.start.toLocaleString();
+        var endDate = event.end ? event.end.toLocaleString() : startDate;
         var content = '<div class="booking-details">' +
             '<div class="detail-row"><strong><?php _e( 'Product:', 'smart-rentals-wc' ); ?></strong> ' + event.title.split(' (')[0] + '</div>' +
-            '<div class="detail-row"><strong><?php _e( 'Booking ID:', 'smart-rentals-wc' ); ?></strong> #' + props.booking_id + '</div>' +
+            '<div class="detail-row"><strong><?php _e( 'Booking ID:', 'smart-rentals-wc' ); ?></strong> #' + props.order_id + '</div>' +
             '<div class="detail-row"><strong><?php _e( 'Status:', 'smart-rentals-wc' ); ?></strong> <span class="status-badge status-' + props.status + '">' + props.status + '</span></div>' +
             '<div class="detail-row"><strong><?php _e( 'Pickup Date:', 'smart-rentals-wc' ); ?></strong> ' + startDate + '</div>' +
             '<div class="detail-row"><strong><?php _e( 'Dropoff Date:', 'smart-rentals-wc' ); ?></strong> ' + endDate + '</div>' +
             '<div class="detail-row"><strong><?php _e( 'Quantity:', 'smart-rentals-wc' ); ?></strong> ' + props.quantity + '</div>' +
             '<div class="detail-row"><strong><?php _e( 'Total Price:', 'smart-rentals-wc' ); ?></strong> ' + (props.total_price ? '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$'; ?>' + props.total_price : 'N/A') + '</div>' +
             '<div class="detail-row"><strong><?php _e( 'Security Deposit:', 'smart-rentals-wc' ); ?></strong> ' + (props.security_deposit ? '<?php echo function_exists( 'get_woocommerce_currency_symbol' ) ? get_woocommerce_currency_symbol() : '$'; ?>' + props.security_deposit : 'N/A') + '</div>' +
+            '<div class="detail-row">' +
+                '<a href="<?php echo admin_url( 'post.php?action=edit&post=' ); ?>' + props.order_id + '" class="button button-primary" target="_blank">' +
+                    '<?php _e( 'Edit Order', 'smart-rentals-wc' ); ?>' +
+                '</a>' +
+            '</div>' +
             '</div>';
         
         $('#booking-details-content').html(content);

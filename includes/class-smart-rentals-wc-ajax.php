@@ -448,158 +448,102 @@ if ( !class_exists( 'Smart_Rentals_WC_Ajax' ) ) {
 		 */
 		private function get_admin_calendar_events_data( $product_id = 0, $status = '' ) {
 			global $wpdb;
+
 			$events = [];
-			
-			// First, try custom bookings table
-			$table_name = $wpdb->prefix . 'smart_rentals_bookings';
-			
-			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) == $table_name ) {
-				$where_conditions = [ "b.status IN ('pending', 'confirmed', 'active', 'processing', 'completed')" ];
-				$prepare_values = [];
+			$bookings_table = $wpdb->prefix . 'smart_rentals_bookings';
+			$posts_table    = $wpdb->posts;
+			$postmeta_table = $wpdb->postmeta;
 
-				if ( $product_id ) {
-					$where_conditions[] = "b.product_id = %d";
-					$prepare_values[] = $product_id;
-				}
-
-				if ( $status ) {
-					$where_conditions[] = "b.status = %s";
-					$prepare_values[] = $status;
-				}
-
-				$where_clause = implode( ' AND ', $where_conditions );
-				$query = "
-					SELECT b.*, p.post_title as product_name
-					FROM $table_name b
-					LEFT JOIN {$wpdb->posts} p ON b.product_id = p.ID
-					WHERE $where_clause
-					ORDER BY b.pickup_date ASC
-				";
-
-				if ( !empty( $prepare_values ) ) {
-					$bookings = $wpdb->get_results( $wpdb->prepare( $query, $prepare_values ) );
-				} else {
-					$bookings = $wpdb->get_results( $query );
-				}
-
-				foreach ( $bookings as $booking ) {
-					$events[] = [
-						'id' => 'custom_' . $booking->id,
-						'title' => $booking->product_name . ' (' . $booking->quantity . ')',
-						'start' => $booking->pickup_date,
-						'end' => $booking->dropoff_date,
-						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking->status ),
-						'borderColor' => smart_rentals_wc_get_booking_color( $booking->status ),
-						'textColor' => '#ffffff',
-						'extendedProps' => [
-							'booking_id' => $booking->id,
-							'product_id' => $booking->product_id,
-							'quantity' => $booking->quantity,
-							'status' => $booking->status,
-							'total_price' => $booking->total_price,
-							'security_deposit' => $booking->security_deposit,
-							'source' => 'custom_table'
-						]
-					];
-				}
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$bookings_table'" ) != $bookings_table ) {
+				return $events; // no table
 			}
-			
-			// Also check WooCommerce orders (primary source like external plugin)
-			$order_status = [ 'wc-processing', 'wc-completed', 'wc-on-hold', 'wc-pending' ];
-			$status_placeholders = implode( "','", array_map( 'esc_sql', $order_status ) );
-			
-			$where_conditions = [ "rental_check.meta_value = 'yes'" ];
-			$where_conditions[] = "orders.post_status IN ('{$status_placeholders}')";
-			$where_conditions[] = "pickup_date.meta_value IS NOT NULL";
-			$where_conditions[] = "dropoff_date.meta_value IS NOT NULL";
-			$where_conditions[] = "product_meta.meta_value IS NOT NULL";
-			
-			$prepare_values = [
-				smart_rentals_wc_meta_key( 'pickup_date' ),
-				smart_rentals_wc_meta_key( 'dropoff_date' ),
-				smart_rentals_wc_meta_key( 'rental_quantity' ),
-				smart_rentals_wc_meta_key( 'is_rental' ),
-				'_product_id'
-			];
+
+			$where_conditions = [ "b.status IN ('pending','confirmed','active','processing','completed')" ];
+			$prepare_values   = [];
 
 			if ( $product_id ) {
-				$where_conditions[] = "product_meta.meta_value = %d";
-				$prepare_values[] = $product_id;
+				$where_conditions[] = "b.product_id = %d";
+				$prepare_values[]   = $product_id;
+			}
+
+			if ( $status ) {
+				$where_conditions[] = "b.status = %s";
+				$prepare_values[]   = $status;
 			}
 
 			$where_clause = implode( ' AND ', $where_conditions );
-			
-			$order_bookings = $wpdb->get_results( $wpdb->prepare("
-				SELECT 
-					orders.ID as order_id,
-					orders.post_date as order_date,
-					items.order_item_name as product_name,
-					pickup_date.meta_value as pickup_date,
-					dropoff_date.meta_value as dropoff_date,
-					quantity.meta_value as quantity,
-					product_meta.meta_value as product_id,
-					orders.post_status as order_status
-				FROM {$wpdb->prefix}woocommerce_order_items AS items
-				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS pickup_date 
-					ON items.order_item_id = pickup_date.order_item_id 
-					AND pickup_date.meta_key = %s
-				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS dropoff_date 
-					ON items.order_item_id = dropoff_date.order_item_id 
-					AND dropoff_date.meta_key = %s
-				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS quantity 
-					ON items.order_item_id = quantity.order_item_id 
-					AND quantity.meta_key = %s
-				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS rental_check 
-					ON items.order_item_id = rental_check.order_item_id 
-					AND rental_check.meta_key = %s
-				LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS product_meta 
-					ON items.order_item_id = product_meta.order_item_id 
-					AND product_meta.meta_key = %s
-				LEFT JOIN {$wpdb->posts} AS orders 
-					ON items.order_id = orders.ID
-				WHERE $where_clause
-				ORDER BY pickup_date.meta_value ASC
-			", $prepare_values ));
 
-			foreach ( $order_bookings as $booking ) {
-				if ( $booking->pickup_date && $booking->dropoff_date && $booking->product_id ) {
-					// Convert order status to booking status
+			// ✅ Optimized query: bookings + product title + WooCommerce order status + order total
+			$query = "
+				SELECT 
+					b.id AS booking_id,
+					b.order_id,
+					b.product_id,
+					b.pickup_date,
+					b.dropoff_date,
+					b.quantity,
+					b.security_deposit,
+					b.status AS booking_status,
+					p.post_title AS product_name,
+					o.post_status AS order_status,
+					ot.meta_value AS order_total
+				FROM $bookings_table b
+				LEFT JOIN $posts_table p 
+					ON b.product_id = p.ID
+				LEFT JOIN $posts_table o 
+					ON b.order_id = o.ID
+				LEFT JOIN $postmeta_table ot 
+					ON b.order_id = ot.post_id AND ot.meta_key = '_order_total'
+				WHERE $where_clause
+				ORDER BY b.pickup_date ASC
+			";
+
+			$results = ! empty( $prepare_values ) ? 
+				$wpdb->get_results( $wpdb->prepare( $query, $prepare_values ) ) : 
+				$wpdb->get_results( $query );
+
+			foreach ( $results as $row ) {
+				// Map WooCommerce order_status to calendar status
+				$booking_status = $row->booking_status;
+				if ( $row->order_status === 'wc-processing' ) {
+					$booking_status = 'processing';
+				} elseif ( $row->order_status === 'wc-completed' ) {
+					$booking_status = 'completed';
+				} elseif ( $row->order_status === 'wc-pending' ) {
 					$booking_status = 'pending';
-					if ( $booking->order_status === 'wc-processing' ) {
-						$booking_status = 'confirmed';
-					} elseif ( $booking->order_status === 'wc-completed' ) {
-						$booking_status = 'active';
-					} elseif ( $booking->order_status === 'wc-on-hold' ) {
-						$booking_status = 'pending';
-					}
-					
-					// Skip if filtering by status and it doesn't match
-					if ( $status && $booking_status !== $status ) {
-						continue;
-					}
-					
-					$events[] = [
-						'id' => 'order_' . $booking->order_id,
-						'title' => $booking->product_name . ' (' . ($booking->quantity ?: 1) . ')',
-						'start' => $booking->pickup_date,
-						'end' => $booking->dropoff_date,
-						'backgroundColor' => smart_rentals_wc_get_booking_color( $booking_status ),
-						'borderColor' => smart_rentals_wc_get_booking_color( $booking_status ),
-						'textColor' => '#ffffff',
-						'extendedProps' => [
-							'booking_id' => $booking->order_id,
-							'product_id' => $booking->product_id,
-							'quantity' => $booking->quantity ?: 1,
-							'status' => $booking_status,
-							'order_status' => $booking->order_status,
-							'source' => 'woocommerce_order'
-						]
-					];
+				} elseif ( $row->order_status === 'wc-cancelled' ) {
+					$booking_status = 'cancelled';
 				}
+
+				// Skip if filtering by status and it doesn’t match
+				if ( $status && $booking_status !== $status ) {
+					continue;
+				}
+
+				$events[] = [
+					'id'    => $row->order_id, // ✅ Event ID = order ID
+					'title' => $row->product_name . ' (' . ( $row->quantity ?: 1 ) . ')',
+					'start' => $row->pickup_date,
+					'end'   => $row->dropoff_date,
+					'backgroundColor' => smart_rentals_wc_get_booking_color( $booking_status ),
+					'borderColor'     => smart_rentals_wc_get_booking_color( $booking_status ),
+					'textColor'       => '#ffffff',
+					'extendedProps'   => [
+						'order_id'        => $row->order_id,
+						'product_id'      => $row->product_id,
+						'quantity'        => $row->quantity ?: 1,
+						'status'          => $booking_status,
+						'security_deposit'=> $row->security_deposit,
+						'total_price'     => $row->order_total,
+						'order_status'    => $row->order_status,
+						'source'          => 'custom_table'
+					]
+				];
 			}
-			
+
 			return $events;
 		}
+
 
 
 		/**
