@@ -1622,15 +1622,15 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					'day' => __( 'Daily', 'smart-rentals-wc' ),
 					'hour' => __( 'Hourly', 'smart-rentals-wc' ),
 					'mixed' => __( 'Mixed (Daily/Hourly)', 'smart-rentals-wc' ),
+					'appointment' => __( 'Appointment', 'smart-rentals-wc' ),
 					// Disabled options (kept for future use)
 					'period_time' => __( 'Package/Period', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 					'transportation' => __( 'Transportation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 					'hotel' => __( 'Hotel/Accommodation', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
-					'appointment' => __( 'Appointment', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 					'taxi' => __( 'Taxi/Distance', 'smart-rentals-wc' ) . ' - ' . __( 'Coming Soon', 'smart-rentals-wc' ),
 				],
 				'desc_tip' => true,
-				'description' => __( 'Select the rental pricing type. Currently only Daily, Hourly, and Mixed types are fully supported.', 'smart-rentals-wc' ),
+				'description' => __( 'Select the rental pricing type. Daily, Hourly, Mixed, and Appointment types are fully supported.', 'smart-rentals-wc' ),
 			]);
 
 			echo '</div>';
@@ -2200,7 +2200,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 			if ( 'yes' === $enable_rental ) {
 				// Validate rental type (only allow active types)
 				$rental_type = isset( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) ? sanitize_text_field( $_POST[smart_rentals_wc_meta_key( 'rental_type' )] ) : '';
-				$allowed_types = [ 'day', 'hour', 'mixed' ];
+				$allowed_types = [ 'day', 'hour', 'mixed', 'appointment' ];
 				
 				if ( $rental_type && !in_array( $rental_type, $allowed_types ) ) {
 					// Reset to empty if invalid type selected
@@ -2229,7 +2229,7 @@ if ( !class_exists( 'Smart_Rentals_WC_Admin' ) ) {
 					// Special handling for rental_type validation
 					if ( $field === 'rental_type' && isset( $_POST[smart_rentals_wc_meta_key( $field )] ) ) {
 						$submitted_type = sanitize_text_field( $_POST[smart_rentals_wc_meta_key( $field )] );
-						$allowed_types = [ 'day', 'hour', 'mixed' ];
+						$allowed_types = [ 'day', 'hour', 'mixed', 'appointment' ];
 						
 						if ( !in_array( $submitted_type, $allowed_types ) ) {
 							// Don't save invalid rental type
