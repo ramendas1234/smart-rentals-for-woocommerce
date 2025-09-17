@@ -16,22 +16,58 @@ $rental_type = smart_rentals_wc_get_post_meta( $product_id, 'rental_type' );
 $daily_price = smart_rentals_wc_get_post_meta( $product_id, 'daily_price' );
 $hourly_price = smart_rentals_wc_get_post_meta( $product_id, 'hourly_price' );
 $rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
+
+// Debug: Log the values to see what's being retrieved
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+    smart_rentals_wc_log( "Calendar Debug - Product ID: $product_id, Rental Type: '$rental_type', Daily Price: '$daily_price', Hourly Price: '$hourly_price'" );
+    
+    // Also check the raw meta values
+    $raw_hourly = get_post_meta( $product_id, 'smart_rentals_hourly_price', true );
+    $raw_daily = get_post_meta( $product_id, 'smart_rentals_daily_price', true );
+    $raw_type = get_post_meta( $product_id, 'smart_rentals_rental_type', true );
+    smart_rentals_wc_log( "Raw Meta Values - Type: '$raw_type', Daily: '$raw_daily', Hourly: '$raw_hourly'" );
+}
 ?>
 
 <div class="smart-rentals-calendar-container">
     <h4><?php _e( 'Availability Calendar', 'smart-rentals-wc' ); ?></h4>
     
+    <!-- Debug Information (only show if WP_DEBUG is enabled) -->
+    <?php if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) : ?>
+        <div class="calendar-debug-info" style="background: #f0f0f0; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; font-size: 12px;">
+            <strong>Debug Info:</strong><br>
+            Rental Type: <?php echo esc_html( $rental_type ); ?><br>
+            Daily Price: <?php echo esc_html( $daily_price ); ?><br>
+            Hourly Price: <?php echo esc_html( $hourly_price ); ?><br>
+            Raw Hourly: <?php echo esc_html( get_post_meta( $product_id, 'smart_rentals_hourly_price', true ) ); ?><br>
+            Raw Daily: <?php echo esc_html( get_post_meta( $product_id, 'smart_rentals_daily_price', true ) ); ?><br>
+            Raw Type: <?php echo esc_html( get_post_meta( $product_id, 'smart_rentals_rental_type', true ) ); ?>
+        </div>
+    <?php endif; ?>
+
     <!-- Pricing Information -->
     <div class="calendar-pricing-info">
         <?php if ( $rental_type === 'hour' || $rental_type === 'appointment' ) : ?>
             <div class="price-display">
                 <span class="price-label"><?php _e( 'Hourly Rate:', 'smart-rentals-wc' ); ?></span>
-                <span class="price-value"><?php echo smart_rentals_wc_price( $hourly_price ); ?> <?php _e( 'per hour', 'smart-rentals-wc' ); ?></span>
+                <span class="price-value">
+                    <?php if ( $hourly_price > 0 ) : ?>
+                        <?php echo smart_rentals_wc_price( $hourly_price ); ?> <?php _e( 'per hour', 'smart-rentals-wc' ); ?>
+                    <?php else : ?>
+                        <?php _e( 'Price not set', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                </span>
             </div>
         <?php elseif ( $rental_type === 'day' || $rental_type === 'hotel' ) : ?>
             <div class="price-display">
                 <span class="price-label"><?php _e( 'Daily Rate:', 'smart-rentals-wc' ); ?></span>
-                <span class="price-value"><?php echo smart_rentals_wc_price( $daily_price ); ?> <?php _e( 'per day', 'smart-rentals-wc' ); ?></span>
+                <span class="price-value">
+                    <?php if ( $daily_price > 0 ) : ?>
+                        <?php echo smart_rentals_wc_price( $daily_price ); ?> <?php _e( 'per day', 'smart-rentals-wc' ); ?>
+                    <?php else : ?>
+                        <?php _e( 'Price not set', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                </span>
             </div>
         <?php elseif ( $rental_type === 'mixed' ) : ?>
             <div class="price-display">
@@ -43,6 +79,26 @@ $rental_stock = smart_rentals_wc_get_post_meta( $product_id, 'rental_stock' );
                     <?php if ( $daily_price > 0 && $hourly_price > 0 ) : ?> / <?php endif; ?>
                     <?php if ( $hourly_price > 0 ) : ?>
                         <?php echo smart_rentals_wc_price( $hourly_price ); ?> <?php _e( 'per hour', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                    <?php if ( $daily_price <= 0 && $hourly_price <= 0 ) : ?>
+                        <?php _e( 'Prices not set', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                </span>
+            </div>
+        <?php else : ?>
+            <!-- Fallback for unknown rental types -->
+            <div class="price-display">
+                <span class="price-label"><?php _e( 'Rates:', 'smart-rentals-wc' ); ?></span>
+                <span class="price-value">
+                    <?php if ( $daily_price > 0 ) : ?>
+                        <?php echo smart_rentals_wc_price( $daily_price ); ?> <?php _e( 'per day', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                    <?php if ( $daily_price > 0 && $hourly_price > 0 ) : ?> / <?php endif; ?>
+                    <?php if ( $hourly_price > 0 ) : ?>
+                        <?php echo smart_rentals_wc_price( $hourly_price ); ?> <?php _e( 'per hour', 'smart-rentals-wc' ); ?>
+                    <?php endif; ?>
+                    <?php if ( $daily_price <= 0 && $hourly_price <= 0 ) : ?>
+                        <?php _e( 'Prices not set', 'smart-rentals-wc' ); ?>
                     <?php endif; ?>
                 </span>
             </div>
